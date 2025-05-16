@@ -1,0 +1,105 @@
+- id: 1
+  language: Python
+  concept: Initializing Arrays
+  code_snippet: my_array = [1, 2, 3, 4]
+- id: 2
+  language: Lua
+  concept: Initializing Arrays
+  code_snippet: my_array = {1, 2, 3, 4}
+- id: 3
+  language: TypeScript
+  concept: Initializing Arrays
+  code_snippet: 'const arr: number[] = [1, 2, 3, 4];'
+- id: 4
+  language: Bash
+  concept: Initializing Arrays
+  code_snippet: arr=(1 2 3 4)
+- id: 5
+  language: Go
+  concept: Initializing Arrays
+  code_snippet: var arr = []int{1, 2, 3, 4}
+- id: 6
+  language: Lua
+  concept: Number Primitive
+  code_snippet: local number = 42
+  explanation: Declares a number primitive in Lua
+- id: 7
+  language: Bash
+  concept: Number Primitive
+  code_snippet: declare -i number=42
+  explanation: Declares an integer in Bash
+- id: 8
+  language: Python
+  concept: Number Primitive
+  code_snippet: number = 42
+  explanation: Declares an integer in Python
+- id: 9
+  language: TypeScript
+  concept: Number Primitive
+  code_snippet: 'let number: number = 42;'
+  explanation: Declares a number in TypeScript
+- id: 10
+  language: Go
+  concept: Number Primitive
+  code_snippet: var number int = 42
+  explanation: Declares an integer in Go
+- id: 11
+  language: Lua
+  concept: Write to file
+  code_snippet: "local function write_lines(file_path, lines)\n\tlocal file, err =\
+    \ io.open(file_path, \"w\")\n\tif not file then\n\t\t\treturn false, err\n\tend\n\
+    \n\tfor _, line in ipairs(lines) do\n\t\t\tfile:write(line .. \"\\n\")\n\tend\n\
+    \n\tfile:close()\n\treturn true\nend"
+  explanation: ''
+- id: 13
+  language: Lua
+  concept: Read file
+  code_snippet: "local function read_lines(file_path)\n\tlocal file, err = io.open(file_path,\
+    \ \"r\")\n\tif not file then\n\t\treturn nil, err\n\tend\n\n\tlocal lines = {}\n\
+    \tfor line in file:lines() do\n\t\ttable.insert(lines, line)\n\tend\n\n\tfile:close()\n\
+    \treturn lines\nend"
+  explanation: ''
+- id: 14
+  language: Bash
+  concept: Read file
+  code_snippet: "function read_lines {\n    local file_path=$1\n    if [[ ! -f \"\
+    $file_path\" ]]; then\n        echo \"Error: File not found\" >&2\n        return\
+    \ 1\n    fi\n\n    local lines=()\n    while IFS= read -r line; do\n        lines+=(\"\
+    $line\")\n    done < \"$file_path\"\n\n    echo \"${lines[@]}\"\n    return 0\n\
+    }"
+  explanation: ''
+- id: 15
+  language: Go
+  concept: Read file
+  code_snippet: "import (\n    \"bufio\"\n    \"fmt\"\n    \"os\"\n)\n\nfunc readLines(filePath\
+    \ string) ([]string, error) {\n    file, err := os.Open(filePath)\n    if err\
+    \ != nil {\n        return nil, err\n    }\n    defer file.Close()\n\n    var\
+    \ lines []string\n    scanner := bufio.NewScanner(file)\n    for scanner.Scan()\
+    \ {\n        lines = append(lines, scanner.Text())\n    }\n\n    if err := scanner.Err();\
+    \ err {\n        return nil, err\n    }\n\n    return lines, nil\n}"
+  explanation: ''
+- id: 16
+  language: TypeScript
+  concept: Read file
+  code_snippet: "import * as fs from 'fs';\n\nfunction readLines(filePath: string):\
+    \ string[] | null {\n    try {\n        const data = fs.readFileSync(filePath,\
+    \ 'utf-8');\n        return data.split('\\n');\n    } catch (err) {\n        console.error(err);\n\
+    \        return null;\n    }\n}\n\nconst lines = readLines('example.txt');\nif\
+    \ (lines) {\n    console.log(lines);\n} else {\n    console.log('Failed to read\
+    \ lines');\n}"
+  explanation: ''
+- id: 17
+  language: Python
+  concept: Read file
+  code_snippet: "def read_lines(file_path):\n    try:\n        with open(file_path,\
+    \ 'r') as file:\n            lines = file.readlines()\n        return [line.strip()\
+    \ for line in lines]\n    except FileNotFoundError as e:\n        print(f\"Error:\
+    \ {e}\")\n        return None"
+  explanation: ''
+- id: 18
+  language: Python
+  concept: Object
+  code_snippet: 'student = {"name": "Jamal", "age": 37}
+
+    student.get("name")'
+  explanation: Python dictionaries

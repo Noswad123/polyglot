@@ -1,0 +1,110 @@
+- id: 6
+  name: Initializing Arrays
+  description: Demonstrates how to initialize an array in different programming languages.
+  tags:
+  - data structure
+  - syntax
+  status: not started
+  notes: null
+- id: 7
+  name: Number Primitive
+  description: Basic data types available in a programming language
+  tags:
+  - primitives
+  - types
+  status: not started
+  notes: null
+- id: 8
+  name: Write to file
+  description: A function that writes to a file
+  tags:
+  - filesystem
+  - io
+  status: not started
+  notes: null
+- id: 9
+  name: Read file
+  description: A function that reads the contents of a file
+  tags:
+  - filesystem
+  - io
+  status: not started
+  notes: null
+- id: 10
+  name: Object
+  description: Create an object and use a property
+  tags:
+  - data structure
+  - oop
+  - syntax
+  status: not started
+  notes: null
+- id: 11
+  name: Print to Console
+  description: Print a message to the console or standard output using the default method.
+  tags: [io, basics]
+  status: not started
+  notes: null
+
+- id: 12
+  name: If Statement
+  description: Basic conditional logic using if/else syntax.
+  tags: [control flow, basics]
+  status: not started
+  notes: null
+
+- id: 13
+  name: For Loop
+  description: Iterate using a for loop and highlight any unique syntax or semantics (e.g., range vs index-based).
+  tags: [control flow, iteration]
+  status: not started
+  notes: null
+
+- id: 14
+  name: Function Definition
+  description: Define a function and call it with arguments.
+  tags: [functions, basics]
+  status: not started
+  notes: null
+
+- id: 15
+  name: String Interpolation
+  description: Insert variables into strings using language-specific interpolation or concatenation methods.
+  tags: [strings, syntax]
+  status: not started
+  notes: null
+
+- id: 16
+  name: Comments
+  description: Show how to write single-line and multi-line comments in the language.
+  tags: [syntax, tooling]
+  status: not started
+  notes: null
+
+- id: 17
+  name: Import Module
+  description: Import a module, library, or file and use an exposed function or variable.
+  tags: [modules, tooling]
+  status: not started
+  notes: null
+
+- id: 18
+  name: Map/Dictionary
+  description: Define a map/dictionary, set a key, and retrieve a value.
+  tags: [data structure, syntax]
+  status: not started
+  notes: null
+
+- id: 19
+  name: Switch Statement
+  description: Use a switch or equivalent construct to branch logic based on value.
+  tags: [control flow, syntax]
+  status: not started
+  notes: null
+
+- id: 20
+  name: Error Handling
+  description: Demonstrate how to catch and handle runtime errors or exceptions.
+  tags: [control flow, errors]
+  status: not started
+  notes: null

@@ -1,0 +1,32 @@
+- id: 1
+  name: leetcode
+- id: 2
+  name: basics
+- id: 3
+  name: control flow
+- id: 4
+  name: data structure
+- id: 5
+  name: errors
+- id: 6
+  name: filesystem
+- id: 7
+  name: functions
+- id: 8
+  name: io
+- id: 9
+  name: iteration
+- id: 10
+  name: modules
+- id: 11
+  name: oop
+- id: 12
+  name: primitives
+- id: 13
+  name: strings
+- id: 14
+  name: syntax
+- id: 15
+  name: tooling
+- id: 16
+  name: types
