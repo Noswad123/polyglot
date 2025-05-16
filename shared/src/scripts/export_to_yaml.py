@@ -83,15 +83,30 @@ def export_examples(cur):
         JOIN concepts c ON e.concept_id = c.id
     """)
     examples = []
-    for row in cur.fetchall():
+    rows = cur.fetchall()
+    for row in rows:
+        example_id, language, concept, code_snippet, explanation = row
+
+        cur.execute("""
+            SELECT tags.name
+            FROM example_tags
+            JOIN tags ON example_tags.tag_id = tags.id
+            WHERE example_tags.example_id = ?
+        """, (example_id,))
+
+        tags = [r[0] for r in cur.fetchall()]
+
         example = {
-            "id": row[0],
-            "language": row[1],
-            "concept": row[2],
-            "code_snippet": row[3],
-            "explanation": row[4],
+            "id": example_id,
+            "language": language,
+            "concept": concept,
+            "code_snippet": code_snippet,
+            "explanation": explanation,
         }
-        examples.append({k: v for k, v in example.items() if v is not None})
+        if tags:
+            example["tags"] = tags
+
+        examples.append(examples)
     write_yaml("examples.yaml", examples)
 
 

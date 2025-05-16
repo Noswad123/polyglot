@@ -20,6 +20,20 @@ def validate_example(cur, example):
     cur.execute("SELECT 1 FROM concepts WHERE name = ?", (example["concept"],))
     if not cur.fetchone():
         return f"Unknown concept in example: {example['concept']}"
+
+    if "tags" in example:
+        if not isinstance(example["tags"], list):
+            return f"'tags' must be a list in example: '{example.get('title', example['code_snippet'])[:30]}'"
+        for tag in example["tags"]:
+            if not isinstance(tag, str):
+                return f"Each tag must be a string in example: '{example.get('title', example['code_snippet'])[:30]}'"
+
+    known_tags = {row[0] for row in cur.fetchall()}
+    cur.execute("SELECT name FROM tags")
+    unknown = [tag for tag in example.get("tags", []) if tag not in known_tags]
+    if unknown:
+
+        return f"Unknown tag(s) in example: {unknown}"
     return None
 
 
@@ -45,6 +59,31 @@ def validate_relationship(r):
     return None
 
 
+def validate_one(validator_name, cur):
+    validator_map = {
+        "example": {"func": validate_example, "path": "examples.yaml"},
+        "language": {"func": validate_language, "path": "languages.yaml"},
+        "concept": {"func": validate_concept, "path": "concepts.yaml"},
+        "relationship": {
+            "func": validate_relationship,
+            "path": "trackable_relationships.yaml"
+        }
+    }
+    errors = []
+    if validator_name not in validator_map:
+        raise ValueError(f"Unknown validator: {validator_name}")
+    elif validator_name == "relationship":
+        for thing in load_yaml(validator_map[validator_name]["path"]):
+            err = validator_map[validator_name]["func"](thing)
+            if err:
+                errors.append(err)
+    else:
+        for thing in load_yaml(validator_map[validator_name]["path"]):
+            err = validator_map[validator_name]["func"](cur, thing)
+            if err:
+                errors.append(err)
+
+
 def validate_all(cur):
     errors = []
 
@@ -58,10 +97,10 @@ def validate_all(cur):
         if err:
             errors.append(err)
 
-    for example in load_yaml("examples.yaml"):
-        err = validate_example(cur, example)
-        if err:
-            errors.append(err)
+    # for example in load_yaml("examples.yaml"):
+    #     err = validate_example(cur, example)
+    #     if err:
+    #         errors.append(err)
 
     for rel in load_yaml("trackable_relationships.yaml"):
         err = validate_relationship(rel)

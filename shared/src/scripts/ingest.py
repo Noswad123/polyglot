@@ -1,7 +1,7 @@
 import sqlite3
 from ingest_helpers import load_yaml
 from pathlib import Path
-from ingest_validation_helpers import validate_all
+from ingest_validation_helpers import validate_all, validate_one
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "../../db/programming_languages.db"
@@ -26,6 +26,7 @@ def insert_missing_tags(cur, concepts):
 
 
 def main():
+    print(DB_PATH)
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
@@ -51,6 +52,7 @@ def main():
     for concept in concepts:
         upsert_concept(cur, concept)
 
+    validate_one("example", cur)
     for ex in load_yaml("examples.yaml"):
         upsert_example(cur, ex)
 

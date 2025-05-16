@@ -33,7 +33,8 @@ CREATE TABLE language_info (
 );
 CREATE TABLE tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
 );
 CREATE TABLE trackable_tags (
     trackable_id INTEGER NOT NULL,
@@ -47,4 +48,11 @@ CREATE TABLE trackable_progress (
     status TEXT CHECK (status IN ('not started', 'in progress', 'mastered', 'abandoned')) DEFAULT 'not started',
     notes TEXT,
     FOREIGN KEY (trackable_id) REFERENCES trackables(id)
+);
+CREATE TABLE IF NOT EXISTS example_tags(
+    example_Id INTEGER PRIMARY KEY,
+    tag_id INTEGER NOT NULL,
+    Primary KEY (example_Id, tag_id),
+    FOREIGN KEY (example_Id) REFERENCES examples(id),
+    FOREIGN KEY (tag_id) REFERENCES tags(id)
 );

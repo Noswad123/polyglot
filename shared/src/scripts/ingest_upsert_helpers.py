@@ -123,6 +123,20 @@ def upsert_example(cur: sqlite3.Cursor, example: Dict[str, Any]) -> None:
         example.get("explanation")
     ))
 
+    example_id = example.get("id")
+    if not example_id:
+        cur.execute("SELECT last_insert_rowid()")
+        example_id = cur.fetchone()[0]
+
+    for tag in example.get("tags", []):
+        cur.execute("INSERT OR IGNORE INTO tags (name) VALUES (?)", (tag,))
+        cur.execute("SELECT id FROM tags WHERE name = ?", (tag,))
+        tag_id = cur.fetchone()[0]
+        cur.execute("""
+            INSERT OR IGNORE INTO example_tags (example_id, tag_id)
+            VALUES (?, ?)
+        """, (example_id, tag_id))
+
 
 def upsert_relationships(cur: sqlite3.Cursor, relationships: List[Dict[str, Any]]) -> None:
     for r in relationships:

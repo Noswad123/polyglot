@@ -122,3 +122,8 @@
   - errors
   status: not started
   notes: null
+- name: Create Collections from an Existing One
+  description: Demonstrate how different languages achieve this pattern, whether with list comprehensions, higher-order functions, or imperative loops.
+  tags: [collections, transformation, syntax]
+  status: not started
+  notes: null
