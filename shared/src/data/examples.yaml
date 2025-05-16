@@ -1,256 +1,45 @@
-- id: 1
-  language: Python
-  concept: Initializing Arrays
-  tags: [syntax, array, initialization]
-  code_snippet: my_array = [1, 2, 3, 4]
-- id: 2
-  language: Lua
-  concept: Initializing Arrays
-  tags: [syntax, array, initialization]
-  code_snippet: my_array = {1, 2, 3, 4}
-- id: 3
-  language: TypeScript
-  concept: Initializing Arrays
-  tags: [syntax, array, initialization]
-  code_snippet: 'const arr: number[] = [1, 2, 3, 4];'
-- id: 4
-  language: Bash
-  concept: Initializing Arrays
-  tags: [syntax, array, initialization]
-  code_snippet: arr=(1 2 3 4)
-- id: 5
-  language: Go
-  concept: Initializing Arrays
-  tags: [syntax, array, initialization]
-  code_snippet: var arr = []int{1, 2, 3, 4}
-- id: 6
-  tags: [primitives, types, syntax]
-  language: Lua
-  concept: Number Primitive
-  code_snippet: local number = 42
-  explanation: Declares a number primitive in Lua
-- id: 7
-  tags: [primitives, types, syntax]
-  language: Bash
-  concept: Number Primitive
-  code_snippet: declare -i number=42
-  explanation: Declares an integer in Bash
-- id: 8
-  tags: [primitives, types, syntax]
-  language: Python
-  concept: Number Primitive
-  code_snippet: number = 42
-  explanation: Declares an integer in Python
-- id: 9
-  tags: [primitives, types, syntax]
-  language: TypeScript
-  concept: Number Primitive
-  code_snippet: 'let number: number = 42;'
-  explanation: Declares a number in TypeScript
-- id: 10
-  tags: [primitives, types, syntax]
-  language: Go
-  concept: Number Primitive
-  code_snippet: var number int = 42
-  explanation: Declares an integer in Go
-- id: 11
-  language: Lua
-  tags: [io, filesystem, write]
-  concept: Write to file
-  code_snippet: "local function write_lines(file_path, lines)\n\tlocal file, err =\
-    \ io.open(file_path, \"w\")\n\tif not file then\n\t\t\treturn false, err\n\tend\n\
-    \n\tfor _, line in ipairs(lines) do\n\t\t\tfile:write(line .. \"\\n\")\n\tend\n\
-    \n\tfile:close()\n\treturn true\nend"
-  explanation: ''
-- id: 13
-  tags: [io, filesystem, read]
-  language: Lua
-  concept: Read file
-  code_snippet: "local function read_lines(file_path)\n\tlocal file, err = io.open(file_path,\
-    \ \"r\")\n\tif not file then\n\t\treturn nil, err\n\tend\n\n\tlocal lines = {}\n\
-    \tfor line in file:lines() do\n\t\ttable.insert(lines, line)\n\tend\n\n\tfile:close()\n\
-    \treturn lines\nend"
-  explanation: ''
-- id: 14
-  language: Bash
-  tags: [io, filesystem, read]
-  concept: Read file
-  code_snippet: "function read_lines {\n    local file_path=$1\n    if [[ ! -f \"\
-    $file_path\" ]]; then\n        echo \"Error: File not found\" >&2\n        return\
-    \ 1\n    fi\n\n    local lines=()\n    while IFS= read -r line; do\n        lines+=(\"\
-    $line\")\n    done < \"$file_path\"\n\n    echo \"${lines[@]}\"\n    return 0\n\
-    }"
-  explanation: ''
-- id: 15
-  language: Go
-  tags: [io, filesystem, read]
-  concept: Read file
-  code_snippet: "import (\n    \"bufio\"\n    \"fmt\"\n    \"os\"\n)\n\nfunc readLines(filePath\
-    \ string) ([]string, error) {\n    file, err := os.Open(filePath)\n    if err\
-    \ != nil {\n        return nil, err\n    }\n    defer file.Close()\n\n    var\
-    \ lines []string\n    scanner := bufio.NewScanner(file)\n    for scanner.Scan()\
-    \ {\n        lines = append(lines, scanner.Text())\n    }\n\n    if err := scanner.Err();\
-    \ err {\n        return nil, err\n    }\n\n    return lines, nil\n}"
-  explanation: ''
-- id: 16
-  language: TypeScript
-  tags: [io, filesystem, read]
-  concept: Read file
-  code_snippet: "import * as fs from 'fs';\n\nfunction readLines(filePath: string):\
-    \ string[] | null {\n    try {\n        const data = fs.readFileSync(filePath,\
-    \ 'utf-8');\n        return data.split('\\n');\n    } catch (err) {\n        console.error(err);\n\
-    \        return null;\n    }\n}\n\nconst lines = readLines('example.txt');\nif\
-    \ (lines) {\n    console.log(lines);\n} else {\n    console.log('Failed to read\
-    \ lines');\n}"
-  explanation: ''
-- id: 17
-  language: Python
-  tags: [io, filesystem, read]
-  concept: Read file
-  code_snippet: "def read_lines(file_path):\n    try:\n        with open(file_path,\
-    \ 'r') as file:\n            lines = file.readlines()\n        return [line.strip()\
-    \ for line in lines]\n    except FileNotFoundError as e:\n        print(f\"Error:\
-    \ {e}\")\n        return None"
-  explanation: ''
-- id: 18
-  language: Python
-  tags: [object, data structure, access]
-  concept: Object
-  code_snippet: 'student = {"name": "Jamal", "age": 37}
-
-    student.get("name")'
-  explanation: Python dictionaries
-- language: Python
-  concept: Create Collections from an Existing One
-  tags: [comprehension, declarative, filter-map]
-  title: List comprehension
-  code_snippet: "[x * 2 for x in [1, 2, 3, 4, 5] if x % 2 == 0]"
-  explanation: Uses list comprehension to filter even numbers and double them.
-
-- language: Lua
-  concept: Create Collections from an Existing One
-  tags: [loop, imperative]
-  title: Manual iteration with table.insert
-  code_snippet: |
-    local nums = {1, 2, 3, 4, 5}
-    local result = {}
-    for _, x in ipairs(nums) do
-      if x % 2 == 0 then
-        table.insert(result, x * 2)
-      end
-    end
-  explanation: Lua lacks list comprehension, so this uses a loop and `table.insert`.
-
-- language: TypeScript
-  concept: Create Collections from an Existing One
-  tags: [filter-map, declarative]
-  title: Using filter and map
-  code_snippet: |
-    const nums = [1, 2, 3, 4, 5];
-    const result = nums.filter(x => x % 2 === 0).map(x => x * 2);
-  explanation: Uses functional programming methods to filter and transform a list.
-
-- language: Bash
-  concept: Create Collections from an Existing One
-  title: For loop with condition
-  tags: [loop, imperative]
-  code_snippet: |
-    nums=(1 2 3 4 5)
-    result=()
-    for x in "${nums[@]}"; do
-      if (( x % 2 == 0 )); then
-        result+=( $((x * 2)) )
-      fi
-    done
-    echo "${result[@]}"
-  explanation: Bash has no native comprehension or mapping tools, so loops are used.
-
-- language: Go
-  concept: Create Collections from an Existing One
-  tags: [loop, imperative]
-  title: Imperative slice transformation
-  code_snippet: |
-    nums := []int{1, 2, 3, 4, 5}
-    var result []int
-    for _, x := range nums {
-      if x%2 == 0 {
-        result = append(result, x*2)
-      }
-    }
-  explanation: Go requires imperative code to build transformed collections.
-- language: Rust
-  concept: Create Collections from an Existing One
-  title: Iterator with filter and map
-  code_snippet: |
-    fn main() {
-        let nums = vec![1, 2, 3, 4, 5];
-        let result: Vec<i32> = nums.iter()
-            .filter(|&&x| x % 2 == 0)
-            .map(|x| x * 2)
-            .collect();
-        println!("{:?}", result);
-    }
-  tags: [filter-map, declarative, lazy]
-  explanation: Rust uses iterator chaining with `filter`, `map`, and `collect` to declaratively build new collections.
-
-- language: C++
-  concept: Create Collections from an Existing One
-  tags: [filter-map, declarative]
-  title: Using ranges and views (C++20)
-  code_snippet: |
-    #include <iostream>
-    #include <vector>
-    #include <ranges>
-
-    int main() {
-        std::vector<int> nums = {1, 2, 3, 4, 5};
-        auto result = nums | std::views::filter([](int x) { return x % 2 == 0; })
-                            | std::views::transform([](int x) { return x * 2; });
-        for (int x : result) {
-            std::cout << x << " ";
-        }
-    }
-  explanation: C++20 introduced ranges, allowing functional-style filtering and transformation similar to comprehensions.
-
-- language: Zig
-  concept: Create Collections from an Existing One
-  title: Manual filtering and transformation
-  code_snippet: |
-    const std = @import("std");
-
-    pub fn main() void {
-        const nums = [_]i32{1, 2, 3, 4, 5};
-        var result = std.ArrayList(i32).init(std.heap.page_allocator);
-
-        for (nums) |x| {
-            if (x % 2 == 0) {
-                result.append(x * 2) catch unreachable;
-            }
-        }
-
-        for (result.items) |x| {
-            std.debug.print("{} ", .{x});
-        }
-    }
-  tags: [loop, imperative]
-  explanation: Zig does not have comprehensions or iterators, so manual allocation and appending is required.
-- language: Python
-  concept: Create Collections from an Existing One
-  title: Set comprehension
-  code_snippet: "{x * 2 for x in [1, 2, 2, 3, 4] if x % 2 == 0}"
-  tags: [comprehension, declarative, set]
-  explanation: Creates a set of doubled even numbers, removing duplicates.
-
-- language: Python
-  tags: [comprehension, declarative, map]
-  concept: Create Collections from an Existing One
-  title: Dict comprehension
-  code_snippet: "{k: v * 2 for k, v in {'a': 1, 'b': 2}.items()}"
-  explanation: Builds a new dictionary by doubling values from an existing one.
-
-- language: Python
-  concept: Create Collections from an Existing One
-  tags: [comprehension, lazy, generator]
-  title: Generator expression
-  code_snippet: "(x * 2 for x in [1, 2, 3, 4, 5] if x % 2 == 0)"
-  explanation: Produces a generator object for lazy iteration.
+&id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001
+- *id001

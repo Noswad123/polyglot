@@ -1,11 +1,42 @@
 import sqlite3
 import yaml
 from pathlib import Path
+import zipfile
+import os
+from datetime import date
+import argparse
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "../../db/programming_languages.db"
-DATA_DIR = Path("../data")
+DATA_DIR = BASE_DIR / "../data"
 DATA_DIR.mkdir(exist_ok=True)
+
+
+# List of files to include in the snapshot
+FILES_TO_INCLUDE = [
+    DATA_DIR / "concepts.yaml",
+    DATA_DIR / "languages.yaml",
+    DATA_DIR / "examples.yaml",
+    DATA_DIR / "tags.yaml",
+    DATA_DIR / "trackable_relationships.yaml",
+]
+
+
+def zip_files(files):
+    # Output filename with today's date
+    today_str = date.today().isoformat()
+    zip_filename = f"snapshot-{today_str}.zip"
+
+# Create the zip file
+    with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for filepath in FILES_TO_INCLUDE:
+            if os.path.isfile(filepath):
+                zipf.write(filepath)
+                print(f"Added: {filepath}")
+            else:
+                print(f"Skipped (not found): {filepath}")
+
+    print(f"\nSnapshot created: {zip_filename}")
 
 
 def write_yaml(filename, data):
@@ -149,6 +180,15 @@ def main():
 
     conn.close()
     print("✅ Export complete. Files saved to 'data/' directory.")
+
+    parser = argparse.ArgumentParser(
+        description="Export data from the DB and optionally zip the result.")
+    parser.add_argument("--zip", "-z", action="store_true",
+                        help="Create a zip snapshot after export.")
+    args = parser.parse_args()
+
+    if args.zip:
+        zip_files(FILES_TO_INCLUDE)
 
 
 if __name__ == "__main__":

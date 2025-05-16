@@ -30,3 +30,37 @@
   name: tooling
 - id: 16
   name: types
+- id: 110
+  name: collections
+- id: 111
+  name: transformation
+- id: 181
+  name: array
+- id: 182
+  name: initialization
+- id: 212
+  name: write
+- id: 215
+  name: read
+- id: 228
+  name: object
+- id: 230
+  name: access
+- id: 231
+  name: comprehension
+- id: 232
+  name: declarative
+- id: 233
+  name: filter-map
+- id: 234
+  name: loop
+- id: 235
+  name: imperative
+- id: 244
+  name: lazy
+- id: 354
+  name: set
+- id: 357
+  name: map
+- id: 360
+  name: generator
