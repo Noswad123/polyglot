@@ -50,14 +50,12 @@ st.set_page_config(
     layout="wide"  # This enables full-width content area
 )
 st.title("📚 Programming Concept Explorer")
-# Concept selection
 concepts = load_concepts()
 concept_options = {name: cid for cid, name, _ in concepts}
 selected_concept_name = st.selectbox(
     "Choose a concept", list(concept_options.keys()))
 concept_id = concept_options[selected_concept_name]
 
-# Language filters
 languages = load_languages()
 selected_language_ids = []
 with st.expander("Filter by language"):
@@ -65,7 +63,6 @@ with st.expander("Filter by language"):
         if st.checkbox(lang_name, key=f"lang_{lang_id}"):
             selected_language_ids.append(lang_id)
 
-# Load filtered examples
 examples = load_examples(
     concept_id, selected_language_ids if selected_language_ids else None)
 

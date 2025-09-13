@@ -1,4 +1,4 @@
-CREATE TABLE sqlite_sequence(name,seq);
+REATE TABLE sqlite_sequence(name,seq);
 CREATE TABLE IF NOT EXISTS examples (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         language_id INTEGER NOT NULL,
