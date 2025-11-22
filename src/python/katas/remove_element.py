@@ -1,4 +1,4 @@
-def removeElement(nums, val):
+def remove_element(nums, val):
 	i = 0
 	while i < len(nums):
 		# check if element is the val

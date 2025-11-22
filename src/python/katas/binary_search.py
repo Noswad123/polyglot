@@ -5,10 +5,10 @@ def binary_search(target, arr):
     while low <= high:
         median = (low + high) // 2
         if arr[median] == target:
-            return True  # Found the target
+            return True
         elif arr[median] < target:
-            low = median + 1  # Move to the right half
+            low = median + 1
         else:
-            high = median - 1  # Move to the left half
+            high = median - 1
 
-    return False  # Target not found
+    return False

@@ -2,6 +2,9 @@ import sqlite3
 import yaml
 from pathlib import Path
 
+"""
+Adds missing tags to db
+"""
 DB_PATH = Path(__file__).resolve().parent / "../../db/programming_languages.db"
 CONCEPTS_FILE = Path(__file__).resolve().parent / "../data/concepts.yaml"
 

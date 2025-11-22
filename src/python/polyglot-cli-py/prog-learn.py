@@ -32,16 +32,6 @@ def open_editor(initial_code: str = "") -> str:
     os.unlink(tmp.name)
     return result
 
-TEST_RUNNERS = {
-    "python": run_python_tests,
-}
-def run_tests(kata_name: str, language: str, user_code: str) -> bool:
-    runner = TEST_RUNNERS.get(language)
-    if runner:
-        return runner(kata_name, user_code)
-    print(f"❌ Test runner not implemented for {language}")
-    return False
-
 
 def fetch_previous_solution(db, kata_name, language):
     cursor = db.execute("""
