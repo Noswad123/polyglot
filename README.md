@@ -1,4 +1,5 @@
 # Polyglot
+![Polyglot](./img/polyglot.png)
 
 Polyglot helps developers learn programming concepts by comparing them across different languages and paradigms. Think of it as learning to communicate—not just memorize rules. As your communication skills evolve, so does your mastery.
 
