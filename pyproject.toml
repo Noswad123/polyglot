@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pylearn"
+version = "0.1.0"
+description = "CLI study tool for learning programming concepts in Python using a shared polyglot SQLite DB."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "Jamal Dawson" }
+]
+dependencies = [
+  "python-dotenv>=1.0.0",
+  # pytest is only needed for your own tests, not for the CLI itself,
+  # so I'd keep it in optional-dependencies or dev deps, not here.
+]
+
+[project.scripts]
+pylearn = "pylearn.cli:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "ruff>=0.6.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src/python"]
+include = ["pylearn"]
+
+[tool.setuptools.package-data]
+# If you ever want to ship the DB or other resources inside the package
+pylearn = ["../db/*.db", "../katas/**"]

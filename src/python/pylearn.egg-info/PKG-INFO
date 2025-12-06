@@ -1,3 +1,16 @@
+Metadata-Version: 2.4
+Name: pylearn
+Version: 0.1.0
+Summary: CLI study tool for learning programming concepts in Python using a shared polyglot SQLite DB.
+Author: Jamal Dawson
+License: MIT
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: python-dotenv>=1.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+Requires-Dist: ruff>=0.6.0; extra == "dev"
+
 # Polyglot
 ![Polyglot](./img/polyglot.png)
 

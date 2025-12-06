@@ -1,0 +1,2 @@
+[console_scripts]
+pylearn = pylearn.cli:main
