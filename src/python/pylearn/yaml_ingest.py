@@ -1,11 +1,13 @@
 import sqlite3
-from ingest_helpers import load_yaml
-from pathlib import Path
-from ingest_validation_helpers import validate_all, validate_one
-
-BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "../../db/programming_languages.db"
-
+from .config import DB_PATH
+from .yaml_helpers import load_yaml
+from .ingest_validation_helpers import validate_all, validate_one
+from .ingest_upsert_helpers import (
+    upsert_language,
+    upsert_concept,
+    upsert_example,
+    upsert_relationships,
+)
 
 def insert_missing_tags(cur, concepts):
     tag_set = set()
@@ -24,9 +26,7 @@ def insert_missing_tags(cur, concepts):
         cur.execute("INSERT INTO tags (name) VALUES (?)", (tag,))
         print(f"✅ Added missing tag: {tag}")
 
-
-def main():
-    print(DB_PATH)
+def ingest_all():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
@@ -36,12 +36,9 @@ def main():
         print("❌ Validation failed. Fix the following issues:")
         for err in errors:
             print(f"  - {err}")
+        conn.close()
         return
     print("✅ Validation passed. Proceeding with ingestion...\n")
-
-    from ingest_upsert_helpers import (
-        upsert_language, upsert_concept, upsert_example, upsert_relationships
-    )
 
     for lang in load_yaml("languages.yaml"):
         upsert_language(cur, lang)
@@ -61,7 +58,3 @@ def main():
     conn.commit()
     conn.close()
     print("✅ Ingest complete.")
-
-
-if __name__ == "__main__":
-    main()

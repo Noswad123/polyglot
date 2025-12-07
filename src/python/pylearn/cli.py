@@ -2,9 +2,11 @@ import argparse
 from .trackables import list_items, show_status, update_progress
 from .kata import handle_kata
 from .concepts import show_concept
+from .yaml_ingest import ingest_all
+from .yaml_export import export_all
 
 def build_parser() -> argparse.ArgumentParser:
-    valid_choices = ["list", "show", "run", "status", "progress", "kata"]
+    valid_choices = ["list", "show", "run", "status", "progress", "kata", "yaml-ingest", "yaml-export"]
     parser = argparse.ArgumentParser(prog="pylearn")
     parser.add_argument("command", choices=valid_choices, help="Command to execute")
 
@@ -55,6 +57,10 @@ def main():
                 print("❌ kata requires --name and --language.")
             else:
                 handle_kata(args.name, args.language, args.file, args.answer, args.edit)
+        case "yaml-ingest":#️⃣
+            ingest_all()
+        case "yaml-export":#️⃣
+            export_all(zip_after=False)
 
 if __name__ == "__main__":
     main()

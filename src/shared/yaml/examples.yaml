@@ -1,45 +1,9 @@
-&id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
-- *id001
+- id: 1
+  language: python
+  concept: For Loop
+  code_snippet: |
+    for car in cars:
+      print(car)
+  tags:
+    - control flow
+

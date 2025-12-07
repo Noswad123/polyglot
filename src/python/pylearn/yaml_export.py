@@ -1,47 +1,9 @@
 import sqlite3
-import yaml
-from pathlib import Path
 import zipfile
-import os
 from datetime import date
-import argparse
 
-BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "../../db/programming_languages.db"
-DATA_DIR = BASE_DIR / "../data"
-DATA_DIR.mkdir(exist_ok=True)
-
-
-# List of files to include in the snapshot
-FILES_TO_INCLUDE = [
-    DATA_DIR / "concepts.yaml",
-    DATA_DIR / "languages.yaml",
-    DATA_DIR / "examples.yaml",
-    DATA_DIR / "tags.yaml",
-    DATA_DIR / "trackable_relationships.yaml",
-]
-
-
-def zip_files(files):
-    # Output filename with today's date
-    today_str = date.today().isoformat()
-    zip_filename = f"snapshot-{today_str}.zip"
-
-# Create the zip file
-    with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for filepath in FILES_TO_INCLUDE:
-            if os.path.isfile(filepath):
-                zipf.write(filepath)
-                print(f"Added: {filepath}")
-            else:
-                print(f"Skipped (not found): {filepath}")
-
-    print(f"\nSnapshot created: {zip_filename}")
-
-
-def write_yaml(filename, data):
-    with open(DATA_DIR / filename, "w") as f:
-        yaml.dump(data, f, sort_keys=False, allow_unicode=True)
+from .config import DB_PATH, YAML_DIR
+from .yaml_helpers import write_yaml
 
 
 def export_languages(cur):
@@ -75,29 +37,37 @@ def export_concepts(cur):
     """)
     concepts = []
     for trackable_id, name, description in cur.fetchall():
-        cur.execute("""
+        cur.execute(
+            """
             SELECT tags.name
             FROM trackable_tags
             JOIN tags ON tags.id = trackable_tags.tag_id
             WHERE trackable_tags.trackable_id = ?
-        """, (trackable_id,))
+        """,
+            (trackable_id,),
+        )
         tags = [row[0] for row in cur.fetchall()]
 
-        cur.execute("""
+        cur.execute(
+            """
             SELECT status, notes
             FROM trackable_progress
             WHERE trackable_id = ?
-        """, (trackable_id,))
+        """,
+            (trackable_id,),
+        )
         progress = cur.fetchone() or ("not started", None)
 
-        concepts.append({
-            "id": trackable_id,
-            "name": name,
-            "description": description,
-            "tags": tags or None,
-            "status": progress[0],
-            "notes": progress[1],
-        })
+        concepts.append(
+            {
+                "id": trackable_id,
+                "name": name,
+                "description": description,
+                "tags": tags or None,
+                "status": progress[0],
+                "notes": progress[1],
+            }
+        )
     write_yaml("concepts.yaml", concepts)
 
 
@@ -118,12 +88,15 @@ def export_examples(cur):
     for row in rows:
         example_id, language, concept, code_snippet, explanation = row
 
-        cur.execute("""
+        cur.execute(
+            """
             SELECT tags.name
             FROM example_tags
             JOIN tags ON example_tags.tag_id = tags.id
             WHERE example_tags.example_id = ?
-        """, (example_id,))
+        """,
+            (example_id,),
+        )
 
         tags = [r[0] for r in cur.fetchall()]
 
@@ -137,7 +110,7 @@ def export_examples(cur):
         if tags:
             example["tags"] = tags
 
-        examples.append(examples)
+        examples.append(example)
     write_yaml("examples.yaml", examples)
 
 
@@ -168,9 +141,11 @@ def export_tags(cur):
     write_yaml("tags.yaml", tags)
 
 
-def main():
+def export_all(zip_after: bool = False):
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
+
+    YAML_DIR.mkdir(parents=True, exist_ok=True)
 
     export_languages(cur)
     export_concepts(cur)
@@ -179,17 +154,28 @@ def main():
     export_trackable_relationships(cur)
 
     conn.close()
-    print("✅ Export complete. Files saved to 'data/' directory.")
+    print(f"✅ Export complete. Files saved to '{YAML_DIR}' directory.")
 
-    parser = argparse.ArgumentParser(
-        description="Export data from the DB and optionally zip the result.")
-    parser.add_argument("--zip", "-z", action="store_true",
-                        help="Create a zip snapshot after export.")
-    args = parser.parse_args()
-
-    if args.zip:
-        zip_files(FILES_TO_INCLUDE)
+    if zip_after:
+        zip_files()
 
 
-if __name__ == "__main__":
-    main()
+def zip_files():
+    today_str = date.today().isoformat()
+    zip_filename = f"snapshot-{today_str}.zip"
+    yaml_files = [
+        YAML_DIR / "concepts.yaml",
+        YAML_DIR / "languages.yaml",
+        YAML_DIR / "examples.yaml",
+        YAML_DIR / "tags.yaml",
+        YAML_DIR / "trackable_relationships.yaml",
+    ]
+
+    with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for filepath in yaml_files:
+            if filepath.is_file():
+                zipf.write(filepath, arcname=filepath.name)
+                print(f"Added: {filepath}")
+            else:
+                print(f"Skipped (not found): {filepath}")
+    print(f"\nSnapshot created: {zip_filename}")
