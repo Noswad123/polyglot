@@ -13,7 +13,7 @@ __pycache__/
 **/node_modules/**
 .cache
 **/build/**
-**/*/egg-info/
+**/*.egg-info/
 
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
