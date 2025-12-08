@@ -16,6 +16,7 @@ dependencies = [
   "python-dotenv>=1.0.0",
   # pytest is only needed for your own tests, not for the CLI itself,
   # so I'd keep it in optional-dependencies or dev deps, not here.
+  "pyyaml>=6.0.3",
 ]
 
 [project.scripts]

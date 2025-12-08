@@ -12,6 +12,7 @@ lerna-debug.log*
 __pycache__/
 **/node_modules/**
 .cache
+**/build/
 
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
