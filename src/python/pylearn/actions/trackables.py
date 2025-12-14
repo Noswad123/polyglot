@@ -1,4 +1,4 @@
-from .db import get_connection
+from ..db import get_connection
 
 def list_items(item_type: str) -> None:
     with get_connection() as db:

@@ -1,8 +1,9 @@
-from .config import KATAS_DIR
-from .db import get_connection
-from .editor import open_editor
+from ..config import KATAS_DIR
+from ..db import get_connection
+from ..editor import open_editor
 from .test_runner import run_tests
 from .trackables import update_progress
+from .enter_dojo import enter_dojo
 
 
 def fetch_previous_solution(kata_name: str, language: str) -> str | None:
@@ -80,14 +81,18 @@ def get_kata_instructions(kata_name: str) -> str:
     path = KATAS_DIR / kata_name / "instructions.md"
     return path.read_text() if path.exists() else ""
 
-
 def handle_kata(
     kata_name: str,
     language: str,
     file: bool = False,
     answer: bool = False,
     edit: bool = False,
+    dojo: bool = False
 ):
+    if dojo:
+        enter_dojo()
+        return
+
     if answer:
         prev = fetch_previous_solution(kata_name, language)
         if prev:

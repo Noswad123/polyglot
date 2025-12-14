@@ -1,6 +1,6 @@
 import yaml
 
-from .config import YAML_DIR
+from ..config import YAML_DIR
 
 
 def load_yaml(filename: str):

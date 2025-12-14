@@ -2,7 +2,7 @@ import sqlite3
 import zipfile
 from datetime import date
 
-from .config import DB_PATH, YAML_DIR
+from ..config import DB_PATH, YAML_DIR
 from .yaml_helpers import write_yaml
 
 

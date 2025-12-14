@@ -1,9 +1,9 @@
 import argparse
-from .trackables import list_items, show_status, update_progress
-from .kata import handle_kata
-from .concepts import show_concept
-from .yaml_ingest import ingest_all
-from .yaml_export import export_all
+from .actions.trackables import list_items, show_status, update_progress
+from .actions.kata import handle_kata
+from .actions.concepts import show_concept
+from .actions.yaml_ingest import ingest_all
+from .actions.yaml_export import export_all
 
 def build_parser() -> argparse.ArgumentParser:
     valid_choices = ["list", "show", "run", "status", "progress", "kata", "yaml-ingest", "yaml-export"]
@@ -18,6 +18,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--file", action="store_true")
     parser.add_argument("--answer", action="store_true")
     parser.add_argument("--edit", action="store_true")
+    parser.add_argument("--dojo", action="store_true")
 
     return parser
 
@@ -53,10 +54,17 @@ def main():
                 update_progress(target_name, args.type, args.status)
 
         case "kata":
-            if not (args.name and args.language):
+            if not (args.name and args.language) and not args.dojo:
                 print("❌ kata requires --name and --language.")
             else:
-                handle_kata(args.name, args.language, args.file, args.answer, args.edit)
+                handle_kata(
+                    args.name,
+                    args.language,
+                    args.file,
+                    args.answer,
+                    args.edit,
+                    args.dojo
+                )
         case "yaml-ingest":#️⃣
             ingest_all()
         case "yaml-export":#️⃣

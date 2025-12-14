@@ -1,8 +1,8 @@
 import sqlite3
-from .config import DB_PATH
+from ..config import DB_PATH
 from .yaml_helpers import load_yaml
 from .ingest_validation_helpers import validate_all, validate_one
-from .ingest_upsert_helpers import (
+from .ingest_upsert_helper import (
     upsert_language,
     upsert_concept,
     upsert_example,

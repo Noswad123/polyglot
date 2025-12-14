@@ -1,4 +1,4 @@
-from .db import get_connection
+from ..db import get_connection
 
 def show_concept(concept_name: str, language: str | None = None):
     """
