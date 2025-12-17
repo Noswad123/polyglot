@@ -2,7 +2,7 @@ import sqlite3
 import zipfile
 from datetime import date
 
-from ..config import DB_PATH, YAML_DIR
+from ...config import DB_PATH, YAML_DIR
 from .yaml_helpers import write_yaml
 
 
@@ -70,18 +70,77 @@ def export_concepts(cur):
         )
     write_yaml("concepts.yaml", concepts)
 
+def export_katas(cur):
+    cur.execute("""
+        SELECT id, name, description
+        FROM trackables
+        WHERE type = 'kata'
+    """)
+    katas = []
+    for trackable_id, name, description in cur.fetchall():
+        # tags
+        cur.execute(
+            """
+            SELECT tags.name
+            FROM trackable_tags
+            JOIN tags ON tags.id = trackable_tags.tag_id
+            WHERE trackable_tags.trackable_id = ?
+            """,
+            (trackable_id,),
+        )
+        tags = [row[0] for row in cur.fetchall()]
+
+        cur.execute(
+            """
+            SELECT status, notes
+            FROM trackable_progress
+            WHERE trackable_id = ?
+            """,
+            (trackable_id,),
+        )
+        status, notes = cur.fetchone() or ("not started", None)
+
+        cur.execute(
+            """
+            SELECT tgt.name
+            FROM trackable_relationships r
+            JOIN trackables tgt ON r.target_id = tgt.id
+            WHERE r.source_id = ? AND r.relation = 'implements'
+            """,
+            (trackable_id,),
+        )
+        concepts = [row[0] for row in cur.fetchall()]
+
+        katas.append(
+            {
+                "id": trackable_id,
+                "name": name,
+                "description": description,
+                "concepts": concepts or None,
+                "tags": tags or None,
+                "status": status,
+                "notes": notes,
+            }
+        )
+
+    write_yaml("katas.yaml", katas)
 
 def export_examples(cur):
     cur.execute("""
         SELECT
             e.id,
-            l.name AS language,
-            c.name AS concept,
+            lang_t.name AS language,
+            concept_t.name AS concept,
             e.code_snippet,
             e.explanation
         FROM examples e
-        JOIN languages l ON e.language_id = l.id
-        JOIN concepts c ON e.concept_id = c.id
+        JOIN trackables AS lang_t
+          ON e.language_trackable_id = lang_t.id
+        JOIN trackables AS concept_t
+          ON e.concept_trackable_id = concept_t.id
+        -- optional safety filters:
+        -- WHERE lang_t.type = 'language'
+        --   AND concept_t.type IN ('concept', 'kata')
     """)
     examples = []
     rows = cur.fetchall()
@@ -94,10 +153,9 @@ def export_examples(cur):
             FROM example_tags
             JOIN tags ON example_tags.tag_id = tags.id
             WHERE example_tags.example_id = ?
-        """,
+            """,
             (example_id,),
         )
-
         tags = [r[0] for r in cur.fetchall()]
 
         example = {
@@ -111,8 +169,8 @@ def export_examples(cur):
             example["tags"] = tags
 
         examples.append(example)
-    write_yaml("examples.yaml", examples)
 
+    write_yaml("examples.yaml", examples)
 
 def export_trackable_relationships(cur):
     cur.execute("""
@@ -149,6 +207,7 @@ def export_all(zip_after: bool = False):
 
     export_languages(cur)
     export_concepts(cur)
+    export_katas(cur)
     export_tags(cur)
     export_examples(cur)
     export_trackable_relationships(cur)
@@ -165,6 +224,7 @@ def zip_files():
     zip_filename = f"snapshot-{today_str}.zip"
     yaml_files = [
         YAML_DIR / "concepts.yaml",
+        YAML_DIR / "katas.yaml",
         YAML_DIR / "languages.yaml",
         YAML_DIR / "examples.yaml",
         YAML_DIR / "tags.yaml",

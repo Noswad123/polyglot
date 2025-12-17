@@ -10,11 +10,17 @@
 
 ## Question
 
-    Write a function given a boggle board and a word returns true if the word is in the board, and false if it is not.
+    Write a function named is_word_present. It takes a boggle board (a list of strings) and a word. It returns true if the word is in the board, and false if it is not.
 
 ## Example Board
-
     [H] [P] [G] [E]
     [O] [O] [A] [R]
     [I] [T] [P] [U]
     [S] [Y] [H] [N]
+
+    - hoists -> false
+    - gear -> true
+    - potty -> false
+    - goats -> true
+    - erupt -> true
+    - pear -> false

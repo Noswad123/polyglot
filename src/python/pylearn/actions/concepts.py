@@ -2,20 +2,28 @@ from ..db import get_connection
 
 def show_concept(concept_name: str, language: str | None = None):
     """
-    Show examples from examples(language_id, concept_id) for a given concept,
-    optionally filtered by language.
+    Show examples for a given concept or kata trackable, optionally filtered by language.
+
+    Uses examples.language_trackable_id / concept_trackable_id joined to trackables.
     """
     params: list[str] = [concept_name]
+
     query = """
-        SELECT l.name AS language_name,
-               c.name AS concept_name,
-               e.code_snippet,
-               e.explanation
+        SELECT
+            l.name AS language_name,
+            c.name AS concept_name,
+            e.code_snippet,
+            e.explanation
         FROM examples e
-        JOIN languages l ON l.id = e.language_id
-        JOIN concepts c ON c.id = e.concept_id
+        JOIN trackables AS l
+          ON l.id = e.language_trackable_id
+        JOIN trackables AS c
+          ON c.id = e.concept_trackable_id
         WHERE c.name = ?
+          AND l.type = 'language'
+          AND c.type IN ('concept', 'kata')
     """
+
     if language:
         query += " AND l.name = ?"
         params.append(language)

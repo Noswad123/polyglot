@@ -1,8 +1,7 @@
 import os
 import subprocess
-import sys
 
-from ..config import PROJECT_ROOT
+from ...config import PROJECT_ROOT
 
 if PROJECT_ROOT:
     TESTS_DIR = PROJECT_ROOT / "src" / "python" / "tests" / "katas"
@@ -10,7 +9,7 @@ if PROJECT_ROOT:
 
     ANSWER_DIR = PROJECT_ROOT / "build" / "katas"
     ANSWER_DIR.mkdir(parents=True, exist_ok=True)
-
+    (ANSWER_DIR / "__init__.py").touch()
 
 def run_python_tests(kata_name: str, user_code: str) -> bool:
     """
@@ -28,6 +27,10 @@ def run_python_tests(kata_name: str, user_code: str) -> bool:
 
     # Build PYTHONPATH: build/ first, then src/python, then whatever already exists
     env = os.environ.copy()
+
+    if PROJECT_ROOT is None:
+        raise ValueError("Not at project root")
+
     pythonpath_parts = [
         str(ANSWER_DIR.parent),  # build/
         str(PROJECT_ROOT / "src" / "python"),  # src/python

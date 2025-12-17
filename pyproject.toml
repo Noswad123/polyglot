@@ -14,8 +14,6 @@ authors = [
 ]
 dependencies = [
   "python-dotenv>=1.0.0",
-  # pytest is only needed for your own tests, not for the CLI itself,
-  # so I'd keep it in optional-dependencies or dev deps, not here.
   "pyyaml>=6.0.3",
 ]
 
@@ -24,7 +22,7 @@ pylearn = "pylearn.cli:main"
 
 [project.optional-dependencies]
 dev = [
-  "pytest>=8.0.0",
+  "pytest>=9.0.2",
   "ruff>=0.6.0",
 ]
 
@@ -35,3 +33,19 @@ include = ["pylearn"]
 [tool.setuptools.package-data]
 # If you ever want to ship the DB or other resources inside the package
 pylearn = ["../db/*.db", "../katas/**"]
+
+[tool.pytest.ini_options]
+addopts = "-vv --strict-markers --maxfail=1 --durations=5 --disable-warnings"
+# Full stack traces
+# addopts = "-vv -s --strict-markers …"
+# Show absolute test paths
+# addopts = "-vv --full-trace --verbose --show-capture=all"
+# strict
+# addopts = "-vv --strict-markers --strict-config"
+testpaths = [
+    "src/python/tests"
+]
+python_files = [
+    "test_*.py",
+    "*_test.py"
+]

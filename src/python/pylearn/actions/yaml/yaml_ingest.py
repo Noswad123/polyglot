@@ -1,13 +1,15 @@
 import sqlite3
-from ..config import DB_PATH
-from .yaml_helpers import load_yaml
-from .ingest_validation_helpers import validate_all, validate_one
-from .ingest_upsert_helper import (
-    upsert_language,
+
+from ...config import DB_PATH
+from .ingest_upsert_helpers import (
     upsert_concept,
-    upsert_example,
+    upsert_language,
     upsert_relationships,
+    upsert_kata
 )
+from .ingest_validation_helpers import validate_all
+from .yaml_helpers import load_yaml
+
 
 def insert_missing_tags(cur, concepts):
     tag_set = set()
@@ -26,12 +28,13 @@ def insert_missing_tags(cur, concepts):
         cur.execute("INSERT INTO tags (name) VALUES (?)", (tag,))
         print(f"✅ Added missing tag: {tag}")
 
+
 def ingest_all():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
     print("🔍 Validating data...")
-    errors = validate_all(cur)
+    errors = validate_all()
     if errors:
         print("❌ Validation failed. Fix the following issues:")
         for err in errors:
@@ -43,15 +46,15 @@ def ingest_all():
     for lang in load_yaml("languages.yaml"):
         upsert_language(cur, lang)
 
-    concepts = load_yaml("concepts.yaml")
-    insert_missing_tags(cur, concepts)
+    concepts = load_yaml("concepts.yaml") or []
+    katas = load_yaml("katas.yaml") or []
+    insert_missing_tags(cur, (concepts + katas))
 
     for concept in concepts:
         upsert_concept(cur, concept)
 
-    validate_one("example", cur)
-    for ex in load_yaml("examples.yaml"):
-        upsert_example(cur, ex)
+    for kata in katas:
+        upsert_kata(cur, kata)
 
     upsert_relationships(cur, load_yaml("trackable_relationships.yaml"))
 

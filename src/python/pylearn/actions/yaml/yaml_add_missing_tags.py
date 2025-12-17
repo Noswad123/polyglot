@@ -1,5 +1,5 @@
 import sqlite3
-from ..config import DB_PATH
+from ...config import DB_PATH
 from .yaml_helpers import load_yaml
 
 def add_missing_tags_from_concepts() -> None:

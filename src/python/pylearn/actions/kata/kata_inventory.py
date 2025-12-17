@@ -1,5 +1,5 @@
 from pathlib import Path
-from ..config import LANGUAGES_ROOT, PROJECT_ROOT
+from ...config import LANGUAGES_ROOT, PROJECT_ROOT
 
 if PROJECT_ROOT is not None:
     README_KATAS_DIR = PROJECT_ROOT / "README" / "katas"
