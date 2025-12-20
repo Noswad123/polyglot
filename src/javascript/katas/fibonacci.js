@@ -1,8 +1,8 @@
+function fibonacci(length) {
 let prev1 = 1;
 let prev2 = 1;
-let sequence = Array();
-function fibonacci() {
-  for (let i = 0; i < 20; i++) {
+const sequence = [];
+  for (let i = 0; i < length; i++) {
     if (i % 2 == 0) {
       sequence.push(prev1 + prev2);
       prev2 = sequence[i];
@@ -14,7 +14,7 @@ function fibonacci() {
     }
   }
   sequence.unshift(1);
+  return sequence;
 }
 
-fibonacci();
-console.log(sequence);
+console.log(fibonacci(20));
