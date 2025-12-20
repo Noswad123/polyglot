@@ -1,6 +1,8 @@
-def strStr(haystack: str, needle: str) -> int:
-	if needle == "": return 0
-	for i in range(len(haystack) + 1 - len(needle)):
-		if(haystack[i:i +len(needle)] == needle):
-			return i
-	return -1
+def find_in_string(string: str, sub_string: str) -> int:
+    if sub_string == "":
+        return 0
+    for i in range(len(string) + 1 - len(sub_string)):
+        if string[i: i + len(sub_string)] == sub_string:
+            return i
+    return -1
+
