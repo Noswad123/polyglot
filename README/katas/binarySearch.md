@@ -1,4 +1,5 @@
 # Binary Search
+
 ## Instructions
     - Implement the binary search algorithm
     - call a function called binary_search (capitilzation dependent on language)

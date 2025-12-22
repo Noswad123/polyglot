@@ -1,4 +1,5 @@
-# Find the index Of The First Occurrence in a String
+# Find in String
+
 ## Instructions
 - write a function called find_in_string
 - it should take a string and a substring

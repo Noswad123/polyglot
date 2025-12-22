@@ -5,71 +5,16 @@ A kata is a focused coding challenge designed to improve problem-solving, fluenc
 
 ## Existing Katas
 - [Boggle](./boggle.md)
-- Bowling
-- Fibonacci
-- Poker
-- PrimeFactor
-- Scrabble
+- [Fibonacci](./fibonacci.md)
 
 ## Katas to add
 
-### 📝 Everyday Practical Automations
-    - Rename files in a folder to follow a pattern (e.g., Vacation-2025-01.jpg, Vacation-2025-02.jpg, etc.)
-    - Make a to-do list app that saves tasks to a file and lets you check them off.
-    - Track your expenses: Ask for a daily expense, save it, and show a summary for the week/month.
-    - Remind yourself to take breaks: Pop up a message every hour.
-    - Batch resize images in a folder (good if you take lots of photos).
-
-### 💬 Fun with Text and Language
-    - Random compliment generator (displays a new compliment every time you run it).
-    - Simple chatbot that responds with funny answers to basic questions.
-    - Word counter: Paste in text, and it counts words, sentences, or most-used words.
-    - Mad Libs game: Asks for random words and inserts them into a silly story template.
-    - Pig Latin translator: Converts English sentences to Pig Latin.
-
-### 📂 File & Data Operations
-    - Backup important files to a different folder or drive with a single command.
-    - Find duplicate files (by name or content) in a directory.
-    - Extract emails from a big block of text or from all text files in a folder.
-    - Merge CSV files and summarize the results (e.g., total sales).
-
-### 🌐 Web & API Fun
-    - Weather checker: Ask for your city, fetch the weather from an API, and print a summary.
-    - Quote of the day: Download and display an inspirational quote from a website.
-    - Simple web scraper: Get the titles of the latest news articles from your favorite website.
-    - Track the price of a product online and alert you if it drops.
-
-🧮 Math, Games & Randomness
-    - Roll a virtual die or coin flip (maybe keep a tally of results).
-    - Number guessing game: Computer picks a number; you try to guess it.
-    - Flashcards quiz: Test yourself on capitals, vocabulary, or trivia.
-    - Password generator: Creates random passwords with rules you set.
-
-📅 Time and Reminders
-    - Countdown timer to an event (birthday, vacation, etc.).
-    - Pomodoro timer: Helps you focus in 25-minute intervals, with breaks.
-    - Daily journal prompt: Each day, save a different question and your answer.
-
-🤖 “Power User” Utilities
-    - Convert file formats: Like .txt to .csv, or images from .png to .jpg.
-    - Monitor a folder for new files and alert you or process them.
-    - Sync a folder to the cloud or an external drive automatically.
-
-🦄 Just-for-Fun / Creative
-    - ASCII art generator (turn text into stylized banners).
-    - Random color picker: Shows a color and its hex/RGB code.
-    - Meme caption generator: Add captions to images automatically.
-    - Virtual pet: A silly script that asks you to “feed” or “play” with your pet each day.
-
 ### Assorted
-    - Return a random value from a list
+    - Bowling
+    - Poker
+    - Fizzbuzz
+    - PrimeFactor
     - Read a list of numbers and print only the even ones.
-    - Save some notes to a file so I don’t forget them.
-    - Download the latest weather report and send me a notification.
-    - Rename all the files in a folder to follow a consistent pattern.
-    - Ask the user their name and greet them with it.
-    - Convert a date from one format to another.
-    - Show a random motivational quote each time I open a web page.
     - Running pointers
     - Linked List cycle or intersection detection
     - Divide and conquer or decrease and conquer
