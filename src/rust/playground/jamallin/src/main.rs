@@ -3,7 +3,7 @@ use std::io;
 use rand::Rng;
 
 fn main() {
-    let secret_number = rand::thread_rng().gen_range(1..=100);
+    let secret_number: u32 = rand::thread_rng().gen_range(1..=100);
 
     loop {
         println!("Guess the number!");
@@ -14,9 +14,9 @@ fn main() {
             .read_line(&mut guess)
             .expect("Failed to read line");
 
-        let mut guess: u32 = match guess.trim().parse() {
+        let guess: u32 = match guess.trim().parse() {
             Ok(num) => num,
-            Err(_) => continue,
+            Err(_) => continue
         };
            
         match guess.cmp(&secret_number) {
