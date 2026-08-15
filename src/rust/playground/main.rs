@@ -5,5 +5,3 @@
 fn main() {
   println!("Hello World");
 }
-// lookup later
-// macros vs functions
