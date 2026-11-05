@@ -1,7 +1,7 @@
 # ============================================================
 # Polyglot Makefile
-# - Manages multiple language CLIs: pylearn, rustlearn, jslearn
-# - Uses uv for Python, and leaves hooks for Rust/JS
+# - Builds and installs the shared Rust CLI for local development
+# - Retains older Python CLI commands and Rust/JS placeholders
 # ============================================================
 
 # --------------- CONFIG -------------------------------------
@@ -26,6 +26,14 @@ NODE := node
 NPM := npm
 PNPM := pnpm
 
+# Shared CLI development build/install (independent of legacy LANG selection).
+INSTALL_DIR ?= $(HOME)/.local/bin
+TARGET_DIR ?= $(or $(CARGO_TARGET_DIR),target)
+
+.PHONY: build
+build:
+	$(CARGO) build --locked --bin polyglot --target-dir "$(TARGET_DIR)"
+
 # Resolve language-specific values
 CLI := $(CLI_$(LANG))
 ROOT := $(ROOT_$(LANG))
@@ -42,7 +50,13 @@ help:
 	@echo ""
 	@echo "Polyglot Makefile"
 	@echo "------------------"
-	@echo "LANG variable controls which CLI you target (default: python)."
+	@echo "Shared CLI development commands:"
+	@echo "  make build                     - Build the debug polyglot binary"
+	@echo "  make install                   - Install it to $(INSTALL_DIR)/polyglot"
+	@echo "  make install-dev               - Alias for make install"
+	@echo "  make install INSTALL_DIR=...    - Override the local binary directory"
+	@echo ""
+	@echo "Legacy CLI commands (LANG controls only these):"
 	@echo ""
 	@echo "Supported LANG values (now/future):"
 	@echo "  LANG=python   -> $(CLI_python)"
@@ -52,7 +66,7 @@ help:
 	@echo "Common commands:"
 	@echo "  make sync LANG=python          - Sync deps for Python CLI via uv"
 	@echo "  make run LANG=python ARGS='list --type concept'"
-	@echo "  make install LANG=python       - Install CLI as a global uv tool"
+	@echo "  make install-python            - Install the older pylearn uv tool"
 	@echo "  make reinstall LANG=python     - Force reinstall global tool"
 	@echo "  make uninstall LANG=python     - Uninstall global tool"
 	@echo ""
@@ -65,6 +79,9 @@ help:
 	@echo "  make sync LANG=rust            - TODO: add cargo command"
 	@echo "  make sync LANG=js              - TODO: add npm/pnpm command"
 	@echo ""
+
+# Keep help as the default even though the shared build target appears first.
+.DEFAULT_GOAL := help
 
 # --------------- DISPATCHERS --------------------------------
 # High-level targets that branch on LANG.
@@ -94,17 +111,12 @@ else
 	$(error Unsupported LANG='$(LANG)'; use LANG=python|rust|js)
 endif
 
-.PHONY: install
-install:
-ifeq ($(LANG),python)
-	$(UV) tool install .
-else ifeq ($(LANG),rust)
-	@echo "TODO: add Rust install (e.g., 'cd $(ROOT_rust)/$(CLI_rust) && $(CARGO) install --path .')"
-else ifeq ($(LANG),js)
-	@echo "TODO: add JS install (e.g., global npm/pnpm link)"
-else
-	$(error Unsupported LANG='$(LANG)'; use LANG=python|rust|js)
-endif
+.PHONY: install install-dev
+install: build
+	install -d "$(INSTALL_DIR)"
+	install -m 0755 "$(TARGET_DIR)/debug/polyglot" "$(INSTALL_DIR)/polyglot"
+
+install-dev: install
 
 .PHONY: reinstall
 reinstall:
@@ -142,7 +154,7 @@ run-python:
 
 .PHONY: install-python
 install-python:
-	$(MAKE) install LANG=python
+	$(UV) tool install .
 
 .PHONY: reinstall-python
 reinstall-python:
@@ -188,7 +200,7 @@ run-js:
 
 .PHONY: install-js
 install-js:
-	$(MAKE) install LANG=js
+	@echo "TODO: add JS install (e.g., global npm/pnpm link)"
 
 .PHONY: reinstall-js
 reinstall-js:

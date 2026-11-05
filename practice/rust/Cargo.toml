@@ -1,0 +1,13 @@
+[package]
+name = "polyglot-rust-practice"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+autobins = false
+autotests = false
+
+[[test]]
+name = "practice_checks"
+path = "checks.rs"
+
+[workspace]

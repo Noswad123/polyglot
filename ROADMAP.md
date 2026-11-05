@@ -27,9 +27,11 @@ for the current implementation and integration rules.
 The direction is accepted in
 [ADR 0001](README/decisions/0001-shared-workflow-language-adapters.md).
 The Python CLI is a working prototype, not the final implementation language.
-The Rust workflow and adapters are planned, not implemented. The initial
-Python-only milestones below remain completed historical work; later gates
-supersede the earlier implementation sequencing without discarding the prototype.
+The Rust list/start/check workflow and two native adapters are implemented and
+validated. The first shared line-based prompt/hint/navigation session is also
+implemented; watch/resume and adoption remain future gates.
+The initial Python-only milestones below remain completed historical work; later
+gates supersede the earlier sequencing without discarding the prototype.
 
 ## Ownership boundaries
 
@@ -120,51 +122,80 @@ compatibility was reviewed, but execution was validated on 3.12 and 3.15 only.
 ## Phase 2 — Prove a shared Rust workflow with two adapters
 
 **Scope:** a small Rust list/start/check slice, not a full Rustlings fork or TUI.
-Implementation has not started.
+Implemented and validated; see the [Rust proof instructions](README/rust-cli.md).
 
 - [x] Record the shared workflow, exercise model, and adapter decision in an ADR.
-- [ ] Introduce a small Rust CLI with one orchestration path and built-in Python
+- [x] Introduce a small Rust CLI with one orchestration path and built-in Python
       and Rust adapters; no plugin framework.
-- [ ] Describe exercise identity separately from workspace identity and native
+- [x] Describe exercise identity separately from workspace identity and native
       check selection. Expose the existing Python exercises without moving them.
-- [ ] Add one isolated Rust starter/check pair, independent of older Rust projects.
-- [ ] Preserve current attempt files and the prototype's safe start/check behavior.
-- [ ] Define Python interpreter selection and version validation for a Rust host.
-- [ ] Distinguish known blocked checks from learner failures, keeping native
+- [x] Add one isolated Rust starter/check pair, independent of older Rust projects.
+- [x] Preserve current attempt files and the prototype's safe start/check behavior.
+- [x] Define Python interpreter selection and version validation for a Rust host.
+- [x] Distinguish known blocked checks from learner failures, keeping native
       diagnostics and an indeterminate outcome where classification is uncertain.
-- [ ] If adapting upstream code, pin the Rustlings revision and retain attribution.
+- [x] Record the reuse choice: no upstream code copied for this slice. Pin and
+      attribute any future code reuse.
 
 **Proof gate — all must pass before interactive features:**
 
-- [ ] Both languages use the same workflow; only the adapter constructs native
+- [x] Both languages use the same workflow; only the adapter constructs native
       invocations. Rust checks do not build unrelated projects.
-- [ ] Blank attempts fail intentionally, valid attempts pass, and individual Python
+- [x] Blank attempts fail intentionally, valid attempts pass, and individual Python
       checks work while other exercises remain unfinished. Zero selected tests
       cannot count as success.
-- [ ] Missing tools and invalid check targets are reported distinctly from known
+- [x] Missing tools and invalid check targets are reported distinctly from known
       learner errors. Listing does not require every language tool to be installed.
-- [ ] Repeated/concurrent starts preserve source files; invalid selections and
+- [x] Repeated/concurrent starts preserve source files; invalid selections and
       checks of missing attempts do not create or reset them.
-- [ ] Commands work from unrelated directories and paths with spaces, using
+- [x] Commands work from unrelated directories and paths with spaces, using
       explicit working directories and argument vectors, not shell interpolation.
-- [ ] Native checks remain independently usable and agree with CLI outcomes.
-- [ ] Tests use isolated workspaces, not real learner attempts or Darkness.
+- [x] Native checks remain independently usable and agree with CLI outcomes.
+- [x] Tests use isolated workspaces, not real learner attempts or Darkness.
 
 No watcher, progress store, automatic reset, dependency installer, or UI is needed
 to pass this gate. Keep the current Python CLI available throughout.
+
+**Validation completed:** Rust/Cargo 1.89.0 on macOS; format, three Rust unit tests,
+Clippy with warnings denied, and locked offline build all passed. The 26 isolated
+integration tests passed with Python 3.12.11 and 3.15.0. They include native-check
+parity, concurrent preserving starts, tool/harness failures, zero/ignored tests,
+fresh-source checks despite stale bytecode, nested build-directory symlinks, and
+missing/stale lockfiles. All 11 Python-prototype regression tests also passed.
+Rust 1.85 is the declared build minimum, not an executed test matrix entry.
+
+Current boundaries: one workspace mapping per language; native output is buffered
+until each process finishes; Rust classification uses Cargo JSON and libtest text.
+That validation covered the non-interactive proof, not a full-repository test run.
 
 ## Phase 3 — Add the Rustlings-style interaction
 
 **Start only after:** the two-language proof gate passes.
 
-- [ ] Add prompt/hint presentation and next/previous selection through shared
+- [x] Add prompt/hint presentation and next/previous selection through shared
       session policy; adapters do not control navigation.
-- [ ] Demonstrate select → edit → check → hint → next in both languages.
+- [x] Demonstrate select → edit → check → hint → next in both languages.
 - [ ] Add watching as a separate increment, accounting for shared answer files and
       relevant test/config inputs rather than assuming one file per exercise.
 - [ ] Cancel or supersede old runs safely; do not display stale success after an
       edit or a change of selected exercise.
-- [ ] Keep explicit check commands available outside interactive mode.
+- [x] Keep explicit check commands available outside interactive mode.
+
+**First increment validated:** `practice [python|rust|ID]` provides an in-memory,
+line-based session; `show ID` and `hint ID` are read-only. `next` reruns the current
+check and advances only on success. Normal checks do not advance; quit/EOF ends
+the session without claiming completion. Navigation prepares before committing
+selection, preserving shared answers across exercises and languages.
+
+All 20 isolated interaction tests and all 26 adapter regressions passed with
+Python 3.12.11 and 3.15.0 on macOS. Three Rust unit tests, format, Clippy with
+warnings denied, locked offline build, and all 11 prototype regressions passed.
+Coverage includes a live external edit after a pass, blocked-check recovery,
+boundaries, failed destination preparation, menus, hints, and preservation.
+
+**Still open:** watching and stale in-flight result handling. The session does
+not observe edits while a check is running; save edits before requesting a check.
+This phase is partially complete, not the full save-triggered Rustlings flow.
 
 **Acceptance:** the same user flow works across both languages, preserves raw
 native feedback, and remains usable when note references are unavailable.
@@ -228,8 +259,8 @@ programming-practice session.
 
 ## Current next action
 
-Phases 1 and 1b remain complete. The shared-workflow ADR and this implementation
-plan are recorded; no Rust replacement has been implemented. The next code change
-is the Phase 2 two-language vertical slice, with preservation and native-check
-tests. Do not add watch/resume features or retire the Python prototype before its
-proof gate passes. The Python starter track remains usable now.
+Phases 1, 1b, and the Phase 2 proof gate are complete; Phase 3 prompt/hint/navigation
+is validated. Try `practice` without retiring the Python prototype. The next code
+change is the separate watch increment, including shared-file/config invalidation
+and superseded-run handling. Do not introduce persisted progress or retire the
+prototype before their later gates pass.

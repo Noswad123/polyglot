@@ -1,6 +1,8 @@
 # ADR 0001: Shared practice workflow with native language adapters
 
-**Status:** Accepted direction; Rust implementation not started.
+**Status:** Accepted; the Phase 2 two-language list/start/check proof is implemented
+and validated, with the first shared line-based prompt/hint/navigation session
+implemented. Watching, resume, and adoption remain gated.
 
 [Architecture](../architecture.md) · [Roadmap](../../ROADMAP.md)
 
@@ -14,6 +16,10 @@ language for that experience, not the required exercise language.
 The current `polyglot.py` is a useful Python-only prototype. Its three exercises
 share `practice/python/answers.py` but select different unittest methods. It
 establishes preservation and invocation behavior, not the final architecture.
+
+The first Rust slice now exposes the same Python exercises plus one isolated Rust
+exercise. It preserves the prototype rather than replacing it. See the
+[proof instructions](../rust-cli.md) for current commands and validation.
 
 Rustlings demonstrates the interaction we want, but its current execution path
 includes Cargo build/test/Clippy, Rust binary execution, and `.rs` paths. Reusing
@@ -37,7 +43,7 @@ boundary. Dynamic plugins and a generalized runner framework remain out of scope
 ### Shared workflow
 
 Own exercise selection, safe attempt preparation, check orchestration, result
-presentation, and eventually hints, navigation, watching, and resume policy.
+presentation, hints, and navigation, with watching and resume policy added later.
 
 It must not construct Cargo commands, understand Python imports, or scatter
 language conditionals throughout application state. Select an adapter at one
@@ -159,4 +165,5 @@ to catch a Rust-only design before more features or exercise tracks depend on it
 - [Rustlings license](https://github.com/rust-lang/rustlings/blob/main/LICENSE)
 
 These links describe the reviewed design, not a pinned code dependency. Pin a
-revision if implementation copies code; no upstream code is copied by this ADR.
+revision if implementation copies code; no upstream code was copied for the
+current two-language proof.

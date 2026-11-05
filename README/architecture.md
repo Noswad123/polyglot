@@ -3,8 +3,10 @@
 [Home](../README.md) · [Roadmap](../ROADMAP.md)
 
 **Accepted direction:** a Rust-hosted, Rustlings-inspired shared workflow with
-native language adapters. The current Python CLI remains a working prototype;
-the Rust replacement has not been implemented. See
+native language adapters. The Rust list/start/check proof is implemented for
+Python and Rust. A shared line-based session now supplies prompts, hints, and
+navigation; watching and resume remain future gates. The Python prototype is
+retained during adoption. See
 [ADR 0001](decisions/0001-shared-workflow-language-adapters.md) for the decision,
 boundaries, and adoption gates.
 
@@ -61,7 +63,8 @@ storage choice should follow a concrete requirement, not precede it.
 ## Shared workflow and native adapters (target)
 
 The Rust workflow owns selection, safe preparation, check orchestration, feedback,
-hints, and navigation. Watching and resume follow in separate delivery gates.
+and shared hints/navigation policy. The first line-based session is implemented;
+watching, superseded-run handling, and resume follow in separate delivery gates.
 It must not contain Cargo/Python command construction or assume `.rs` files.
 
 Exercise definitions connect stable IDs to workspaces, prompts, hints, native check
@@ -73,12 +76,49 @@ and return evidence-backed outcomes: passed, attempt failed, blocked, or
 interrupted/indeterminate. Keep native diagnostics; do not mistake missing tools
 for an incorrect solution or zero selected tests for success.
 
-Use two built-in adapters, not a dynamic plugin framework. Prove both languages
-through the same list/start/check path before adding interactive conveniences.
+The two built-in adapters now use the same list/start/check path; there is no
+dynamic plugin framework. The initial catalog uses one workspace per language,
+with distinct Python exercise IDs sharing its answer file. Add independent
+workspace metadata when a second workspace within one language needs it.
 Reuse suitable Rustlings patterns/code without importing Cargo assumptions into
 application state or adopting a full fork by default.
 
-## Current interface: Python prototype
+## Current Rust proof
+
+```sh
+cargo build --locked
+./target/debug/polyglot list
+./target/debug/polyglot start python/hello
+./target/debug/polyglot check python/hello
+./target/debug/polyglot start rust/hello
+./target/debug/polyglot check rust/hello
+./target/debug/polyglot practice
+```
+
+See the [proof instructions](rust-cli.md) for tool selection, root overrides,
+outcome codes, preservation guarantees, and isolated test commands.
+
+Code boundaries are explicit:
+
+- `cli/src/main.rs`: argument parsing and command dispatch.
+- `cli/src/model.rs`: catalog, workspace mappings, native selectors, and outcomes.
+- `cli/src/workflow.rs`: shared preparation, metadata display, and check orchestration.
+- `cli/src/session.rs`: language selection and in-memory prompt/hint/navigation policy.
+- `cli/src/workspace.rs`: contained paths and preserving attempt creation.
+- `cli/src/adapters/`: tool resolution, native invocations, and classification.
+
+Native checks may produce build artifacts but must preserve learner sources and
+locked inputs. Python checks execute fresh source instead of cached bytecode.
+Missing tools/configuration are blocked, and ambiguous results are indeterminate.
+This is a local practice tool, not a sandbox or arbitrary exercise-pack executor.
+
+Session checks and one-shot checks use the same context and adapters. `next`
+rechecks before advancing, while `check` stays on the selected exercise. There is
+no saved pass used as a navigation gate; selection and language switches are
+committed only after safe preparation succeeds. In-flight edits are not tracked
+until the watch increment. Session quit success does not mean all checks passed.
+
+## Retained interface: Python prototype
 
 The working interface remains repository-local:
 
@@ -96,7 +136,8 @@ status from the native test runner.
 
 Keep this prototype and direct native commands usable during the Rust proof.
 Retirement is gated on real sessions and behavior/preservation parity, not merely
-on a Rust binary compiling. No installed Rust `polyglot` command exists yet.
+on a Rust binary compiling. `make install` now supports a local Rust debug binary
+at `~/.local/bin/polyglot`; release packaging remains separate.
 Separate per-language CLIs are not the target; existing `pylearn` code remains
 untouched.
 
@@ -109,8 +150,8 @@ untouched.
 - Existing local attempts must never be silently overwritten.
 - Direct native check commands remain documented even when a CLI shortcut exists.
 - Practice must not depend on a web service, notes database, or progress service.
-- A future Rust host must explicitly resolve its Python interpreter rather than
-  assuming the host process already supplies one.
+- The Rust host explicitly resolves its Python interpreter rather than assuming
+  the host process already supplies one.
 - Watch and resume behavior must account for shared workspaces and stale checks;
   completion history must not become a mastery score.
 

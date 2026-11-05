@@ -110,3 +110,4 @@ dist
 
 # Local exercise attempts; committed starters and checks stay reusable.
 /practice/python/answers.py
+/practice/rust/answers.rs

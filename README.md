@@ -14,9 +14,37 @@ The accepted direction is a **Rust-based shared workflow with native language
 adapters**, preserving the Rustlings-style interaction across languages. See
 [ADR 0001](README/decisions/0001-shared-workflow-language-adapters.md).
 
-The commands below use the working Python prototype. A Rust replacement is planned,
-not implemented; the prototype and existing practice files remain usable until
-the two-language proof and adoption gates in the roadmap pass.
+The commands below use the working Python prototype. The
+[Rust CLI proof](README/rust-cli.md) now supports the same list/start/check workflow
+for Python and Rust through separate native adapters, plus a line-based practice
+session with prompts, hints, and navigation. Watching and resume are not implemented
+yet. The prototype and existing practice files remain available until the later
+adoption gate passes.
+
+To try the Rust proof from the repository root:
+
+```sh
+cargo build --locked
+./target/debug/polyglot list
+./target/debug/polyglot practice
+```
+
+In the session, choose a language, edit the displayed answer in your own editor,
+then press Enter to check. Use `h` for a hint, `n` to recheck and advance after a
+pass, `p` to go back, and `q` to quit. Saves do not trigger checks yet.
+
+To install the development binary alongside other local tools:
+
+```sh
+make install
+polyglot practice
+```
+
+This builds the Rust debug binary and installs it as `~/.local/bin/polyglot`.
+Use `make install-dev` as an alias, or override `INSTALL_DIR`. The bin directory
+must be on PATH to invoke `polyglot` by name. Rerun the target after code changes.
+The installed binary remains bound to this checkout by default; use `--root` for
+another checkout. The older Python installer is now `make install-python`.
 
 ## Start practicing
 
@@ -41,8 +69,8 @@ share one answer file. Use `python3 polyglot.py check python` to check the whole
 track. The CLI works from another directory when invoked by its absolute script
 path, and uses the Python interpreter that launched it.
 
-The CLI is a repository-local script, not yet an installed `polyglot` command.
-Direct native commands remain available in the track instructions.
+These Python-prototype commands remain repository-local; `make install` installs
+the shared Rust CLI instead. Direct native commands remain in the track instructions.
 
 The three exercises are a small setup-and-feedback path, not a full curriculum:
 
@@ -79,13 +107,17 @@ evidence about this attempt, not a claim of permanent mastery.
   practice, and a shared Rust workflow with native adapters as the target.
 - [Architecture decision](README/decisions/0001-shared-workflow-language-adapters.md):
   adapter boundaries, outcome semantics, and adoption gates.
+- [Rust CLI proof](README/rust-cli.md): build/run instructions for both adapters,
+  tool selection, safety, and outcome codes.
 - [Python starter track](practice/python/README.md): prompts, checks, and retry instructions.
+- [Rust proof exercise](practice/rust/README.md): a native check for the second adapter.
 - [Existing language code](src/): katas, scripts, projects, and experiments with
   varying levels of completeness. Existing implementations may reveal solutions.
 - [Older kata catalog and ideas](README/katas/index.md): a resource, not an active queue.
 - [Earlier vision](README/vision.md): preserved philosophy and platform proposals.
 
-Only the starter track is documented here as a self-contained practice path.
+Only the Python starter track and Rust proof exercise are documented as
+self-contained practice paths.
 Keep the active scope small; use a few real sessions to decide what to add next.
 
 ## Check the CLI implementation
