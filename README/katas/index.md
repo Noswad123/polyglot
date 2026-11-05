@@ -1,6 +1,11 @@
 # Katas
 [home](../../README.md)
 
+For the current repeatable practice path, start with the
+[Python starter track](../../practice/python/README.md).
+The catalog below preserves older prompts and ideas; it is not an active learning
+queue, and listed ideas are not necessarily runnable exercises.
+
 A kata is a focused coding challenge designed to improve problem-solving, fluency, and familiarity with programming concepts through deliberate, iterative practice. The idea here is to create a kata environment for any language of your choosing.
 
 ## Existing Katas
@@ -120,5 +125,4 @@ A kata is a focused coding challenge designed to improve problem-solving, fluenc
     - [Merge K Sorted Lists](https://leetcode.com/problems/merge-k-sorted-lists/)
     - [Top K Frequent Elements](https://leetcode.com/problems/top-k-frequent-elements/)
     - [Find Median from Data Stream](https://leetcode.com/problems/find-median-from-data-stream/)
-
 

@@ -107,3 +107,6 @@ dist
 # Finder (MacOS) folder config
 .DS_Store
 **/target/
+
+# Local exercise attempts; committed starters and checks stay reusable.
+/practice/python/answers.py
