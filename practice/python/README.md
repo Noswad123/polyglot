@@ -9,6 +9,28 @@ installation, virtual environment, database, or Polyglot CLI is required.
 All commands below run from the repository root. `python3 --version` checks your
 interpreter; an existing `.venv/bin/python` can also replace `python3`.
 
+## Optional CLI shortcuts
+
+The repository-local CLI wraps the same workflow:
+
+```sh
+python3 polyglot.py list --language python
+python3 polyglot.py start python/hello
+# Edit practice/python/answers.py, then:
+python3 polyglot.py check python/hello
+```
+
+Use `python/find_in_string` or `python/length_of_last_word` for the other exercises,
+or `python3 polyglot.py check python` for the whole track. All three exercises share
+one answer file. Selecting another exercise preserves your current answers.
+
+`start` prints the answer and prompt paths. `check` never initializes or resets
+answers; if they are missing, it tells you how to start. Checks use the same Python
+interpreter as the CLI and stop on the first failure. A failed test returns exit
+code 1; invalid input or a missing attempt returns exit code 2.
+
+The direct commands below remain an alternative; no CLI installation is required.
+
 ## Start an attempt
 
 ```sh

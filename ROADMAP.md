@@ -12,13 +12,33 @@ Success means being able to open this repository and start practicing within two
 minutes after initial language setup. This is a personal practice space, not a
 promise to build a complete curriculum for every language.
 
+## Agreed end state
+
+**Darkness is the knowledge store. Polyglot is the executable practice system.
+One Rust-based Polyglot CLI is its front door, with a shared Rustlings-inspired
+workflow and native language adapters. A web UI is optional.**
+
+These are responsibilities, not three independently deployed products. Start with
+files and native language tools, not a shared database or required backend service.
+The CLI connects practice to references without duplicating knowledge or
+automatically rewriting notes. See the [target architecture](README/architecture.md)
+for the current implementation and integration rules.
+
+The direction is accepted in
+[ADR 0001](README/decisions/0001-shared-workflow-language-adapters.md).
+The Python CLI is a working prototype, not the final implementation language.
+The Rust workflow and adapters are planned, not implemented. The initial
+Python-only milestones below remain completed historical work; later gates
+supersede the earlier implementation sequencing without discarding the prototype.
+
 ## Ownership boundaries
 
 | Space | Authoritative content |
 |---|---|
 | Darkness (`~/projects/darkness`) | Concept explanations, mental models, language comparisons, resources, learning takeaways, and personal learning priorities |
 | Polyglot | Exercise prompts, starters, tests, runnable examples, implementations, and run instructions |
-| Optional Polyglot tooling | Features that make an already-useful practice loop easier |
+| Polyglot CLI | Finding exercises, safely preparing attempts, and invoking native checks |
+| Optional services and UI | Later interfaces or storage, only if practice demonstrates a need |
 
 - Keep general software notes in Darkness. Do not migrate them back here.
 - Short illustrative snippets in notes are fine; avoid maintaining complete
@@ -70,66 +90,136 @@ cases and nine last-word cases). Whole-track checks passed on Python 3.12.11 and
 restored to blank starters. Focused existing kata checks also passed: 10 passed,
 one expected failure. This was not a full-repository test run.
 
-## Phase 2 — Use the loop before expanding it
+## Phase 1b — Establish the single CLI entry point
 
-**Scope:** a few real sessions, not another infrastructure sprint.
+**Scope:** a thin interface over the existing track, following agreement on the
+long-term architecture. This does not expand the curriculum or select the primary
+learning language.
 
-- [ ] Choose the primary language and a concrete capability to improve.
-- [ ] Add a small Current Practice section to an existing programming hub in
-      Darkness, when ready; do not create another dashboard.
-- [ ] Complete a few sessions and retry an exercise without consulting its solution.
-- [ ] Record only useful discoveries or misconceptions in existing concept notes.
-- [ ] Identify actual friction before deciding the next repository change.
+- [x] Document Darkness, Polyglot, and the CLI as complementary responsibilities.
+- [x] List the existing exercises without loading notes or writing files.
+- [x] Prepare a shared local answer file without overwriting an existing attempt.
+- [x] Check one exercise or the whole track through native unittest commands.
+- [x] Validate preservation, failure reporting, and use outside the repository cwd
+      with isolated integration tests.
+- [x] Document the CLI while retaining direct native commands as an alternative.
 
-Suggested Current Practice section:
+**Acceptance:** one dependency-free entry point supports list → start → check.
+Invalid selections do not write files, failed checks remain failures, and existing
+answers are preserved. No database, note sync, backend service, or plugin framework
+is introduced.
 
-```markdown
-## Current Practice
+**Validation completed:** 11 isolated CLI integration tests passed on Python
+3.12.11 and 3.15.0. They cover listing/help without writes, invalid selections,
+preserving existing answers, rejecting symlink/directory answer paths, missing
+files, intended starter failures, individual and whole-track success, syntax
+errors, import side effects, unrelated working directories, and paths with spaces.
+Tests use disposable fixtures and do not touch local practice answers. Python 3.11
+compatibility was reviewed, but execution was validated on 3.12 and 3.15 only.
 
-- Focus: one capability in one language
-- Reference: link to an existing concept note
-- Exercise: path or link to runnable practice
-- Next action: one concrete step
-```
+## Phase 2 — Prove a shared Rust workflow with two adapters
 
-**Acceptance:** choosing and starting practice feels straightforward. If the
-starter track is too basic, replace or skip it; completing a prescribed curriculum
-is not the goal.
+**Scope:** a small Rust list/start/check slice, not a full Rustlings fork or TUI.
+Implementation has not started.
 
-## Phase 3 — Add one useful learning slice
+- [x] Record the shared workflow, exercise model, and adapter decision in an ADR.
+- [ ] Introduce a small Rust CLI with one orchestration path and built-in Python
+      and Rust adapters; no plugin framework.
+- [ ] Describe exercise identity separately from workspace identity and native
+      check selection. Expose the existing Python exercises without moving them.
+- [ ] Add one isolated Rust starter/check pair, independent of older Rust projects.
+- [ ] Preserve current attempt files and the prototype's safe start/check behavior.
+- [ ] Define Python interpreter selection and version validation for a Rust host.
+- [ ] Distinguish known blocked checks from learner failures, keeping native
+      diagnostics and an indeterminate outcome where classification is uncertain.
+- [ ] If adapting upstream code, pin the Rustlings revision and retain attribution.
 
-**Start only after:** the primary language and next capability are chosen.
+**Proof gate — all must pass before interactive features:**
 
-- [ ] Add or adapt one exercise relevant to that capability.
-- [ ] Give it a prompt, starter, check command, and explicit success conditions.
-- [ ] Link a relevant Darkness note where useful; do not duplicate its explanation.
-- [ ] If comparison helps, implement the same contract in one reference language.
-- [ ] Use native language tools directly before considering a common runner.
+- [ ] Both languages use the same workflow; only the adapter constructs native
+      invocations. Rust checks do not build unrelated projects.
+- [ ] Blank attempts fail intentionally, valid attempts pass, and individual Python
+      checks work while other exercises remain unfinished. Zero selected tests
+      cannot count as success.
+- [ ] Missing tools and invalid check targets are reported distinctly from known
+      learner errors. Listing does not require every language tool to be installed.
+- [ ] Repeated/concurrent starts preserve source files; invalid selections and
+      checks of missing attempts do not create or reset them.
+- [ ] Commands work from unrelated directories and paths with spaces, using
+      explicit working directories and argument vectors, not shell interpolation.
+- [ ] Native checks remain independently usable and agree with CLI outcomes.
+- [ ] Tests use isolated workspaces, not real learner attempts or Darkness.
 
-**Acceptance:** the new exercise supports a real learning goal and can be checked
-independently. Another language does not require filling a language-by-concept
-matrix.
+No watcher, progress store, automatic reset, dependency installer, or UI is needed
+to pass this gate. Keep the current Python CLI available throughout.
 
-## Phase 4 — Maintain only what practice demonstrates is useful
+## Phase 3 — Add the Rustlings-style interaction
 
-This is a decision gate, not a commitment to build more software.
+**Start only after:** the two-language proof gate passes.
 
-Possible changes, only in response to repeated friction:
+- [ ] Add prompt/hint presentation and next/previous selection through shared
+      session policy; adapters do not control navigation.
+- [ ] Demonstrate select → edit → check → hint → next in both languages.
+- [ ] Add watching as a separate increment, accounting for shared answer files and
+      relevant test/config inputs rather than assuming one file per exercise.
+- [ ] Cancel or supersede old runs safely; do not display stale success after an
+      edit or a change of selected exercise.
+- [ ] Keep explicit check commands available outside interactive mode.
 
-- A shortcut for a frequently typed check command.
-- A small exercise index if navigation becomes difficult.
-- Fixing a note-to-code link when that note is used.
-- A watcher or lightweight runner if manual checks are genuinely disruptive.
+**Acceptance:** the same user flow works across both languages, preserves raw
+native feedback, and remains usable when note references are unavailable.
 
-**Acceptance:** each tooling change removes an observed obstacle and keeps direct
-exercise commands usable without it.
+## Phase 4 — Add minimal local resume behavior
+
+**Start only after:** interaction and check invalidation behavior are established.
+
+- [ ] Store the selected language/exercise and minimal completion history locally.
+- [ ] Define how changed sources or check definitions invalidate current results.
+- [ ] Handle missing or damaged state without overwriting practice files.
+- [ ] Verify restart/resume behavior and interrupted checks in both languages.
+
+**Acceptance:** resuming is convenient, but stored progress is neither proof of
+current correctness nor a mastery score. No database or notes synchronization is
+required; adapters do not write session state.
+
+## Phase 5 — Adopt the Rust CLI before retiring the prototype
+
+**Start only after:** the prior gates pass and real sessions confirm the workflow.
+
+- [ ] Compare the Rust entry point against the prototype's selection, preservation,
+      working-directory, and failure-reporting behavior.
+- [ ] Use both Python and Rust exercises in real practice sessions.
+- [ ] Document build/run requirements and switch the README's primary commands
+      only after the replacement is validated.
+- [ ] Propose wrapping or retiring `polyglot.py` separately. Do not delete it,
+      existing `pylearn` code, or learner attempts as an incidental migration.
+
+**Acceptance:** the replacement is useful in practice, not merely compilable.
+Installation/distribution can be added without making a web service necessary.
+
+## Practice and curriculum discipline throughout
+
+These remain learning choices, not prerequisites for the two-language technical
+proof. Two adapters do not imply two mandatory learning tracks.
+
+- Choose one primary learning language and a concrete capability to improve.
+- Keep a small Current Practice section in an existing programming hub in Darkness:
+  focus, concept-note reference, exercise link, and one next action.
+- Complete a few sessions and retry without consulting the solution. Record only
+  useful discoveries or misconceptions in existing notes.
+- Add the next useful exercise after identifying a learning need, not to fill a
+  language-by-concept matrix. Give it a prompt, starter, and native success check.
+- Link or repair relevant note references as they are used; avoid bulk migration.
 
 ## Deferred, not required
 
 - Database-backed mastery and automated next-exercise selection.
 - Notes ingestion, synchronization, shared schemas, and CQRS integration.
 - New frontend/backend work for the learning platform.
-- A CLI per language or a universal exercise runner.
+- A CLI per language, dynamic plugins, or a generalized framework that replaces
+  native tools. The shared Rust workflow and two built-in adapters are in scope.
+- A full Rustlings fork by default, automatic environment setup, or a broad rewrite
+  of existing exercises before the two-language proof.
 - Bulk note cleanup, wholesale directory migration, and complete language parity.
 
 The [earlier vision](README/vision.md) and existing code remain available. Building
@@ -138,6 +228,8 @@ programming-practice session.
 
 ## Current next action
 
-Phase 1 is complete. Choose the primary learning language and one capability for
-Phase 2 before expanding the exercise catalog. The Python starter track is
-available immediately as a setup check, not a required learning assignment.
+Phases 1 and 1b remain complete. The shared-workflow ADR and this implementation
+plan are recorded; no Rust replacement has been implemented. The next code change
+is the Phase 2 two-language vertical slice, with preservation and native-check
+tests. Do not add watch/resume features or retire the Python prototype before its
+proof gate passes. The Python starter track remains usable now.
