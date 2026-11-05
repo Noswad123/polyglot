@@ -1,4 +1,5 @@
 # Polyglot
+![Polyglot](./img/polyglot.png)
 
 A personal programming practice space inspired by Rustlings: small exercises,
 immediate feedback, and repeated attempts across the languages I'm studying.
