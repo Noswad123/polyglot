@@ -20,10 +20,10 @@ class MainHookTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.base = Path(self.temp.name).resolve()
         self.root = self.base / "fixture repository"
+        self.env = isolated_git_env()
         self.root.mkdir()
         self.global_config = self.base / "isolated global config"
         self.global_config.write_text("")
-        self.env = isolated_git_env()
         self.env["GIT_CONFIG_GLOBAL"] = str(self.global_config)
         shutil.copytree(REPO / ".githooks", self.root / ".githooks")
         shutil.copy2(REPO / "Makefile", self.root / "Makefile")

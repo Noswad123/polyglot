@@ -1,5 +1,10 @@
 
 # Polyglot Frontend
+
+Historical UI proposal. The frontend project code was removed, not relocated;
+the JSON below is a design sketch, not a current API. Current practice uses the
+[shared Rust CLI](rust-cli.md), without a web UI.
+
 ## Notebook UI:
      - displays and edits cells, each cell can be code in a given language or rich markdown
      - show outputs/errors

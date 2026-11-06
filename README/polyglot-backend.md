@@ -1,6 +1,8 @@
 # Polyglot Backend
 
-Every backend should have the behavior enumerated here
+Historical backend proposal; the project code was removed, not moved. These
+sketches are not current setup instructions or a required service. Use the
+[shared practice workflow](rust-cli.md) without a backend.
 
 ## Features
 

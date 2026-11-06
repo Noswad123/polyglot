@@ -1,5 +1,6 @@
 mod adapters;
 mod git;
+mod library;
 mod model;
 mod reset;
 mod session;
@@ -9,13 +10,15 @@ mod workspace;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use model::{Exercise, Language, Outcome, CATALOG};
+use model::{Exercise, Language, Outcome, CATALOG, PROBLEMS};
 use workflow::Context;
 
 const HELP: &str = "polyglot [--root PATH] [--python PATH] [--cargo PATH] COMMAND
 
 Commands:
   list [--language python|rust]
+  questions [--json | --pretty]
+  question PROBLEM_ID
   start ID
   reset ID
   check ID|python|rust
@@ -23,8 +26,12 @@ Commands:
   hint ID
   practice [python|rust|ID]
 
-IDs: python/hello, python/find_in_string, python/length_of_last_word, rust/hello
+IDs: python/hello, python/find_in_string, python/length_of_last_word,
+     python/binary_search, python/fibonacci, rust/hello
 Global options must precede the command. --help shows this help.
+Questions inventories all topics, draft/missing docs, and stored solution attempts.
+Questions defaults to JSON (--json is explicit); --pretty displays a compact table.
+List shows only runnable native bindings; stored solutions remain unverified.
 Start selects existing exercise files. Check never creates exercise files.
 Reset restores one exercise from committed main after confirmation.
 Start requires a non-main Git branch. Practice creates one from clean main.
@@ -82,6 +89,31 @@ fn run() -> Result<(), Outcome> {
     };
     // Validate selection before touching any workspace or launching tools.
     match command.as_str() {
+        "questions" => {
+            let pretty = match args.as_slice() {
+                [_] => false,
+                [_, flag] if flag == "--json" => false,
+                [_, flag] if flag == "--pretty" => true,
+                _ => {
+                    return Err(Outcome::Blocked(
+                        "usage: questions [--json | --pretty] (default: JSON)".into(),
+                    ))
+                }
+            };
+            workflow::questions(pretty);
+            Ok(())
+        }
+        "question" => {
+            if args.len() != 2 {
+                return Err(Outcome::Blocked("usage: question PROBLEM_ID".into()));
+            }
+            let problem = PROBLEMS
+                .iter()
+                .find(|problem| problem.id == args[1])
+                .ok_or_else(|| Outcome::Blocked(format!("unknown problem: {}", args[1])))?;
+            let context = options.resolve()?;
+            context.question_detail(problem)
+        }
         "list" => {
             let language = match args.as_slice() {
                 [_] => None,
@@ -126,20 +158,19 @@ fn run() -> Result<(), Outcome> {
                 return Ok(());
             }
             let context = options.resolve()?;
-            let language = exercises[0].language;
             if command == "reset" {
                 reset::run(&context.root, exercises[0])?;
                 return Ok(());
             }
             if command == "show" {
-                context.show(exercises[0], None);
-                return Ok(());
+                return context.show(exercises[0], None);
             }
             if command == "start" {
                 context.start(exercises[0])?;
                 println!(
-                    "Prompt/hints: {}/README.md",
-                    context.root.join(language.workspace().directory).display()
+                    "Problem: {}\nQuestion: {}",
+                    exercises[0].problem.id,
+                    exercises[0].problem.question_doc.unwrap_or("missing")
                 );
                 return Ok(());
             }
@@ -172,7 +203,7 @@ mod tests {
 
     #[test]
     fn selection_is_exact_and_tracks_are_check_only() {
-        assert_eq!(select("python", true).unwrap().len(), 3);
+        assert_eq!(select("python", true).unwrap().len(), 5);
         assert_eq!(select("rust/hello", false).unwrap().len(), 1);
         for value in ["python", "../rust/hello", "hello", "python/hello/", ""] {
             assert!(select(value, false).is_err());

@@ -15,16 +15,10 @@ import tempfile
 import unittest
 
 from git_fixture import isolated_git_env
-from active_fixture import copy_active_fixture, exercise_path, solve
+from active_fixture import IDS, copy_active_fixture, exercise_path, solve
 
 
 REPO = Path(__file__).resolve().parents[1]
-IDS = (
-    "python/hello",
-    "python/find_in_string",
-    "python/length_of_last_word",
-    "rust/hello",
-)
 PYTHON_SOLUTION = '''def hello():
     print("Hello, World!")
 
@@ -61,9 +55,9 @@ class RustCliTests(unittest.TestCase):
         self.base = Path(self.temp.name)
         self.root = self.base / "copied repository with spaces"
         self.cwd = self.base / "unrelated working directory"
+        self.env = isolated_git_env()
         self.cwd.mkdir()
         copy_active_fixture(self.root)
-        self.env = isolated_git_env()
         self.env["PYTHONDONTWRITEBYTECODE"] = "1"
         self.env["CARGO_TERM_COLOR"] = "never"
         # Keep caller-specific build flags/target redirections out of fixtures.
@@ -144,7 +138,7 @@ class RustCliTests(unittest.TestCase):
         self.assertIn("Global options", help_result.stdout)
         result = self.cli("list", globals=overrides, env=env)
         self.assertEqual([line.split("\t")[0] for line in result.stdout.splitlines()], list(IDS))
-        self.assertIn("practice/rust/README.md", result.stdout)
+        self.assertIn("README/katas/hello_world.md", result.stdout)
         for language in ("python", "rust"):
             with self.subTest(language=language):
                 result = self.cli("list", "--language", language, globals=overrides, env=env)
@@ -180,7 +174,7 @@ class RustCliTests(unittest.TestCase):
                 self.assertEqual(self.git_files(), metadata)
                 edited = b"# edited learner bytes\r\n" if language == "python" else b"// edited\r\n"
                 self.answer(language).write_bytes(edited)
-                selections = IDS[:3] if language == "python" else IDS[3:]
+                selections = [item for item in IDS if item.startswith(language + "/")]
                 for selection in selections:
                     self.cli("start", selection)
                     self.assertEqual(self.answer(language).read_bytes(), edited)
@@ -289,7 +283,7 @@ class RustCliTests(unittest.TestCase):
                 if solved:
                     self.solve("python")
                 result = self.cli("check", "python", code=expected)
-                self.assertIn("Ran 3 tests", result.stderr)
+                self.assertIn("Ran 5 tests", result.stderr)
                 self.assert_code(self.native("python"), expected)
 
     def test_rust_blank_and_valid_match_native_runner(self):
@@ -304,10 +298,11 @@ class RustCliTests(unittest.TestCase):
         self.cli("check", "rust/hello")
 
     def test_each_python_id_can_pass_with_siblings_blank(self):
-        for selection in IDS[:3]:
+        for selection in IDS[:5]:
             with self.subTest(selection=selection):
                 name = selection.split("/")[1]
                 starter = self.answer("python", name).read_text()
+                self.cli("check", selection, code=1)
                 solve(self.root, "python", name)
                 self.cli("check", selection)
                 self.cli("check", "python", code=1)

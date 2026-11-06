@@ -202,6 +202,7 @@ class BranchPolicyTests(BranchFixture, unittest.TestCase):
         nested = outer / "nested"
         nested.mkdir()
         shutil.copytree(outer / "practice", nested / "practice")
+        shutil.copytree(outer / "README", nested / "README")
         self.git("add", "nested")
         self.commit()
         self.git("switch", "-c", "feature/nested")
@@ -246,7 +247,8 @@ class BranchPolicyTests(BranchFixture, unittest.TestCase):
         for repository in (True, False):
             if not repository:
                 shutil.rmtree(self.root / ".git")
-            for args in (("list",), ("show", "python/hello"), ("hint", "python/hello"),
+            for args in (("list",), ("questions",), ("question", "hello-world"),
+                         ("show", "python/hello"), ("hint", "python/hello"),
                          ("check", "python/hello")):
                 self.cli(*args, env=env)
             self.assertEqual(self.sources(), before)
@@ -318,7 +320,8 @@ class BranchPolicyTests(BranchFixture, unittest.TestCase):
             self.assertIn("Hint:", output)
             self.assertNotIn("Created practice branch", output)
             self.assertNotIn("Exercise: rust/hello", output)
-            self.assertEqual(output.count("Exercise: python/find_in_string"), 1, output)
+            self.assertIn("Exercise: python/find_in_string", output)
+            self.assertNotIn("Exercise: python/length_of_last_word", output)
             self.assertEqual(self.sources(), before)
             self.assertEqual(self.git_files(), metadata)
         finally:

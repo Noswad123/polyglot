@@ -58,10 +58,52 @@ dispatch boundary and use the same orchestration for both languages.
 
 ### Exercise definition
 
-Carry a stable language-qualified ID, language, title, prompt/hint references,
-workspace identity, exercise-file path, native check selector, and optional
-Darkness references. Define only the fields required by the first two adapters;
+Separate a shared problem (stable ID, title, question status, optional document,
+unverified reference metadata) from its
+language bindings. Each binding carries a language-qualified ID, language,
+workspace identity, exercise-file path, native API task, language hint, check
+selector, and optional Darkness references. Common contracts/examples live in
+the question library; native task strings do not duplicate those rules.
+Define only the fields required by the first two adapters;
 the serialization format is an implementation choice, not a reason to build a DSL.
+
+The static inventory in `cli/src/library.rs` now registers 37 topic families:
+five curated, 15 draft, and 17 missing questions, covering 20 existing documents
+and 60 current legacy source artifacts across eight languages. `questions` defaults
+to strict JSON-only stdout; `questions --json` remains an explicit alias, with the
+same metadata schema and no human header/footer. Paths remain repository-relative,
+but now point to the mixed `practice/` collection roots. JSON retains `references` with
+language/path/nullable-note entries, without a `solutions` alias; the legacy key
+is compatibility metadata, not a verification claim. Internal reference types stay unchanged.
+`questions --pretty` exposes the same topics as an ASCII table within 80 columns,
+not pretty-printed JSON. Its columns are `Problem ID`, `Question` (status),
+`Solutions` (wrapped unverified languages, same 18-character width), and `Practice` (runnable native languages, or `-`
+for not converted), with no duplicate title. Aggregate totals and a legend
+include 60 solution artifacts, distinguish unverified solutions from native practice, and direct readers to JSON
+or `question ID` for titles, exact binding IDs, and full source paths. Mixing or
+repeating format flags is invalid. For human browsing use
+`polyglot questions --pretty`; for machine export use `polyglot questions` or
+`polyglot questions --json`. `question ID` supports curated contracts,
+warned draft bodies (including empty-draft notices), and metadata-only code topics.
+Reference paths are never read/imported/executed by discovery, and listing requires
+no Git, tools, or root files. This is metadata, not a runtime filesystem audit or
+solution validation. Independent coverage checks live in `tests/test_library_inventory.py`.
+
+The [inventory](../katas/index.md) maps the eight language collections under
+`practice/`; the former aggregate Solutions directory no longer exists. Legacy
+Python tests and their compatibility bridge were removed, not relocated.
+Shared question documents remain in `README/katas/`. Human question detail
+uses a `Solutions` heading. This storage/label change does not change the five
+curated contracts, six native bindings, or adapter boundaries.
+
+`cli/src/model.rs` still supplies only six native bindings: five Python exercises
+and `rust/hello`, with unchanged IDs/order. Reference-language labels are not native
+adapters; the native `Language` enum remains Python/Rust. A curated contract may
+have no binding. Question readiness, reference availability, native practice, and
+committed reset readiness are separate. Markdown edits are visible at runtime but
+never automatically promote a question or register a binding. Active selection
+still requires a curated, nonempty safe document before automatic branching;
+native checks remain document-independent. No database or watcher is introduced.
 
 Exercise identity is distinct from workspace identity. The initial proof used a
 shared answer file; ADR 0002 supersedes that layout with independent tracked
@@ -131,8 +173,8 @@ interpreters after a check fails.
    local session state only if real practice needs it; it is not a retirement gate.
 4. **Adoption:** the user chose retirement of `polyglot.py` and obsolete practice
    scaffolding. Ignored learner attempts are preserved, not migrated or deleted.
-   The separate experimental `src/python/pylearn` package, `pyproject.toml`, uv
-   tooling, and `make install-python` are not the retired prototype or active CLI.
+   The separate experimental Python package has since been removed as well.
+   Root Python configuration is development/test tooling, not a runtime package.
 
 The [roadmap](../../ROADMAP.md) tracks delivery and acceptance checks; the manual
 workflow and retirement status above supersede the earlier watch/adoption gates.

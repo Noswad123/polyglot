@@ -39,6 +39,7 @@ pub fn choose_language() -> Result<Option<&'static Exercise>, Outcome> {
 
 pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome> {
     workspace::prevalidate_start(&context.root, initial)?;
+    context.question(initial.problem)?;
     git::prepare_practice(&context.root, initial.language)?;
     context.start(initial)?;
     let mut track: Vec<_> = CATALOG
@@ -46,7 +47,7 @@ pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome>
         .filter(|e| e.language == initial.language)
         .collect();
     let mut index = track.iter().position(|e| e.id == initial.id).unwrap();
-    context.show(initial, Some((index, track.len())));
+    context.show(initial, Some((index, track.len())))?;
     println!("{HELP}");
     while let Some(line) = read_line("practice> ")? {
         let current = track[index];
@@ -62,14 +63,20 @@ pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome>
             }
             "reset" | "r" => {
                 match crate::reset::run(&context.root, current) {
-                    Ok(true) => context.show(current, Some((index, track.len()))),
+                    Ok(true) => {
+                        if let Err(outcome) = context.show(current, Some((index, track.len()))) {
+                            println!("{outcome}");
+                        }
+                    }
                     Ok(false) => {}
                     Err(outcome) => println!("{outcome}"),
                 }
                 continue;
             }
             "prompt" => {
-                println!("Prompt: {}", current.prompt);
+                if let Err(outcome) = context.show(current, Some((index, track.len()))) {
+                    println!("{outcome}");
+                }
                 continue;
             }
             "next" | "n" => {
@@ -126,12 +133,17 @@ pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome>
             println!("{outcome}");
             continue;
         }
-        track = CATALOG
+        let target_track: Vec<_> = CATALOG
             .iter()
             .filter(|e| e.language == target.language)
             .collect();
-        index = track.iter().position(|e| e.id == target.id).unwrap();
-        context.show(target, Some((index, track.len())));
+        let target_index = target_track.iter().position(|e| e.id == target.id).unwrap();
+        if let Err(outcome) = context.show(target, Some((target_index, target_track.len()))) {
+            println!("{outcome}");
+            continue;
+        }
+        track = target_track;
+        index = target_index;
     }
     Ok(())
 }

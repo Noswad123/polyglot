@@ -50,8 +50,62 @@ This builds the Rust debug binary and installs it as `~/.local/bin/polyglot`.
 Use `make install-dev` as an alias, or override `INSTALL_DIR`. The bin directory
 must be on PATH to invoke `polyglot` by name. Rerun the target after code changes.
 The installed binary remains bound to this checkout by default; use `--root` for
-another checkout. `make install-python` installs the unrelated experimental
-`pylearn` package, not the retired root prototype or the active practice CLI.
+another checkout. There is no Python runtime package or `pylearn` entry point.
+
+## Shared question library
+
+The [full collection inventory](README/katas/index.md) includes **37 topic
+families**, not just the five curated questions. Nothing outside that small
+curated batch has been converted into a practice track. A curated problem defines
+the behavior once; each language binding supplies
+its native signature, blank file, hint, and tests. These are exercise contracts,
+not duplicate concept notes—general explanations still belong in Darkness.
+
+```sh
+polyglot questions --pretty
+polyglot question binary-search
+polyglot question boggle
+polyglot question stack
+polyglot question two-sum
+polyglot show python/binary_search
+```
+
+For machine export, `polyglot questions` emits only JSON on stdout;
+`polyglot questions --json` is an explicit alias. For example:
+
+```sh
+polyglot questions > /tmp/polyglot-questions.json
+```
+
+`--pretty` means a human-readable ASCII table, not pretty-printed JSON. Its
+`Problem ID`, `Question` (status), `Solutions` (wrapped language list), and
+`Practice` (runnable languages, e.g. `python, rust`; `-` means not converted)
+columns fit within 80 columns without a duplicate title column. The footer gives
+aggregate totals (including 60 solution artifacts) and a legend distinguishing unverified solutions
+from native practice. Use JSON or `question ID` for titles, exact binding IDs, and
+full solution paths. Choose at most one format flag; mixing or repeating flags
+is rejected. Default/`--json` output has no human header or footer.
+
+The `Solutions` column retains its 18-character width; its languages are unverified
+inventory, while `Practice` lists runnable native languages. Detail output uses a
+`Solutions` heading. JSON intentionally keeps the legacy `references` key and its
+`language`/`path`/nullable `note` entries, with paths now under
+the mixed `practice/` collection roots listed in the inventory; no `solutions` alias field is added. The legacy export
+key is not a verification claim.
+
+`show` and the practice session read the shared Markdown at runtime, followed by
+the selected language task. Question edits are visible without rebuilding; catalog
+or native binding changes still require a build/install. Native checks do not
+depend on question-file availability.
+
+The inventory registers five curated contracts, 15 drafts/project sketches, and
+17 topics still needing question documents: 20 existing documents and 60 unverified
+solution artifacts across eight languages under `practice/`. These are preserved inventory,
+not validated solutions or runnable bindings; discovery never reads or executes them.
+`questions` lists all 37 topics; `question ID` also accepts drafts and code-only
+topics. `list` and practice commands still expose only six active bindings: five
+Python exercises and `rust/hello`, in the same order. Solution-language labels do
+not add native adapters. Use the curated contract when porting a question.
 
 ## Pristine main and practice branches
 
@@ -84,11 +138,11 @@ not retired starter paths. Editor and native commands do not enforce branch safe
 
 On a practice branch, `polyglot reset python/hello` (or session `reset`/`r`) asks
 before restoring only that exercise from a pinned commit of local `main`.
-All four current blank files are already committed on local `main`; no additional
-baseline commit is needed for them. A newly authored file still needs reviewed
-integration into local `main` before reset can restore it; a working-tree file is
-not enough. Uncommitted cleanup on main still makes it dirty and blocks automatic
-practice-branch creation until you explicitly branch or reconcile those changes.
+The four original blank files have a committed local-main baseline. Any new
+binding—including newly converted katas—becomes reset-ready only after its reviewed
+blank reaches local `main`; a working-tree file is not enough. See the roadmap for
+pending authoring work. Uncommitted changes on main still block automatic
+practice-branch creation until you explicitly branch or reconcile them.
 Changed existing files get private snapshot and original-inode recovery artifacts;
 the index is unchanged. See the [exercise lifecycle guide](README/exercises.md)
 before using reset or moving an older attempt into the new files.
@@ -116,11 +170,13 @@ resolves Python explicitly; see `--python` and `--root` in its instructions.
 Direct native commands remain in the track instructions; use them on a practice
 branch too. They do not enforce the CLI's branch safeguards.
 
-The three exercises are a small setup-and-feedback path, not a full curriculum:
+The five Python exercises form a small practice path, not a full curriculum:
 
 1. **Hello World:** functions and observable output; skip quickly if familiar.
 2. **Find in String:** return values and text searches.
 3. **Length of Last Word:** text cleanup and edge cases.
+4. **Binary Search:** sorted search, boundaries, and boolean results.
+5. **Fibonacci:** exact sequence length and recurrence.
 
 ## A practice session
 
@@ -141,10 +197,10 @@ evidence about this attempt, not a claim of permanent mastery.
   instructions needed to run it. Small illustrative snippets may still live in notes.
 - **Polyglot CLI:** one front door for listing, starting, and checking practice.
   It delegates to native tools; it does not manage your notes or learning goals.
-- **Optional platform work:** the older `pylearn` CLI, database, frontend, and
-  backend remain separate experiments. `src/python/pylearn`, `pyproject.toml`, uv
-  tooling, and `make install-python` are unrelated to the retired root prototype.
-  None is required for the active practice tracks.
+- **Retired platform experiments:** the older `pylearn` package, scripts,
+  playgrounds, frontend, and backend code have been removed, not relocated.
+  Root Python configuration is development/test tooling, not a runtime package;
+  a historical `pylearn` metadata name does not provide a command or import.
 
 ## Find your way around
 
@@ -161,9 +217,12 @@ evidence about this attempt, not a claim of permanent mastery.
   preserving older attempts, and creating or fixing exercises.
 - [Python exercises](practice/python/README.md): prompts, checks, and retry instructions.
 - [Rust proof exercise](practice/rust/README.md): a native check for the second adapter.
-- [Existing language code](src/): katas, scripts, projects, and experiments with
-  varying levels of completeness. Existing implementations may reveal solutions.
-- [Older kata catalog and ideas](README/katas/index.md): a resource, not an active queue.
+- [Solutions inventory](README/katas/index.md): preserved implementations and attempts across eight
+  languages, with their support files; unverified and potentially revealing answers.
+- [Shared data](src/shared/): retained shared data, not language packages or playgrounds.
+- [Full question/solution inventory](README/katas/index.md): all 37 topic families,
+  curated bindings, draft and code-only queues, and the original ideas/resources
+  backlog—not today's assignment list.
 - [Earlier vision](README/vision.md): preserved philosophy and platform proposals.
 
 Only the Python exercises and Rust proof exercise are documented as

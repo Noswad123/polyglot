@@ -74,6 +74,51 @@ Exercise definitions connect stable IDs to workspaces, prompts, hints, native ch
 selectors, and optional notes. Multiple exercises can share one workspace; native
 layouts need not be identical across languages.
 
+A shared `Problem` in `library.rs` owns the problem ID, title, question status,
+optional question-document path, and reference metadata (language, path, optional note).
+`Exercise` references that problem and adds the language, source file, native API
+task, hint, and check selector. Common behavior/examples live in
+`README/katas/*.md`, not repeated language prompt strings. The retained directory
+name preserves old links; its index separates curated contracts from drafts and
+reference inventories. Intentional binding differences, such as Python printing
+Hello World while Rust returns the greeting, are documented explicitly.
+
+The static library covers 37 topic families: five curated, 15 draft, and 17 missing
+questions; its 20 documents and 60 unverified solution artifacts are distinct from
+the six active bindings in `model.rs`. Reference labels span eight languages;
+the native `Language` enum still has only Python and Rust. A curated question may
+exist without a binding: contract readiness, reference availability, native practice,
+and committed reset baselines are independent dimensions.
+
+The shared workflow reads question Markdown at runtime. `questions` defaults to a
+strict JSON metadata array; `questions --json` remains an explicit alias. Neither
+adds a human header or footer to stdout, and the metadata schema and
+repository-relative path format is unchanged; solution paths now use
+the mixed `practice/` collection roots. The legacy JSON key `references` and its
+language/path/nullable-note entries remain; no `solutions` alias is added.
+`questions --pretty` means an ASCII
+table, not pretty-printed JSON: within 80 columns, `Problem ID`, `Question`
+(status), wrapped `Solutions` languages (the same 18-character column), and `Practice` native languages (or `-`
+for not converted) replace verbose rows without duplicating the title. Its footer
+gives aggregate totals including 60 solution artifacts and an unverified-solutions-versus-practice legend with detail
+commands. JSON or `question ID` retains titles, exact binding IDs, and full source
+paths. Mixed or repeated format flags are rejected. `question PROBLEM_ID`
+displays curated contracts, warns before draft bodies, or reports metadata and
+reference paths when no document is registered. An empty draft succeeds with a
+notice. Declared documents must still be readable UTF-8 regular files with no
+symlink components. Active `show`/start/session selection requires a curated,
+nonempty contract, validated before automatic branching; native checks and metadata
+listing remain document-independent. Discovery never reads/imports/executes legacy
+references, requires no Git/tools/root files, and is not a runtime filesystem audit.
+General reference notes remain in Darkness; question contracts belong to Polyglot.
+
+Preserved implementations live under `practice/`: Python uses `python/soutions/`,
+Rust Users uses `rust/solutions/users/`, and other language collections are flat
+apart from retained project subdirectories. The old Python tests and compatibility
+bridge were removed. This layout adds no adapters, changes no shared contracts,
+and does not certify specs, servers, or database projects. See the
+[lifecycle guide](exercises.md#collection-layout-and-execution-limits) for execution limits.
+
 Python and Rust adapters resolve their tools, invoke the selected native checks,
 and return evidence-backed outcomes: passed, attempt failed, blocked, or
 interrupted/indeterminate. Keep native diagnostics; do not mistake missing tools
@@ -92,6 +137,7 @@ application state or adopting a full fork by default.
 ```sh
 cargo build --locked
 ./target/debug/polyglot list
+./target/debug/polyglot questions --pretty
 ./target/debug/polyglot practice python/hello
 # After editing/checking in the session, quit; the practice branch stays selected.
 ./target/debug/polyglot check python/hello
@@ -106,13 +152,20 @@ outcome codes, preservation guarantees, and isolated test commands.
 Code boundaries are explicit:
 
 - `cli/src/main.rs`: argument parsing and command dispatch.
-- `cli/src/model.rs`: catalog, workspace mappings, native selectors, and outcomes.
+- `cli/src/library.rs`: full static topic inventory, statuses, optional documents,
+  and unverified reference paths.
+- `cli/src/model.rs`: native exercise bindings, workspace mappings,
+  selectors, and outcomes.
 - `cli/src/workflow.rs`: shared preparation, metadata display, and check orchestration.
 - `cli/src/session.rs`: language selection and in-memory prompt/hint/navigation policy.
 - `cli/src/workspace.rs`: contained paths and existing exercise-file validation.
 - `cli/src/reset.rs` and `cli/src/reset/native.rs`: shared confirmation, canonical
   reset, descriptor-anchored file transactions, backups, and recovery.
 - `cli/src/adapters/`: tool resolution, native invocations, and classification.
+- `README/katas/`: shared question contracts plus the explicit conversion backlog.
+- `practice/`: native exercise workspaces plus unverified collections; see the inventory for exact roots.
+- `tests/test_library_inventory.py`: independent coverage audit of all 20 question
+  documents and 60 current legacy source artifacts; not solution validation.
 
 Native checks may produce build artifacts but must preserve learner sources and
 locked inputs. Python checks execute fresh source instead of cached bytecode.
@@ -143,7 +196,7 @@ not imported or migrated by the CLI.
 Reset requires a non-main branch, pins strict local `refs/heads/main` once, and
 reads the actual regular-file blob with Git object replacements disabled. Missing
 canonical files block; uncommitted files or learner HEAD are never fallbacks.
-All four current blank files are already committed on local main. Newly authored
+The four original blank files are committed on local main. Newly authored
 files still need reviewed integration there before they become reset baselines.
 After confirmation, only the selected worktree file is restored. Its staged
 version, other files, and Git refs are unchanged.
@@ -172,9 +225,10 @@ quit success does not mean all checks passed.
 The root `polyglot.py` prototype and obsolete practice starters/tests are retired;
 there is no prototype fallback. `make install` installs the Rust debug binary at
 `~/.local/bin/polyglot`; release packaging remains separate. Direct native checks
-remain available but, like editors, do not enforce branch safeguards. The unrelated
-`src/python/pylearn` package, `pyproject.toml`, uv tooling, and `make install-python`
-remain experiments, not active practice entry points.
+remain available but, like editors, do not enforce branch safeguards. The former
+`pylearn` package and other language packages under `src/` were removed; only
+shared data remains there. Root Python configuration is development/test tooling,
+not an installed runtime package or CLI.
 
 ## Integration rules
 

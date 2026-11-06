@@ -308,6 +308,25 @@ class ResetCliTests(BranchFixture, unittest.TestCase):
         self.assert_backup(output, learner)
         self.assertEqual(path.read_bytes(), baseline)
 
+    def test_new_python_resets_use_main_blob_and_preserve_siblings(self):
+        baselines = {name: exercise_path(self.root, "python", name).read_bytes()
+                     for name in ("binary_search", "fibonacci")}
+        for name in ("binary_search", "fibonacci"):
+            with self.subTest(name=name):
+                path = exercise_path(self.root, "python", name)
+                baseline = baselines[name]
+                solve(self.root, "python")
+                learner = path.read_bytes()
+                before, metadata = self.sources(), self.git_files()
+                output = self.reset(selection="python/" + name)
+                self.assert_backup(output, learner)
+                self.assertEqual(path.read_bytes(), baseline)
+                for relative, content in before.items():
+                    if relative != str(path.relative_to(self.root)):
+                        source = self.root / relative
+                        self.assertEqual(source.read_bytes() if source.is_file() else None, content)
+                self.assertEqual(self.git_files(), metadata)
+
     def test_session_reset_aliases_stay_selected_and_next_rechecks(self):
         for alias in ("reset", "r"):
             with self.subTest(alias=alias):

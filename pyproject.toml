@@ -1,11 +1,8 @@
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
+# Locked development-environment identifier, not an installed runtime package.
 name = "pylearn"
 version = "0.1.0"
-description = "CLI study tool for learning programming concepts in Python using a shared polyglot SQLite DB."
+description = "Python development tooling for the shared Polyglot Rust CLI."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -17,22 +14,14 @@ dependencies = [
   "pyyaml>=6.0.3",
 ]
 
-[project.scripts]
-pylearn = "pylearn.cli:main"
-
 [project.optional-dependencies]
 dev = [
   "pytest>=9.0.2",
   "ruff>=0.6.0",
 ]
 
-[tool.setuptools.packages.find]
-where = ["src/python"]
-include = ["pylearn"]
-
-[tool.setuptools.package-data]
-# If you ever want to ship the DB or other resources inside the package
-pylearn = ["../db/*.db", "../katas/**"]
+[tool.uv]
+package = false
 
 [tool.pytest.ini_options]
 addopts = "-vv --strict-markers --maxfail=1 --durations=5 --disable-warnings"
@@ -43,7 +32,7 @@ addopts = "-vv --strict-markers --maxfail=1 --durations=5 --disable-warnings"
 # strict
 # addopts = "-vv --strict-markers --strict-config"
 testpaths = [
-    "src/python/tests"
+    "tests"
 ]
 python_files = [
     "test_*.py",

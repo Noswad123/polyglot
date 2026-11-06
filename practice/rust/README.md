@@ -7,6 +7,12 @@
 One small exercise proves that the shared workflow can run native Rust checks as
 well as Python. This is not a complete Rust track or a requirement to study Rust
 alongside another language. Use Rust/Cargo 1.85+.
+The [full collection inventory](../../README/katas/index.md) exposes 37 topic
+families through `polyglot questions`, but only `rust/hello` is active Rust practice.
+Legacy Rust source is unverified reference inventory, not another binding or adapter.
+The preserved [Users project](solutions/users/) lives in its own standalone
+workspace, retaining its `src/` nesting and support files. It is not part of these
+checks; do not start its server or touch its database to validate native practice.
 
 The active file is tracked `practice/rust/exercises/hello.rs`. Keep `main`
 pristine; implement solutions on a practice branch, not in a separate answers file.
@@ -15,20 +21,17 @@ pristine; implement solutions on a practice branch, not in a separate answers fi
 at its exercise path in local `refs/heads/main`. New or uncommitted paths are not
 a baseline; reset safely refuses until it exists. `start` does not create missing
 files or copy a starter.
-The current Rust blank is already committed on local main; no additional baseline
-commit is needed for it. Newly authored files still need reviewed integration
-there before becoming reset baselines.
 
 ## API / Interfaces
 
-For CLI ID `rust/hello`, implement this function in **`exercises/hello.rs`**:
+| Exercise ID | Shared question / problem ID | Native API |
+|---|---|---|
+| `rust/hello` | [hello-world](../../README/katas/hello_world.md) | `pub fn greeting() -> &'static str` |
 
-```rust
-pub fn greeting() -> &'static str
-```
-
-Return exactly `Hello, World!`; printing is not sufficient. The canonical blank
-body uses `todo!()`. Hint: a string literal has a static lifetime.
+Implement this binding in **`exercises/hello.rs`**. The shared question is
+authoritative: Rust returns the greeting, while Python prints and returns `None`.
+This intentional difference preserves both native APIs. The canonical blank body
+uses `todo!()`. Other curated questions have no active Rust binding yet.
 
 ## Data Flow
 
@@ -37,7 +40,9 @@ body uses `todo!()`. Hint: a string literal has a static lifetime.
 and runs offline and locked. Normal build artifacts go in `practice/rust/target/`;
 checks do not update source, harness, manifest, or lockfile.
 
-`start` validates and displays **Exercise file:** without copying a template or
+`show` and session `prompt` read the full shared question Markdown and display it
+with the native language task; hints remain separate. `start` validates the
+question and displays **Exercise file:** without copying a template or
 opening an editor. `practice` creates a unique branch from clean `main` or reuses
 your non-main branch. Dirty `main` is refused without stashing. One-shot `start`
 and `reset` require an existing non-main branch; standalone checks may run on main.
@@ -48,6 +53,8 @@ From the repository root:
 
 ```sh
 cargo build --locked
+./target/debug/polyglot question hello-world
+./target/debug/polyglot show rust/hello
 ./target/debug/polyglot practice rust/hello
 # Edit and save practice/rust/exercises/hello.rs, then press Enter to check.
 ```
@@ -78,6 +85,15 @@ watch mode is neither implemented nor planned.
 Reset changes only the selected worktree file, not the staged version. Preserve
 both `Backup:` and `Recovery:` artifacts; there is no automatic cleanup.
 
+Missing, empty, unreadable/non-UTF-8, non-regular, or symlinked curated Markdown
+blocks `question`, `show`, `start`, and session entry/navigation before automatic
+branching or committing a navigation selection. `list`, `questions`, `hint`, and
+native checks do not require that Markdown. Edits to the question in the selected
+checkout are visible without rebuilding; static catalog/native signature changes
+require rebuilding and reinstalling the CLI.
+For library-only topics, `question ID` permits empty drafts with a notice and
+missing-question metadata without a prompt; it never reads or executes references.
+
 The obsolete `starter.rs` is retired, as is the root Python prototype; `polyglot`
 is the only supported practice CLI. Ignored `answers.rs` is preserved if present,
 with its ignore and optional hook protection. The CLI and active `checks.rs` never
@@ -88,4 +104,7 @@ an older attempt, follow the [manual preservation steps](../../README/exercises.
 
 - [Exercise](exercises/hello.rs), [checks](checks.rs), [manifest](Cargo.toml), [lockfile](Cargo.lock)
 - [Catalog](../../cli/src/model.rs), [Rust adapter](../../cli/src/adapters/rust.rs)
-- Existing Rust notes in Darkness are optional; no notes database is required.
+- [Shared question library](../../README/katas/index.md)
+- [Collection layout and execution limits](../../README/exercises.md#collection-layout-and-execution-limits)
+- Darkness remains canonical for general concept notes; repository questions own
+  exercise instructions. No notes database is required.

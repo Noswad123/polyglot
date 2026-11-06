@@ -16,12 +16,12 @@ import time
 import unittest
 
 from git_fixture import isolated_git_env
-from active_fixture import copy_active_fixture, exercise_path, solve
+from active_fixture import IDS, copy_active_fixture, exercise_path, solve
 
 
 REPO = Path(__file__).resolve().parents[1]
-IDS = ("python/hello", "python/find_in_string", "python/length_of_last_word", "rust/hello")
-TITLES = ("Hello, World!", "Find in String", "Length of Last Word", "Hello, World!")
+TITLES = ("Hello, World!", "Find in String", "Length of Last Word",
+          "Binary Search", "Fibonacci", "Hello, World!")
 PYTHON_SOLUTION = '''def hello():
     print("Hello, World!")
 
@@ -58,9 +58,9 @@ class InteractiveCliTests(unittest.TestCase):
         self.base = Path(self.temp.name).resolve()
         self.root = self.base / "copied repository with spaces"
         self.cwd = self.base / "unrelated working directory"
+        self.env = isolated_git_env()
         self.cwd.mkdir()
         copy_active_fixture(self.root)
-        self.env = isolated_git_env()
         self.env["PYTHONDONTWRITEBYTECODE"] = "1"
         self.env["CARGO_TERM_COLOR"] = "never"
         for key in ("CARGO_TARGET_DIR", "RUSTFLAGS", "CARGO_ENCODED_RUSTFLAGS"):
@@ -181,7 +181,7 @@ class InteractiveCliTests(unittest.TestCase):
             language = selection.split("/")[0]
             with self.subTest(selection=selection):
                 output = self.cli("practice", selection, input="q\n", tools=False)
-                position, count = (index + 1, 3) if language == "python" else (1, 1)
+                position, count = (index + 1, 5) if language == "python" else (1, 1)
                 self.assertIn(f"Exercise: {selection} ({position}/{count})", output)
                 self.assertIn(TITLES[index], output)
                 self.assertIn(f"Exercise file: {self.answer(*selection.split('/'))}", output)
@@ -224,13 +224,12 @@ class InteractiveCliTests(unittest.TestCase):
         before = self.sources()
         output = self.cli("practice", "python", input=(
             "previous\nprompt\nnext\nprompt\nn\nprompt\nnext\nprompt\nn\n"
-            "prompt\np\nprompt\nprevious\nprompt\nprevious\nprompt\nq\n"))
-        self.assertEqual(output.count("Passed"), 4, output)
+            "next\nn\nprompt\np\nprompt\nprevious\nprevious\nprevious\nprevious\nprompt\nq\n"))
+        self.assertEqual(output.count("Passed"), 6, output)
         self.assertGreaterEqual(output.count("End of track"), 2, output)
         positions = self.selections(output)
-        for expected in (("python/hello", "1", "3"),
-                         ("python/find_in_string", "2", "3"),
-                         ("python/length_of_last_word", "3", "3")):
+        for expected in ((selection, str(index), "5")
+                         for index, selection in enumerate(IDS[:5], 1)):
             self.assertIn(expected, positions)
         self.assert_current(output, "python/hello")
         self.assertEqual(self.sources(), before)
@@ -252,7 +251,7 @@ class InteractiveCliTests(unittest.TestCase):
                           input="hint\nh\nprompt\nhelp\n?\nlist\nl\nq\n", tools=False)
         self.assertEqual(output.count("Hint:"), 2, output)
         self.assertGreaterEqual(output.count("Prompt:"), 2, output)
-        for selection in IDS[:3]:
+        for selection in IDS[:5]:
             self.assertIn(selection, output)
         self.assertNotIn("rust/hello", output)
         self.assert_current(output, "python/find_in_string")
@@ -260,9 +259,8 @@ class InteractiveCliTests(unittest.TestCase):
 
     def test_rust_list_contains_only_current_language(self):
         output = self.cli("practice", "rust", input="list\nl\nq\n", tools=False)
-        self.assertIn("rust/hello", output)
-        for selection in IDS[:3]:
-            self.assertNotIn(selection, output)
+        rows = re.findall(r"(?:^|practice> )([a-z_/]+)\t", output, re.MULTILINE)
+        self.assertEqual(rows, ["rust/hello", "rust/hello"])
 
     def test_language_switch_prepares_first_exercise_and_preserves_source(self):
         self.solve("python")

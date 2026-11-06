@@ -13,6 +13,8 @@ import test_interactive_cli
 import test_main_hooks
 import test_rust_cli
 import test_reset_cli
+import test_question_library
+import test_library_inventory
 
 
 class GitFixtureIsolationTests(unittest.TestCase):
@@ -21,8 +23,8 @@ class GitFixtureIsolationTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.base = Path(self.temp.name).resolve()
         self.caller = self.base / "disposable caller repository"
-        self.caller.mkdir()
         self.env = isolated_git_env()
+        self.caller.mkdir()
         (self.caller / "source.txt").write_bytes(b"caller baseline\n")
         self.git("init", "--initial-branch=main")
         self.git("add", ".")
@@ -50,7 +52,8 @@ class GitFixtureIsolationTests(unittest.TestCase):
         # Import modules, not TestCase classes, so discovery does not rerun their tests here.
         suites = (test_rust_cli.RustCliTests, test_interactive_cli.InteractiveCliTests,
                   test_branch_policy.BranchPolicyTests, test_main_hooks.MainHookTests,
-                  test_reset_cli.ResetCliTests)
+                  test_reset_cli.ResetCliTests, test_question_library.QuestionLibraryTests,
+                  test_library_inventory.LibraryInventoryTests)
         poison = {**context, "GIT_CONFIG_GLOBAL": str(self.config),
                   "GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "core.hooksPath",
                   "GIT_CONFIG_VALUE_0": str(self.hooks), "GIT_FUTURE_CONTEXT": "discard me"}

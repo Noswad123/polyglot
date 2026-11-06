@@ -19,6 +19,12 @@ learner-facing starters/answers pair. The active layout is one tracked
 Current ignored `answers.py`/`answers.rs` files are preserved, not silently
 converted or discarded, and are not imported by the Rust CLI.
 
+The separate [repository inventory](../katas/index.md) maps preserved implementations
+under mixed `practice/` roots, not converted into learner blanks. This layout does
+not migrate or delete personal answers, expand hook protection to inventory
+sources, or create reset baselines.
+Question documents remain in `README/katas/`.
+
 ## Rust CLI policy
 
 - `practice` reuses a committed named branch other than `main`, including one with
@@ -84,7 +90,7 @@ The latest reviewed local main is the baseline at reset start, not a permanently
 recorded practice-branch creation revision. A later main-ref change during the
 confirmation does not substitute another blob into that operation.
 
-The canonical file must already be committed on local main. All four current blank
+The canonical file must already be committed on local main. The four original blank
 files have that baseline; no additional baseline commit is needed for them. Newly
 authored files still need reviewed integration into main; without that baseline
 reset blocks. Uncommitted cleanup on main still blocks automatic practice-branch

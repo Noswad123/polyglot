@@ -43,6 +43,14 @@ tracked exercise modules and explicit reset; legacy shared answer files are
 retained untouched, not automatically imported. Canonical baseline commits still
 require user review and integration into main.
 
+Discovery now covers the complete current-file inventory: 37 topic families,
+20 question documents, and 60 unverified solution artifacts in the user-selected
+language directories under `practice/`.
+The JSON `references` field is retained for export compatibility. Question readiness
+and native practice availability are separate: only five contracts are curated
+and six bindings are runnable. Earlier five-question milestones describe that
+curated subset, not the size of the original collection.
+
 ## Ownership boundaries
 
 | Space | Authoritative content |
@@ -231,7 +239,7 @@ Deliver Git safety first, then migrate the files without losing attempts.
       snapshot backup and lasting original-inode recovery, and no index changes.
 - [x] Validate blank main versus edited practice branches and reset behavior in
       isolated committed fixtures, including late saves and staged content.
-- [x] Confirm that all four canonical blank modules are committed in local main;
+- [x] Confirm that the four original canonical blank modules are committed in local main;
       no additional baseline commit is needed for these existing exercises.
 - [ ] Try the updated layout/reset in a personal practice session. New authored
       exercises still need reviewed integration into main before reset can use them.
@@ -301,6 +309,175 @@ exercise files and learner answers were not deleted; the four canonical blank
 files were confirmed in committed local main. These counts supersede earlier
 prototype-inclusive totals for the current suite.
 
+## Shared question library and kata conversion
+
+Keep the existing `README/katas/` documents as the shared question library rather
+than duplicating each question across language tracks. A `Problem` owns its stable
+ID, title, and Markdown path; each native `Exercise` references it and adds the
+language API, blank file, hint, and test selector. General notes remain in Darkness.
+
+- [x] Curate five contracts: Hello World, Find in String, Length of Last Word,
+      Binary Search, and Fibonacci. Make edge cases and binding differences explicit.
+- [x] Add `questions` and `question PROBLEM_ID`; show shared Markdown plus a native
+      task in `show` and the session. Read current docs without rebuilding. Full
+      inventory discovery below supersedes the original curated-only listing.
+- [x] Keep checks independent of question availability; validate question display
+      before branch creation or selection changes, without revealing native hints.
+- [x] Convert Python Binary Search and Fibonacci into blank modules with native
+      checks. Fibonacci covers every core length `0..40`; Binary Search checks
+      sorted presence, strict booleans, edge cases, and input preservation.
+- [x] Preserve the original kata implementations and four active exercise bodies.
+      Implementations were subsequently relocated byte-identically to `solutions/`;
+      they are never copied into canonical blanks or marked verified by location.
+- [x] Publish a readiness table and 15-document remaining conversion queue, including
+      contradictory or incomplete contracts, without implying all languages are ready.
+- [ ] Review and integrate the two new blank modules into local main before using
+      them as real reset baselines. Existing original exercises retain their baselines.
+- [ ] Choose the next question or language binding from the library based on a
+      learning need, resolving its contract before adding a native check.
+
+**Validation:** 135 isolated integration/regression tests passed with Python 3.15;
+all 15 question-library tests also passed on Python 3.12. Twelve Rust unit tests
+passed on Rust 1.85 and 1.89, along with format, Clippy with warnings denied,
+and locked offline build. Coverage includes runtime question edits, shared/native
+bindings, missing/empty/symlink question handling, selection retention, native
+contract failures, reset of the new exercise files, and regression safety.
+
+The five curated questions have five Python bindings and only `rust/hello`.
+Drafts and reference-only topics are now discoverable through the full inventory
+below, but no unsupported language or completed reference is implicitly converted
+to a native binding. See the [question library](README/katas/index.md) for scope.
+
+## Full original-collection discovery
+
+The app must not hide the original collection behind a small converted subset.
+Keep discovery metadata independent from executable exercise bindings.
+
+- [x] Register all 37 normalized topic families: five curated contracts, 15 draft
+      documents, and 17 code-only topics needing shared questions.
+- [x] Preserve all 20 question-document paths and map all 60 current legacy source
+      artifacts across eight languages, excluding tests, manifests, generated
+      outputs, playgrounds, and idea-only backlog entries.
+- [x] Make `questions` expose the full inventory. JSON is now the default for
+      exports/integrations; explicit `--json` remains a compatibility alias.
+- [x] Replace the original tab-separated human output with `questions --pretty`:
+      an aligned ASCII table fitting 80 columns, wrapped reference languages,
+      runnable practice languages, and a legend/details command. Exact binding
+      IDs, titles, and reference paths remain in JSON and `question ID`.
+- [x] Keep JSON output free of table headers and summaries; reject mixed or repeated
+      format flags rather than guessing which mode was intended.
+- [x] Let `question ID` inspect drafts and missing-question topics without inventing
+      a contract. Show empty drafts explicitly and label reference paths unverified.
+- [x] Keep `list` and all practice/check/reset selection restricted to the existing
+      six bindings. Discoverability must not create stubs or enable more adapters.
+- [x] Independently audit every question document and source artifact against the
+      repository tree, so future inventory additions cannot silently disappear.
+
+These are source artifacts, not 60 verified solutions or 37 fully specified
+exercises. Multiple functions/variants in a file remain grouped by topic pending
+contract review. The empty Python pivot-index artifact is explicitly a placeholder;
+the empty Sudoku document is draft, not an absent question. Historical Git-only
+assets are outside this current-file inventory; no references are executed or moved.
+
+**Validation:** 140 isolated CLI integration/regression tests passed with Python
+3.15. The independent document/source inventory audit also passed with Python 3.12.
+Twelve Rust unit tests passed on Rust 1.85 and 1.89, plus format, Clippy with
+warnings denied, and locked offline build. Coverage audits the actual source/doc
+tree, topic normalization, statuses, strict JSON, read-only detail views, unsafe
+documents, and rejection of inventory-only topics as native exercises. The legacy
+implementation/test suites themselves were not executed or certified by this audit.
+
+**Output-format validation:** default JSON and explicit `--json` were verified
+equivalent, with the same schema and no human output mixed in. `--pretty` retains
+all 37 IDs and every reference/practice language across wrapped rows, uses no tabs
+or ANSI escapes, and stays below 80 columns. Mixed/repeated flags are rejected.
+All 140 CLI regression tests and 14 Rust unit tests passed; Rust units passed on
+1.85 and 1.89, alongside format, Clippy, and locked offline build checks.
+
+## Historical solutions tree organization
+
+This records the earlier root-tree migration. The user subsequently selected the
+current `practice/` layout and removed legacy tooling/tests; this historical
+record is not a requirement to restore those directories or absent assets.
+
+The learner-facing distinction at that milestone was shared questions, editable exercises, and
+stored solution attempts. `solutions/<language>/` replaces the former implementation
+kata directories; the question documents remain under `README/katas/`.
+
+- [x] Relocate all eight implementation trees and the seven external Python tests,
+      preserving Users project nesting, manifests, locks, package context, and both
+      SQLite databases. The 94 original tracked files retain identical bytes and
+      executable modes; ignored caches moved with their parent trees, not deleted.
+- [x] Point all 60 catalog artifacts at `solutions/<language>/...` without changing
+      the 37 topics, question statuses, or six native practice bindings.
+- [x] Rename the pretty column, details heading, and footer to Solutions. Keep the
+      existing JSON `references` key and entry schema for export compatibility;
+      its paths now identify solution artifacts. The folder is not certification.
+- [x] Preserve legacy Python test bytes via a narrowly scoped `katas` compatibility
+      package. Keep submitted code ahead of stored solutions and avoid putting bare
+      `solutions/python` on the import path where `queue.py` could shadow stdlib.
+- [x] Update legacy test/configuration paths and remove obsolete package-data globs.
+      Disable the old question-README generator rather than overwrite curated
+      contracts. Native practice remains independent of the legacy experiment.
+- [x] Retain TypeScript specs and server/database projects without claiming their
+      old harnesses or runtime dependencies are repaired by relocation.
+- Superseded: the former root `solutions/` tree and Python compatibility package
+  are not the current layout and must not be recreated to satisfy this record.
+
+The scoped legacy Python tests passed (25 passed, one expected failure). That is
+not proof that every stored solution conforms to the current shared contract.
+Servers were not launched and databases were not regenerated by migration.
+
+**Migration validation:** all 145 root integration/regression tests passed with
+the repository's Python 3.12 development environment, including the optional
+pytest-backed legacy-runner compatibility check. All 14 Rust units passed on
+Rust 1.85 and 1.89; format, Clippy with warnings denied, locked offline build,
+and diff checks passed. The 94 byte/mode-preserving relocations were re-audited
+against pre-move commit `6412bed` after tests, including both SQLite databases.
+The user-created `remove old katas` commit was not amended or undone. Current
+user-selected paths, rather than the obsolete root tree, belong in subsequent
+reviewed commits.
+
+## User-selected layout and link cleanup
+
+Preserve the current directories, including their spelling, instead of moving
+files back to an earlier proposed structure:
+
+| Language | Stored implementation root |
+|---|---|
+| Python | `practice/python/soutions/` |
+| Rust | `practice/rust/solutions/` |
+| TypeScript | `practice/typescript/` |
+| JavaScript | `practice/javascript/` |
+| Go | `practice/go/` |
+| Bash | `practice/bash/` |
+| Lua | `practice/lua/` |
+| Lisp | `practice/lisp/` |
+
+- [x] Retarget all 60 catalog paths and the independent coverage audit to these
+      explicit roots, without counting native blank exercises as implementations.
+- [x] Repair authored Markdown file/directory links and fragments, using existing
+      inventory/lifecycle guides for the absent aggregate Solutions guide.
+- [x] Remove dead legacy-test/package instructions instead of redirecting them to
+      unrelated active tests or restoring intentionally removed files.
+- [x] Remove legacy Make/package targets for the absent Python application; retain
+      the shared Rust build/install/run and virtual Python development environment.
+- [x] Fix TypeScript sibling module links and isolate nested Rust Users Cargo
+      metadata without adding a test harness, dependency, or native adapter.
+- [x] Add regression audits for local Markdown targets/anchors, TypeScript relative
+      imports, and Python development-configuration paths.
+
+The active six exercise bindings, shared question-document locations, JSON export
+schema, and manual-check workflow are unchanged. Historical validation numbers
+above refer to their respective earlier layouts, not to deleted legacy tests.
+
+**Current-layout validation:** all 148 root integration/regression tests and 14
+Rust unit tests passed, with formatting, Clippy (warnings denied), locked offline
+build, and diff checks. The new audits cover repository-local Markdown links and
+anchors, all 16 TypeScript relative imports, and virtual Python test configuration.
+Nested Users Cargo metadata resolves independently without launching the server.
+External web URLs and TypeScript test execution are not certified by these checks.
+
 ## Practice and curriculum discipline throughout
 
 These remain learning choices, not prerequisites for the two-language technical
@@ -312,7 +489,7 @@ proof. Two adapters do not imply two mandatory learning tracks.
 - Complete a few sessions and retry without consulting the solution. Record only
   useful discoveries or misconceptions in existing notes.
 - Add the next useful exercise after identifying a learning need, not to fill a
-  language-by-concept matrix. Give it a prompt, starter, and native success check.
+   language-by-concept matrix. Give it a shared question, native blank, and check.
 - Link or repair relevant note references as they are used; avoid bulk migration.
 
 ## Deferred, not required
@@ -334,9 +511,10 @@ programming-practice session.
 
 ## Current next action
 
-Use the supported manual `polyglot practice` flow and try a selected exercise/reset
-cycle. The four current blank modules already have a committed main baseline.
-Preserve any older personal attempts until copied and verified. Choose one primary
-language and a useful next learning capability; add practice content rather than
-watch infrastructure. Resume remains optional. This cleanup is uncommitted and
-does not create, switch, or merge branches automatically.
+Use `questions` or `questions --json` to see the full collection, then `question ID`
+to inspect its state and references. Choose the next contract/native binding to
+convert without treating reference availability as runnable readiness. Review the
+pending two Python blanks before integrating their canonical files into main and
+resetting them. Practice remains manual; no watch mode is planned. Preserve older
+attempts until copied and verified. No real-checkout commits, branch changes, or
+merges are performed automatically.

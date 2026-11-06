@@ -6,6 +6,10 @@
 
 This implements the shared practice workflow and a line-based session.
 Python and Rust share prompt/hint presentation, navigation, and check orchestration.
+The [full question/reference inventory](katas/index.md) registers 37 topic families:
+five curated, 15 draft, and 17 missing questions. Its 20 documents and 60 unverified
+legacy source artifacts across eight languages are discoverable, but only five
+Python bindings and one Rust binding are runnable. Discovery adds no native adapters.
 Manual checks are intentional: save, then explicitly check. There is no auto-run
 on save or automatic advancement; watch mode is neither implemented nor planned.
 `polyglot` is the only supported practice CLI. The root Python prototype and
@@ -21,9 +25,6 @@ See [Exercise lifecycle](exercises.md) and
 its exercise path in local `refs/heads/main`. New or uncommitted exercise paths
 are not a baseline; reset fails safely until they are integrated. There is no
 working-tree, learner-HEAD, or legacy-starter fallback, and no automatic commit.
-All four current blank files already have this committed baseline on local main;
-no additional baseline commit is needed for them. Newly authored files still need
-reviewed integration into main before reset can restore them.
 
 ## Build
 
@@ -52,14 +53,17 @@ polyglot practice
 
 Like the other local development tools, this builds the **debug** binary and
 installs it with executable permissions as `~/.local/bin/polyglot`, replacing an
-existing installed copy. `make install-dev` is an alias; neither target installs
-the unrelated experimental `pylearn` package. `make install-python` installs that
-package, not the retired root prototype or the active practice CLI.
+existing installed copy. `make install-dev` is an alias. The former Python
+runtime package and `pylearn` command are removed; Python configuration is only
+development/test tooling.
 
 The install target creates the destination directory if needed, but does not
 change PATH. If it is not on PATH, invoke `~/.local/bin/polyglot` directly.
 Rerun `make install` after source changes; the installed binary is a copy, not a
 symlink. It uses the build checkout as its default root even when run elsewhere.
+Shared question Markdown is read from the selected checkout at runtime: edits on
+its current branch appear without rebuilding. Static problem metadata, bindings,
+and native-signature prompts require a rebuild and reinstall.
 
 Both paths can be overridden (including paths containing spaces):
 
@@ -74,12 +78,18 @@ This is a local development install, not release packaging.
 
 ## API / Interfaces
 
-### List, start, check
+### Questions, bindings, start, check
 
 ```sh
 ./target/debug/polyglot list
 ./target/debug/polyglot list --language python
 ./target/debug/polyglot list --language rust
+./target/debug/polyglot questions --pretty
+./target/debug/polyglot question binary-search
+./target/debug/polyglot question boggle
+./target/debug/polyglot question stack
+./target/debug/polyglot question two-sum
+./target/debug/polyglot show python/binary_search
 
 ./target/debug/polyglot practice python/hello
 ./target/debug/polyglot practice rust/hello
@@ -91,13 +101,57 @@ switch branches. It validates and displays an existing **Exercise file:**; it
 does not copy a template or launch an editor. A missing exercise requires reset
 from the committed-main baseline. Standalone `check` never initializes an attempt.
 
-The other Python IDs are `python/find_in_string` and
-`python/length_of_last_word`. `check python` and `check rust` check a whole track.
-Python uses independent `practice/python/exercises/{hello,find_in_string,length_of_last_word}.py`
-modules and corresponding `tests/test_*.py` files. Rust uses
+Python's track order is `python/hello`, `python/find_in_string`,
+`python/length_of_last_word`, `python/binary_search`, `python/fibonacci`.
+`check python` checks all five native tests; `check rust` checks its one binding.
+Python uses independent `practice/python/exercises/<ID suffix>.py` modules and
+corresponding `tests/test_*.py` files. Rust uses
 `practice/rust/exercises/hello.rs`, imported by `checks.rs`. Selecting another
-exercise does not reset your work. Track READMEs document the contracts; the CLI displays each exercise's
-prompt and hint from its catalog metadata.
+exercise does not reset your work. Track READMEs link to the authoritative shared
+questions and document native APIs/commands; the CLI reads full question Markdown
+and adds the selected native task. Hints remain separate static binding metadata.
+
+`questions [--json | --pretty]` inventories all 37 stable problem IDs. The default
+and the retained explicit `--json` alias emit only a JSON array on stdout, with no
+human header, footer, or totals. The metadata schema is unchanged: each object has `id`, `title`,
+`question_status` (`curated`, `draft`, `missing`), nullable `question_doc`,
+`references` (objects with `language`, `path`, nullable `note`), and `bindings`
+(exercise-ID strings). Document and reference paths remain repository-relative.
+Solution paths use the mixed `practice/` roots in the [inventory](katas/index.md). The legacy export key
+`references` is retained for compatibility, not verification; no `solutions`
+alias field is added. Internal reference metadata types remain unchanged.
+
+`questions --pretty` selects a human-readable ASCII table, **not pretty-printed
+JSON**. It fits within 80 columns and has no duplicate `Title` column:
+
+| Column | Meaning |
+|---|---|
+| `Problem ID` | Stable problem ID |
+| `Question` | `curated`, `draft`, or `missing` status |
+| `Solutions` | Unverified implementation languages, wrapped in the same 18-character column |
+| `Practice` | Runnable native languages, e.g. `python, rust`; `-` means not converted |
+
+The footer reports 37 topics, 20 docs, 60 solution artifacts, and six native
+bindings. Its legend
+distinguishes unverified solution languages from runnable native practice and
+points to JSON or `question ID` for details. Titles, exact binding IDs, and full
+reference source paths remain available there rather than in the compact table.
+No format flags may be mixed or repeated: `--json --pretty`, `--json --json`, and
+`--pretty --pretty` are invalid (Blocked, exit `2`), as are unknown flags or extra
+arguments. The selected format does not change catalog contents or native behavior.
+
+For machine export (examples only):
+
+```sh
+polyglot questions > /tmp/polyglot-questions.json
+polyglot questions --json
+```
+
+Hyphenated problem IDs are distinct from qualified exercise IDs such as
+`python/binary_search`. `list`, `practice`, `start`, `check`, `reset`, `hint`, and
+`show` remain restricted to the six active bindings (or supported track targets).
+Guessing `python/stack` or `python/boggle` is blocked without writes or branch
+mutation. Existing `README/katas/` filenames remain unchanged for link stability.
 
 The catalog is deliberately built in. It describes exercise IDs and native check
 selectors separately from workspace mappings. There is currently one workspace
@@ -117,8 +171,9 @@ workspace within one language is needed, not through a plugin framework now.
 
 Without a target, choose `python`/`rust` or `1`/`2` at the language menu. Quit or
 EOF before selection creates no file or branch. Entering a session validates the
-selected exercise, preserves existing work, and displays the exercise, position,
-exercise file, and task. Hints appear only when requested.
+selected exercise and its shared document before automatic branching, preserves
+existing work, and displays the exercise, position, file, problem ID, question
+file, full shared Markdown, and native language task. Hints appear only when requested.
 
 Edit and save the displayed file in your own editor. The session does not open an
 editor, monitor saves, or automatically run checks.
@@ -127,7 +182,7 @@ editor, monitor saves, or automatically run checks.
 |---|---|
 | Enter, `check`, `c` | Check the selected exercise; stay on it |
 | `hint`, `h` | Show a hint, not a full solution |
-| `prompt` | Repeat the task |
+| `prompt` | Reread and display the full shared contract plus native language task |
 | `reset`, `r` | Confirm reset of only the selected exercise from committed main |
 | `next`, `n` | Recheck current source; advance only if it passes |
 | `previous`, `p` | Move back without requiring a pass |
@@ -151,15 +206,26 @@ or used to invalidate that running result. Finish editing and save before checki
 or resetting; do not edit while either operation is running. Optional persisted
 resume would be considered only if needed, not as a prerequisite for retirement.
 
-## Read a prompt or hint without starting
+## Read a question, binding, or hint without starting
 
 ```sh
+./target/debug/polyglot questions --pretty
+./target/debug/polyglot question find-in-string
 ./target/debug/polyglot show python/find_in_string
 ./target/debug/polyglot hint rust/hello
 ```
 
-These commands do not create attempts or launch language tools. `show` displays
-the task and exercise path without revealing the hint; `hint` displays only the hint.
+`question PROBLEM_ID` accepts any registered topic and prints its metadata,
+bindings, and unverified paths under a `Solutions` heading. Curated topics show the full contract;
+drafts show a warning and legacy body, or an empty-draft notice with success.
+Missing-question topics show metadata and paths without a fabricated `Prompt:`
+or an error. A declared document that is missing, unreadable, non-UTF-8,
+symlinked, or a directory is Blocked (`2`), including for drafts.
+It requires neither Git nor a language workspace or toolchain and performs no
+writes. References are never read, imported, or executed. `show ID` displays the exercise path, `Problem:`
+ID, `Question file:`, `Prompt:` containing the full shared Markdown, and
+`Language task:` containing the selected native binding. Neither reveals a hint;
+`hint ID` displays only the hint. These commands do not start attempts or tools.
 
 ## Reset one exercise
 
@@ -226,7 +292,7 @@ blocked. Existing ignored legacy attempts remain intact.
 
 Session checks and navigation refuse to proceed if you externally switch to
 `main`. Hints, prompts, listing, and quitting remain available. Standalone
-list/show/hint/check are permitted on main and do not require Git.
+list/questions/question/show/hint/check are permitted on main and do not require Git.
 
 To add protection against direct exercise commits on main:
 
@@ -272,14 +338,22 @@ tools, creates environments, or downloads exercise dependencies automatically.
 
 ## Data Flow
 
-`model.rs` provides the static `Exercise` catalog (ID, file, language, title,
-prompt, hint, native selector). `workspace.rs` validates common inputs plus only
+`library.rs` provides `Problem { id, title, question_status, question_doc,
+references }` and the full `PROBLEMS` registry. `question_doc` is optional;
+references carry language/path/optional-note metadata, not native check selectors.
+`model.rs` re-exports library types and provides the static `Exercise` catalog (ID, file, language, typed
+`problem: &'static Problem`, native-signature prompt, hint, native selector).
+`workflow.rs` reads the registered question document at runtime for `question`,
+`show`, `start`, and sessions; it does not discover arbitrary Markdown files.
+`workspace.rs` validates common inputs plus only
 the selected exercise/harness. Python's `exercises/__init__.py` has no re-exports:
 broken or missing unselected sibling modules/tests do not block a selected check.
 For example, hello selects `tests.test_hello.PracticeTests.test_hello`.
 The Python adapter launches a fresh-source helper with a separate result report;
 Rust uses Cargo JSON and the selected libtest executable (`hello`). Checks do not
-trust learner stdout as a pass signal. The catalog does not discover new files.
+trust learner stdout as a pass signal. Metadata listing needs no root files, Git,
+or tools. The catalog is static, not runtime file discovery or a filesystem audit;
+editing Markdown does not automatically curate a draft or register a binding.
 
 ## Edge Cases
 
@@ -300,13 +374,20 @@ Rust outcome detection relies on Cargo JSON and stable libtest inventory/result
 text, not a universal diagnostic parser.
 
 - `start` validates an existing exercise and preserves it; it creates no file.
+- Missing, empty, unreadable/non-UTF-8, non-regular, or symlinked curated Markdown
+  blocks `question`, `show`, `start`, and session entry/navigation. Draft detail
+  permits empty bodies; a registered `None` document permits metadata-only detail.
+  Other declared-document errors still block draft detail. Validation
+  happens before automatic branching or committing a new selection. `list`,
+  `questions`, `hint`, and native checks do not require question documents.
 - `check` never initializes or resets an attempt. It may write normal Rust build
   artifacts, but locked checks do not update source inputs or lockfiles.
 - Workspace symlinks and existing symlinks inside the isolated Rust build tree are
   rejected before native execution. This protects against existing path mistakes,
   not hostile concurrent filesystem replacement.
 - Learner code runs with your privileges. This is not a sandbox for untrusted packs.
-- General notes in Darkness are never loaded or edited by this proof.
+- General concept notes remain canonical in Darkness and are never loaded or
+  edited by the CLI; repository questions own exercise instructions.
 
 Direct native check commands remain in the [Python](../practice/python/README.md)
 and [Rust](../practice/rust/README.md) instructions.
@@ -326,12 +407,21 @@ The integration suite needs Python 3.11+ and Cargo on PATH. It runs the built
 binary fails with build instructions rather than silently skipping the suite.
 The fixtures are isolated temporary copies, with temporary Git repositories where
 needed, paths with spaces, and unrelated working directories. Active fixture
-selection and explicit solution cases live in `tests/active_fixture.py`; tests do
-not copy, reset, or check real local learner answers. Retired prototype tests are
-not part of the active suite and are not required for authoring validation.
+selection and explicit solution cases live in `tests/active_fixture.py`. Fixtures
+copy the curated shared Markdown and include all five Python solution cases;
+tests do not copy, reset, or check real local learner answers. Retired prototype
+tests are not part of the active suite or required for authoring validation.
 Unix-specific symlink/shim cases are skipped on other platforms. Runtime platform
-validation so far is macOS only; this is not a full test run of older projects
-under `src/`.
+validation so far is macOS only; this is not a full test run of the unverified
+collections under `practice/`. The old Python pytest files and compatibility
+bridge were removed, not replaced by the active native tests. See the
+[collection limits](exercises.md#collection-layout-and-execution-limits).
+
+`tests/test_library_inventory.py` independently compares the registry with all
+20 non-index question paths and 60 legacy source artifacts. Tests/specs, manifests,
+generated files, playgrounds, and the ideas backlog are not cataloged solution artifacts.
+New in-scope source additions fail the coverage audit until registered; this audit
+does not execute or validate legacy solutions.
 
 ## Scope and deferrals
 
@@ -347,8 +437,11 @@ not a general platform, remain the scope.
 ## Related files
 
 - [Exercise authoring and preservation](exercises.md)
+- [Shared question library and conversion queue](katas/index.md)
+- [Collection layout and execution limits](exercises.md#collection-layout-and-execution-limits)
 - [Python track](../practice/python/README.md), [Rust track](../practice/rust/README.md)
-- [Catalog](../cli/src/model.rs), [workspace validation](../cli/src/workspace.rs),
+- [Full inventory](../cli/src/library.rs), [native bindings](../cli/src/model.rs),
+  [inventory audit](../tests/test_library_inventory.py), [workspace validation](../cli/src/workspace.rs),
   [workflow](../cli/src/workflow.rs), [session](../cli/src/session.rs)
 - [Git policy/baseline](../cli/src/git.rs), [reset](../cli/src/reset.rs),
   [native filesystem backend](../cli/src/reset/native.rs)

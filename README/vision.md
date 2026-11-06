@@ -13,10 +13,12 @@ Polyglot helps developers learn programming concepts by comparing them across di
 Learn a programming language the way you’d learn to speak:
 Start simple, practice often, and gradually embrace nuance and style.
 
-Read more in the [Philosphy](#Philosophy) section.
+Read more in the [Philosophy](#philosophy) section.
 
 ## Contents
-Each language in this repository includes the following sections:
+The earlier proposal included these sections. Scripts, playgrounds, and platform
+code have since been removed; the linked proposal pages are historical, not
+current project setup guides:
 - [Katas](./katas/index.md): Build fluency through hands-on excercises
 - [Scripts](./scripts/index.md): Explore workflows and short real-world examples
 - [Polyglot Frontend](./polyglot-frontend.md): UI implementation of Polyglot
