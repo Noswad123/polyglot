@@ -96,7 +96,7 @@ pub fn check(
         let NativeCheck::Python(selector) = exercise.check else {
             return Err(Outcome::Blocked("invalid Python selector".into()));
         };
-        command.arg(selector);
+        command.arg(exercise.file).arg(selector);
     }
     let result = output(&mut command)?;
     diagnostics(&result);

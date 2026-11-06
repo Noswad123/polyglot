@@ -1,140 +1,117 @@
-# Python starter track
+# Python practice track
 
-[Home](../../README.md) · [Roadmap](../../ROADMAP.md)
+[Home](../../README.md) · [Roadmap](../../ROADMAP.md) · [Exercise lifecycle](../../README/exercises.md)
 
-Use the shared Rust CLI's `polyglot practice python` for branch-aware practice:
-it leaves clean main for a practice branch before preparing work. Direct native
-commands and the older Python prototype below do not enforce that policy; select
-a non-main branch yourself before using them. The current shared answer file is
-transitional; tracked independent `exercises/` modules and reset are next.
+## Overview
 
-Three small exercises to establish a repeatable practice loop. They adapt existing
-katas without changing their reference solutions. Use Python 3.11+; no package
-installation, virtual environment, database, or Polyglot CLI is required.
+Three independent, tracked `exercises/` modules provide a small practice loop.
+Use Python 3.11+; native checks need no package installation, virtual environment,
+database, or CLI. Keep `main` pristine and edit exercises on a practice branch.
+`polyglot practice python` creates a unique branch from clean `main`, or reuses
+your non-main branch; dirty `main` is refused without stashing anything.
 
-All commands below run from the repository root. `python3 --version` checks your
-interpreter; an existing `.venv/bin/python` can also replace `python3`.
+**Reset prerequisite:** the reviewed canonical blank module must already be
+committed at its exercise path in local `refs/heads/main`. New or uncommitted
+paths are not a baseline. Neither `start` nor `reset` invents a missing exercise
+or copies a legacy starter; reset fails safely until the baseline is available.
 
-## Optional CLI shortcuts
+## API / Interfaces
 
-The repository-local CLI wraps the same workflow:
+| CLI ID | Exercise file under `practice/python/` | Function |
+|---|---|---|
+| `python/hello` | `exercises/hello.py` | `hello() -> None` |
+| `python/find_in_string` | `exercises/find_in_string.py` | `find_in_string(string: str, substring: str) -> int` |
+| `python/length_of_last_word` | `exercises/length_of_last_word.py` | `length_of_last_word(text: str) -> int` |
 
-```sh
-python3 polyglot.py list --language python
-python3 polyglot.py start python/hello
-# Edit practice/python/answers.py, then:
-python3 polyglot.py check python/hello
-```
+- **Hello:** print exactly `Hello, World!` and a newline; return `None`.
+- **Find in String:** return the zero-based first occurrence, or `-1` if absent.
+  Matching is case-sensitive; built-in operations are allowed. An empty substring
+  matches at `0`, including in an empty string. Examples: `("banana", "ana") → 1`,
+  `("abc", "z") → -1`, `("abc", "") → 0`.
+- **Length of Last Word:** return the length of the final whitespace-separated
+  word, ignoring surrounding whitespace. Spaces, tabs, and newlines separate
+  words; empty/whitespace-only text returns `0`. Punctuation counts as part of a
+  word. Examples: `"Hello World" → 5`, `"hello world!" → 6`, `" \t\n" → 0`.
 
-Use `python/find_in_string` or `python/length_of_last_word` for the other exercises,
-or `python3 polyglot.py check python` for the whole track. All three exercises share
-one answer file. Selecting another exercise preserves your current answers.
+## Data Flow
 
-`start` prints the answer and prompt paths. `check` never initializes or resets
-answers; if they are missing, it tells you how to start. Checks use the same Python
-interpreter as the CLI and stop on the first failure. A failed test returns exit
-code 1; invalid input or a missing attempt returns exit code 2.
+The shared Rust CLI selects a static catalog entry, validates the workspace and
+selected files, and displays **Exercise file:**. `start` only selects an existing
+file; it does not copy a template or launch an editor. Edit and save that module,
+then check it. Each test imports only its corresponding exercise and shared
+`tests/feedback.py`. `exercises/__init__.py` has no re-exports, so a broken or
+missing unselected sibling does not block a selected check.
 
-The direct commands below remain an alternative; no CLI installation is required.
+The CLI's hello selector is `tests.test_hello.PracticeTests.test_hello`; the other
+selectors follow the same per-module/per-method naming. Track checks select all
+three exercises. Native unittest commands below run the same contracts directly.
 
-## Start an attempt
+## Example usage
 
-```sh
-cp -n practice/python/starter.py practice/python/answers.py
-```
-
-Edit **`practice/python/answers.py`**, not the starter or tests. `cp -n` leaves an
-existing attempt alone. Answers are ignored by Git so a personal attempt does not
-replace the shared blank starter. Save a separate copy if you want to keep an
-attempt's history; ignored answers are not backed up by commits.
-
-The starter functions raise `NotImplementedError` deliberately. A failing check is
-the starting point, not a broken installation. Run one exercise at a time so that
-unfinished later exercises do not distract you.
-
-## 1. Hello World
-
-Implement `hello() -> None`.
-
-- Print exactly `Hello, World!` followed by a newline.
-- Return `None`.
+From the repository root, after building/installing the [shared CLI](../../README/rust-cli.md):
 
 ```sh
-python3 -m unittest discover -s practice/python -p test_exercises.py -k hello -v
+polyglot list --language python
+polyglot practice python/hello
+# Edit practice/python/exercises/hello.py; Enter checks in the session.
 ```
 
-This is primarily a setup check. If it is familiar, finish it quickly and move on.
-
-## 2. Find in String
-
-Implement `find_in_string(string: str, substring: str) -> int`.
-
-- Return the zero-based index of the first occurrence.
-- Return `-1` if no match exists.
-- An empty substring matches at index `0`, including in an empty string.
-- Matching is case-sensitive. Built-in string operations are allowed.
-
-Examples: `("banana", "ana") → 1`, `("abc", "z") → -1`, `("abc", "") → 0`.
+On an existing non-main branch, the one-shot alternative is:
 
 ```sh
-python3 -m unittest discover -s practice/python -p test_exercises.py -k find_in_string -v
+polyglot start python/hello
+polyglot check python/hello
+polyglot check python
 ```
 
-## 3. Length of Last Word
-
-Implement `length_of_last_word(text: str) -> int`.
-
-- Return the length of the final whitespace-separated word.
-- Ignore leading and trailing whitespace. Spaces, tabs, and newlines separate words.
-- Empty or whitespace-only input returns `0`.
-- Punctuation remains part of a word; this is not natural-language parsing.
-
-Examples: `"Hello World" → 5`, `"  fly me to the moon  " → 4`, `" \t\n" → 0`.
+For native commands, select a practice branch yourself: unittest does not enforce
+the branch policy. From `practice/python` run one module at a time:
 
 ```sh
-python3 -m unittest discover -s practice/python -p test_exercises.py -k length_of_last_word -v
+python3 -B -m unittest tests.test_hello
+python3 -B -m unittest tests.test_find_in_string
+python3 -B -m unittest tests.test_length_of_last_word
 ```
 
-## Check the whole track
+From the repository root, check the whole track:
 
 ```sh
-python3 -m unittest discover -s practice/python -p test_exercises.py -v
+python3 -B -m unittest discover -s practice/python/tests -t practice/python -v
 ```
 
-Each of the three test methods checks the exercise contract; the string exercises
-include multiple cases. All three should pass after completing the track.
+An existing `.venv/bin/python` can replace `python3`. Blank functions deliberately
+fail until implemented. After the committed-main prerequisite above is met, retry
+only one exercise with `polyglot reset python/hello`, or `reset`/`r` in its session.
+Read the [backup and recovery contract](../../README/exercises.md#edge-cases)
+before resetting; keep both printed backup and recovery paths.
 
-## Retry without losing other work
+## Edge Cases
 
-1. Save a copy of your answers if you want to preserve the attempt.
-2. Replace only the function you want to retry with its body from `starter.py`.
-3. Attempt it again without consulting the previous solution.
-4. Run that exercise's check.
+`check` never initializes or resets source. Finish editing and save before checking
+or resetting; do not edit during either operation. There is no watch mode.
+A missing selected file requires restoration from the committed-main baseline,
+not automatic starter copying. A selected check still requires its common package
+and feedback files and its own test harness.
 
-Do not copy the entire starter over an existing answer file unless you intend to
-discard every answer. There is no automated destructive reset command.
+Legacy `starter.py`, `test_exercises.py`, and ignored `answers.py` (including any
+user implementation) remain untouched for compatibility and preservation. They
+are not imported or used by the shared Rust CLI. The older `python3 polyglot.py`
+workflow remains a separate prototype, not the active workflow above. Nothing has
+automatically migrated learner solutions; see the [manual preservation steps](../../README/exercises.md#preserve-an-older-attempt).
 
-## Connect practice to notes
+## Related files
 
-Use the existing programming concept notes in Darkness, particularly
+- [Catalog and selectors](../../cli/src/model.rs), [Python adapter](../../cli/src/adapters/python.rs)
+- [Tests](tests/), [exercise modules](exercises/)
+- Reference implementations: [Hello World](../../src/python/katas/hello_world.py),
+  [Find in String](../../src/python/katas/find_in_string.py),
+  [Length of Last Word](../../src/python/katas/length_of_last_word.py). Compare only
+  after attempting. The older `lengthOfLastWord` splits on literal spaces, unlike
+  this track's general-whitespace contract; the older search module prints a demo
+  when imported. Active tests do not import those references.
+
+For concept notes, use existing Darkness programming notes under
 `autodactyl/computer-science/software/theoretical-computation/programming-concepts/`.
-The `function-definition`, `print-to-console`, and `string-interpolation` notes
-are possible starting references; add only insights that belong there.
-
-Keep the current learning focus and next action in an existing programming hub.
-No note metadata, progress status, or synchronization step is needed to run checks.
-
-## Compare only after attempting
-
-Existing implementations are references, not necessarily solutions to every edge
-case in this track:
-
-- [Hello World](../../src/python/katas/hello_world.py)
-- [Find in String](../../src/python/katas/find_in_string.py)
-- [Length of Last Word](../../src/python/katas/length_of_last_word.py)
-
-The older last-word function is named `lengthOfLastWord` and separates words using
-literal spaces. This track uses the Python-style name `length_of_last_word` and an
-explicit general-whitespace contract. The older find-in-string module also prints
-a demonstration when imported. The starter checks import only your local answers,
-never those reference modules.
+`function-definition`, `print-to-console`, and `string-interpolation` are possible
+starting points. Keep focus/next actions in an existing programming hub; no note
+metadata, progress database, or synchronization is needed to practice.

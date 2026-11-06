@@ -108,6 +108,9 @@ dist
 .DS_Store
 **/target/
 
-# Local exercise attempts; committed starters and checks stay reusable.
+# Retained legacy attempts; active exercises/ modules are tracked by Git.
 /practice/python/answers.py
 /practice/rust/answers.rs
+
+# Private reset snapshots and retained original-file recovery artifacts.
+/.polyglot/

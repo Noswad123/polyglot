@@ -36,8 +36,10 @@ gates supersede the earlier sequencing without discarding the prototype.
 The Git ownership decision is recorded in
 [ADR 0002](README/decisions/0002-pristine-main-practice-branches.md): main is
 canonical and learner work belongs on another branch. This reprioritizes tracked
-per-exercise files and reset ahead of watch mode. Existing shared answer files
-remain transitional and are not silently migrated.
+per-exercise files and reset ahead of watch mode. The Rust CLI now uses independent
+tracked exercise modules and explicit reset; legacy shared answer files are
+retained untouched, not automatically imported. Canonical baseline commits still
+require user review and integration into main.
 
 ## Ownership boundaries
 
@@ -181,7 +183,8 @@ That validation covered the non-interactive proof, not a full-repository test ru
 - [x] Add prompt/hint presentation and next/previous selection through shared
       session policy; adapters do not control navigation.
 - [x] Demonstrate select → edit → check → hint → next in both languages.
-- [ ] Add watching as a separate increment, accounting for shared answer files and
+- [ ] Add watching as a separate increment, accounting for selected exercise files,
+      shared package/harness files, and
       relevant test/config inputs rather than assuming one file per exercise.
 - [ ] Cancel or supersede old runs safely; do not display stale success after an
       edit or a change of selected exercise.
@@ -218,19 +221,28 @@ Deliver Git safety first, then migrate the files without losing attempts.
       branch changes. Keep standalone inspection/checks usable on main.
 - [x] Add an explicit opt-in staged-exercise commit guard without overwriting
       existing hooks or changing Git configuration.
-- [ ] Migrate to independent tracked modules under `practice/<language>/exercises/`
-      and independent test imports; remove the learner-facing starters/answers split.
-- [ ] Preserve existing answer implementations during migration, keeping them out
-      of the pristine baseline and avoiding silent deletion or overwrite.
-- [ ] Specify the canonical revision/reset policy and implement per-exercise reset
-      with confirmation, backup, and no index/unrelated-file changes.
-- [ ] Validate blank main versus edited practice branches and reset behavior before
-      introducing watchers for the new layout.
+- [x] Implement independent modules under `practice/<language>/exercises/` and
+      selected test imports; remove the active starters/answers split. The new
+      canonical files need a reviewed authoring commit before main can supply them.
+- [x] Preserve existing shared answer implementations untouched, keeping them out
+      of the pristine baseline; document explicit manual copying without guessing
+      at shared imports/helpers or deleting the original files.
+- [x] Specify reset against a pinned regular-file blob from strict local
+      `refs/heads/main`, with object replacements disabled, confirmation, private
+      snapshot backup and lasting original-inode recovery, and no index changes.
+- [x] Validate blank main versus edited practice branches and reset behavior in
+      isolated committed fixtures, including late saves and staged content.
+- [ ] Review/integrate the new canonical blank files into real local main, then
+      try the updated layout/reset in practice before adding watch mode.
 
 **Scope limit:** CLI guards apply to the shared Rust entry point. Editors and the
 retained Python prototype do not gain filesystem protection; local hooks are
 optional and bypassable. Remote main-branch rules are owner-managed separately.
-No layout migration or reset command is included in the branch-safety increment.
+The initial branch-safety increment did not migrate layout or add reset. The next
+increment now implements both while preserving the legacy files. `start` only
+validates existing tracked files. Unsupported reset platforms/filesystem primitives
+block rather than using an unsafe overwrite fallback; macOS is runtime-tested,
+Linux is implemented but not yet runtime-tested.
 
 **Validation:** 100 isolated Python 3.15 integration/regression tests passed,
 including 22 branch-policy, 15 hook, and four hostile-Git-context fixture-isolation
@@ -239,6 +251,15 @@ offline build passed. No branches, hooks, configuration, index entries, or commi
 were changed in the real checkout by those tests; fixture commits use temporary
 repositories and isolated Git configuration.
 The 22 branch, 15 hook, and four isolation tests also passed with Python 3.12.11.
+
+**Independent-file/reset validation:** 130 integration/regression tests passed
+on Python 3.15, including 29 reset cases; those reset cases also passed on Python
+3.12.11. Eleven Rust unit tests passed on Rust 1.85 and 1.89. Deterministic native
+tests cover conditional installation, late editor writes through held descriptors,
+retained recovery inodes, directory redirects, and private permissions. Format,
+Clippy with warnings denied, and locked offline build passed. Legacy attempts in
+this checkout were not modified. Platform runtime coverage is macOS; Linux reset
+runtime validation remains open. The new blanks are not committed automatically.
 
 ## Phase 4 — Add minimal local resume behavior
 
@@ -300,8 +321,9 @@ programming-practice session.
 
 ## Current next action
 
-Phases 1, 1b, and the Phase 2 proof gate are complete; Phase 3 prompt/hint/navigation
-and the branch guard are implemented. Next migrate to tracked per-exercise files
-and safe reset with main as the pristine baseline. Watch mode follows that layout
-gate, including config invalidation and superseded-run handling. Do not introduce
-persisted progress or retire the prototype before their later gates pass.
+The branch guard, independent exercise layout, and explicit reset are implemented.
+Review the canonical blank files on an authoring branch and integrate them into
+local main so reset has a committed source; the CLI intentionally has no fallback
+for new files absent from main. Preserve legacy attempts until manually copied and
+verified. Then try a real reset session before watch mode, config invalidation,
+and superseded-run handling. Persisted progress/prototype retirement remain gated.

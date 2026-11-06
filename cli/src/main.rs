@@ -1,6 +1,7 @@
 mod adapters;
 mod git;
 mod model;
+mod reset;
 mod session;
 mod workflow;
 mod workspace;
@@ -16,6 +17,7 @@ const HELP: &str = "polyglot [--root PATH] [--python PATH] [--cargo PATH] COMMAN
 Commands:
   list [--language python|rust]
   start ID
+  reset ID
   check ID|python|rust
   show ID
   hint ID
@@ -23,7 +25,8 @@ Commands:
 
 IDs: python/hello, python/find_in_string, python/length_of_last_word, rust/hello
 Global options must precede the command. --help shows this help.
-Start preserves existing answers. Check never creates answers.
+Start selects existing exercise files. Check never creates exercise files.
+Reset restores one exercise from committed main after confirmation.
 Start requires a non-main Git branch. Practice creates one from clean main.
 ";
 
@@ -106,7 +109,7 @@ fn run() -> Result<(), Outcome> {
             };
             session::run(&options.resolve()?, initial)
         }
-        "start" | "check" | "show" | "hint" => {
+        "start" | "reset" | "check" | "show" | "hint" => {
             if args.len() != 2 {
                 return Err(Outcome::Blocked(format!(
                     "usage: {command} {}",
@@ -124,6 +127,10 @@ fn run() -> Result<(), Outcome> {
             }
             let context = options.resolve()?;
             let language = exercises[0].language;
+            if command == "reset" {
+                reset::run(&context.root, exercises[0])?;
+                return Ok(());
+            }
             if command == "show" {
                 context.show(exercises[0], None);
                 return Ok(());

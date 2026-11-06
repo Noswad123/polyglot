@@ -1,11 +1,10 @@
-use std::fs::{self, OpenOptions};
-use std::io::{self, Write};
+use std::fs;
+use std::io;
 use std::path::{Component, Path, PathBuf};
 
-use crate::model::{Language, Outcome};
+use crate::model::{Exercise, Language, NativeCheck, Outcome};
 
-// Check every component, not just canonical containment: an in-root symlink can
-// otherwise redirect a later exclusive create or native tool invocation.
+// Check every component: even an in-root symlink can redirect a later write.
 pub fn safe_path(root: &Path, relative: &Path) -> Result<PathBuf, Outcome> {
     let mut path = root.to_path_buf();
     for component in relative.components() {
@@ -40,14 +39,18 @@ pub fn validate(root: &Path, language: Language) -> Result<PathBuf, Outcome> {
             directory.display()
         )));
     }
-    for name in [workspace.starter, workspace.answers, "README.md"]
-        .into_iter()
-        .chain(workspace.inputs.iter().copied())
-    {
+    for name in workspace.inputs {
         let path = safe_path(root, &Path::new(workspace.directory).join(name))?;
-        if name != "target" && path.exists() && !path.is_file() {
+        if *name == "target" {
+            if path.exists() && !path.is_dir() {
+                return Err(Outcome::Blocked(format!(
+                    "expected a directory: {}",
+                    path.display()
+                )));
+            }
+        } else if !path.is_file() {
             return Err(Outcome::Blocked(format!(
-                "expected a file: {}",
+                "required workspace file is missing or not regular: {}",
                 path.display()
             )));
         }
@@ -55,50 +58,38 @@ pub fn validate(root: &Path, language: Language) -> Result<PathBuf, Outcome> {
     Ok(directory)
 }
 
-pub fn prevalidate_start(root: &Path, language: Language) -> Result<(), Outcome> {
-    let directory = validate(root, language)?;
-    let workspace = language.workspace();
-    if !directory.join(workspace.answers).is_file() {
-        let starter = directory.join(workspace.starter);
-        fs::read(&starter)
-            .map_err(|error| Outcome::Blocked(format!("{}: {error}", starter.display())))?;
+pub fn prevalidate_start(root: &Path, exercise: &Exercise) -> Result<(), Outcome> {
+    validate(root, exercise.language)?;
+    let relative = Path::new(exercise.language.workspace().directory).join(exercise.file);
+    let path = safe_path(root, &relative)?;
+    if !path.is_file() {
+        return Err(Outcome::Blocked(format!("exercise file is missing or not regular: {}. Use `polyglot reset {}` after committing a reviewed pristine exercise on main first.", path.display(), exercise.id)));
+    }
+    if let NativeCheck::Python(selector) = exercise.check {
+        let module = selector.rsplit_once(".PracticeTests.").unwrap().0;
+        let harness = format!("{}.py", module.replace('.', "/"));
+        let path = safe_path(
+            root,
+            &Path::new(exercise.language.workspace().directory).join(harness),
+        )?;
+        if !path.is_file() {
+            return Err(Outcome::Blocked(format!(
+                "selected test harness is missing or not regular: {}",
+                path.display()
+            )));
+        }
     }
     Ok(())
 }
 
-pub fn start(root: &Path, language: Language) -> Result<(), Outcome> {
-    let directory = validate(root, language)?;
-    let workspace = language.workspace();
-    let answer = directory.join(workspace.answers);
-    if answer.is_file() {
-        println!("Preserved {}", answer.display());
-        return Ok(());
-    }
-    let starter = directory.join(workspace.starter);
-    let bytes = fs::read(&starter)
-        .map_err(|error| Outcome::Blocked(format!("{}: {error}", starter.display())))?;
-    match OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&answer)
-    {
-        Ok(mut file) => {
-            file.write_all(&bytes)
-                .map_err(|error| Outcome::Blocked(format!("{}: {error}", answer.display())))?;
-            println!("Created {}", answer.display());
-        }
-        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
-            validate(root, language)?;
-            if !answer.is_file() {
-                return Err(Outcome::Blocked(format!(
-                    "expected a file: {}",
-                    answer.display()
-                )));
-            }
-            println!("Preserved {}", answer.display());
-        }
-        Err(error) => return Err(Outcome::Blocked(format!("{}: {error}", answer.display()))),
-    }
+pub fn start(root: &Path, exercise: &Exercise) -> Result<(), Outcome> {
+    prevalidate_start(root, exercise)?;
+    println!(
+        "Exercise file: {}",
+        root.join(exercise.language.workspace().directory)
+            .join(exercise.file)
+            .display()
+    );
     Ok(())
 }
 

@@ -7,16 +7,17 @@ import traceback
 import types
 import unittest
 
-report_path, *selectors = sys.argv[1:]
-answer_path = Path("answers.py").resolve()
+report_path, *selected = sys.argv[1:]
+answer_paths = {Path(path).resolve() for path in selected[::2]}
+selectors = selected[1::2]
 
 
 def in_answer(error):
     _, exception, tb = error
     if isinstance(exception, SyntaxError):
-        return Path(exception.filename or "").resolve() == answer_path
+        return Path(exception.filename or "").resolve() in answer_paths
     while tb is not None:
-        if Path(tb.tb_frame.f_code.co_filename).resolve() == answer_path:
+        if Path(tb.tb_frame.f_code.co_filename).resolve() in answer_paths:
             return True
         tb = tb.tb_next
     return False
@@ -41,15 +42,28 @@ def load_source(name, path):
     module.__loader__ = spec.loader
     module.__package__ = spec.parent
     module.__cached__ = None
+    if path.name == "__init__.py":
+        module.__path__ = [str(path.parent)]
     sys.modules[name] = module
     exec(code, module.__dict__)
+    if "." in name:
+        parent, child = name.rsplit(".", 1)
+        setattr(sys.modules[parent], child, module)
 
 
 def check():
-    # Compile before loading the harness so answer syntax failures cannot be
-    # confused with unittest's synthetic loader-error tests.
     try:
-        load_source("answers", answer_path)
+        for package in ("exercises", "tests"):
+            load_source(package, Path(package, "__init__.py").resolve())
+        load_source("tests.feedback", Path("tests/feedback.py").resolve())
+    except Exception:
+        traceback.print_exc()
+        return {"outcome": "blocked", "reason": "shared unittest harness could not be imported"}
+
+    # Execute only selected current sources, bypassing even valid stale pycache.
+    try:
+        for path in selected[::2]:
+            load_source(Path(path).with_suffix("").as_posix().replace("/", "."), Path(path).resolve())
     except Exception:
         error = sys.exc_info()
         traceback.print_exc()
@@ -58,7 +72,8 @@ def check():
 
     loader = unittest.TestLoader()
     try:
-        load_source("test_exercises", Path("test_exercises.py").resolve())
+        for name in dict.fromkeys(selector.rsplit(".PracticeTests.", 1)[0] for selector in selectors):
+            load_source(name, Path(name.replace(".", "/") + ".py").resolve())
         suite = loader.loadTestsFromNames(selectors)
     except Exception:
         traceback.print_exc()

@@ -2,15 +2,23 @@
 
 [Home](../README.md) · [Architecture](architecture.md) · [Roadmap](../ROADMAP.md)
 
-This implements the Phase 2 proof and the first Phase 3 line-based session.
+## Overview
+
+This implements the shared practice workflow and a line-based session.
 Python and Rust share prompt/hint presentation, navigation, and check orchestration.
 It is not yet the full edit-and-save Rustlings experience: watching remains next.
 The Python prototype remains available; no learner files are migrated or removed.
 
-Practice now uses Git branches to keep `main` pristine. Branch safeguards are
-implemented; the existing shared answer files have not yet been migrated to the
-planned tracked `exercises/` layout. See
+Practice uses tracked, independent `exercises/` files on Git practice branches
+to keep `main` pristine. Legacy starters and ignored answers remain untouched;
+the shared Rust CLI never imports or uses them and does not migrate solutions.
+See [Exercise lifecycle](exercises.md) and
 [ADR 0002](decisions/0002-pristine-main-practice-branches.md).
+
+**Reset prerequisite:** the reviewed canonical blank must already be committed at
+its exercise path in local `refs/heads/main`. New or uncommitted exercise paths
+are not a baseline; reset fails safely until they are integrated. There is no
+working-tree, learner-HEAD, or legacy-starter fallback, and no automatic commit.
 
 ## Build
 
@@ -24,7 +32,8 @@ cargo build --locked
 ./target/debug/polyglot --help
 ```
 
-The CLI's only direct crate dependency is `serde_json`. The first build may need
+The direct dependencies are `serde_json` and, on macOS/Linux, `rustix` for safe
+filesystem operations during reset. The first build may need
 network access to download locked dependencies. Once cached, the CLI can also be
 built with `cargo build --offline --locked`. Rust exercise checks themselves use
 an isolated dependency-free Cargo package and run offline and locked.
@@ -58,7 +67,9 @@ passes that directory explicitly to Cargo and installs its native debug binary.
 This is a local development install, not release packaging or adoption/retirement
 of the prototype.
 
-## List, start, check
+## API / Interfaces
+
+### List, start, check
 
 ```sh
 ./target/debug/polyglot list
@@ -69,14 +80,18 @@ of the prototype.
 ./target/debug/polyglot practice rust/hello
 ```
 
-For one-shot preparation, first create or select a non-`main` branch, then use
+For one-shot selection, first create or select a non-`main` branch, then use
 `start ID`, edit the displayed file, and run `check ID`. `start` will not silently
-switch branches. Standalone `check` never initializes an attempt.
+switch branches. It validates and displays an existing **Exercise file:**; it
+does not copy a template or launch an editor. A missing exercise requires reset
+from the committed-main baseline. Standalone `check` never initializes an attempt.
 
 The other Python IDs are `python/find_in_string` and
 `python/length_of_last_word`. `check python` and `check rust` check a whole track.
-Python's three exercises share one answer file; selecting another does not reset
-your work. Track READMEs document the contracts; the CLI displays each exercise's
+Python uses independent `practice/python/exercises/{hello,find_in_string,length_of_last_word}.py`
+modules and corresponding `tests/test_*.py` files. Rust uses
+`practice/rust/exercises/hello.rs`, imported by `checks.rs`. Selecting another
+exercise does not reset your work. Track READMEs document the contracts; the CLI displays each exercise's
 prompt and hint from its catalog metadata.
 
 The catalog is deliberately built in. It describes exercise IDs and native check
@@ -84,7 +99,9 @@ selectors separately from workspace mappings. There is currently one workspace
 per language; independent workspace metadata should be introduced when a second
 workspace within one language is needed, not through a plugin framework now.
 
-## Practice in a session
+## Example usage
+
+### Practice in a session
 
 ```sh
 ./target/debug/polyglot practice
@@ -94,9 +111,9 @@ workspace within one language is needed, not through a plugin framework now.
 ```
 
 Without a target, choose `python`/`rust` or `1`/`2` at the language menu. Quit or
-EOF before selection creates no answer or branch. Entering a session safely prepares the
-selected answer, preserving existing work, and displays the exercise, position,
-answer path, and task. Hints appear only when requested.
+EOF before selection creates no file or branch. Entering a session validates the
+selected exercise, preserves existing work, and displays the exercise, position,
+exercise file, and task. Hints appear only when requested.
 
 Edit and save the displayed file in your own editor. The session does not open an
 editor, monitor saves, or automatically run checks.
@@ -106,17 +123,18 @@ editor, monitor saves, or automatically run checks.
 | Enter, `check`, `c` | Check the selected exercise; stay on it |
 | `hint`, `h` | Show a hint, not a full solution |
 | `prompt` | Repeat the task |
+| `reset`, `r` | Confirm reset of only the selected exercise from committed main |
 | `next`, `n` | Recheck current source; advance only if it passes |
 | `previous`, `p` | Move back without requiring a pass |
 | `list`, `l` | List exercises in the selected language |
 | `language python`, `language rust` | Switch to that language's first exercise |
 | `help`, `?` | Show session commands |
-| `quit`, `q`, EOF | End the session without changing answer files |
+| `quit`, `q`, EOF | End the session without changing exercise files |
 
 `next` does not trust an earlier pass: it checks again, including after an external
 edit. At the last exercise it reports `End of track` and stays there; it does not
-wrap or claim every exercise has been completed. Preparation must succeed before
-navigation changes the selection. Switching languages preserves both answer files.
+wrap or claim every exercise has been completed. Validation must succeed before
+navigation changes the selection. Switching languages preserves exercise files.
 
 Failed, blocked, and indeterminate checks leave the session usable. Clean quit/EOF
 returns `0` because the session ended normally, **not** because the exercises all
@@ -125,7 +143,8 @@ passed. Use one-shot `check` for a machine-readable check exit code.
 There is no saved selection or progress; a new session starts at its requested
 target or language menu. Edits during an active native process are not yet tracked
 or used to invalidate that running result; superseded-run handling belongs to the
-watch increment. For now, finish editing and save before requesting a check.
+watch increment. Finish editing and save before checking or resetting; do not edit
+while either operation is running.
 
 ## Read a prompt or hint without starting
 
@@ -135,7 +154,50 @@ watch increment. For now, finish editing and save before requesting a check.
 ```
 
 These commands do not create attempts or launch language tools. `show` displays
-the task and answer path without revealing the hint; `hint` displays only the hint.
+the task and exercise path without revealing the hint; `hint` displays only the hint.
+
+## Reset one exercise
+
+The committed-main prerequisite in the overview must be met before these work:
+
+```sh
+polyglot reset python/hello
+polyglot reset rust/hello
+```
+
+Reset accepts exactly one language-qualified exercise ID: no track, `all`, or
+`--yes` option. Session `reset`/`r` uses the same implementation. It requires a
+non-main branch; main is blocked with exit `2`. Only `y`/`yes` confirms (ignoring
+case and surrounding whitespace). Cancellation/EOF returns `0` without writes.
+Already-pristine source returns `0` without prompting or creating backups.
+
+Reset resolves strict local `refs/heads/main` to a full commit OID once, before
+prompting, and reads the raw committed regular-file blob with Git replacement
+objects disabled. A moving main ref cannot change that reset's chosen baseline.
+Missing refs, missing paths, symlinks, and non-regular tree entries are blocked;
+no working-tree, learner-HEAD, or starter fallback exists.
+
+Changed existing bytes are backed up under ignored `.polyglot/backups` before
+atomic replacement. Keep both printed paths: **Backup:** is a byte snapshot;
+**Recovery:** retains the displaced original inode, so an editor holding an open
+descriptor can still write to it after replacement. New backup files use `0600`
+and new private directories use `0700`. If the inode cannot safely move across
+filesystems, a private adjacent recovery artifact remains at the exact printed
+path. Do not delete it. There is no automatic backup/recovery cleanup. Restoring
+a missing file creates no backup because no previous file exists.
+
+Branch or source changes detected while prompting block without overwriting the
+source. A late atomic editor save during exchange is different: the baseline may
+already be installed when reset reports **Blocked**, and the actual displaced
+bytes are retained at the reported backup/recovery paths. Do not assume every
+Blocked result leaves the original source path untouched; read the diagnostic.
+Preserve both artifacts, especially if an editor may still have a descriptor open.
+
+Reset changes only the selected worktree file: staged content/index, Git history,
+and Git configuration remain unchanged. It is not `git reset`. The native backend
+supports macOS and Linux only; unsupported platforms or filesystem atomic
+primitives block without an overwrite fallback. Runtime testing has covered macOS;
+the Linux implementation has not been runtime-tested.
 
 ## Pristine main and practice branches
 
@@ -152,9 +214,10 @@ git switch -c practice/my-session
 polyglot practice
 ```
 
-The CLI does not stash, reset, commit, fetch, or force branch changes. Detached or
+Branch preparation does not stash, discard work, commit, fetch, or force branch
+changes. Explicit exercise reset is separate and described above. Detached or
 unborn HEAD, bare/non-repositories, and a root nested inside another repo are
-blocked. Existing ignored attempts remain intact during this transitional layout.
+blocked. Existing ignored legacy attempts remain intact.
 
 Session checks and navigation refuse to proceed if you externally switch to
 `main`. Hints, prompts, listing, and quitting remain available. Standalone
@@ -169,7 +232,8 @@ make install-hooks
 This explicitly installs the tracked pre-commit guard, not a Git configuration
 change. It refuses to replace existing different hooks or configured hook systems;
 identical installed guards are recognized. No hook is installed by `make install`.
-The guard checks staged exercise paths, including deletes and renames, without
+The guard checks staged protected active exercise source paths, including new
+files, modifications, deletes, and renames, without
 modifying your files or index. See ADR 0002 for the protected paths and limits.
 
 This is not a filesystem lock: editors can still modify files, the old Python
@@ -198,11 +262,24 @@ Cargo selection is `--cargo` → `cargo` on PATH. Paths may contain spaces; tool
 are invoked as argument vectors without shell interpolation. No command installs
 tools, creates environments, or downloads exercise dependencies automatically.
 
-## Outcomes and safety
+## Data Flow
+
+`model.rs` provides the static `Exercise` catalog (ID, file, language, title,
+prompt, hint, native selector). `workspace.rs` validates common inputs plus only
+the selected exercise/harness. Python's `exercises/__init__.py` has no re-exports:
+broken or missing unselected sibling modules/tests do not block a selected check.
+For example, hello selects `tests.test_hello.PracticeTests.test_hello`.
+The Python adapter launches a fresh-source helper with a separate result report;
+Rust uses Cargo JSON and the selected libtest executable (`hello`). Checks do not
+trust learner stdout as a pass signal. The catalog does not discover new files.
+
+## Edge Cases
+
+### Outcomes and safety
 
 | Exit code | Meaning |
 |---|---|
-| `0` | The selected checks actually ran and passed |
+| `0` | For `check`, selected checks ran and passed; other commands completed normally |
 | `1` | An attributable learner-code or assertion failure |
 | `2` | Invalid input or a blocked check: missing tools, bad target/configuration |
 | `3` | Interrupted or indeterminate: no trustworthy normal result |
@@ -214,7 +291,7 @@ stdout; Rust uses Cargo compiler messages and the selected native test executabl
 Rust outcome detection relies on Cargo JSON and stable libtest inventory/result
 text, not a universal diagnostic parser.
 
-- `start` exclusively creates an absent answer and preserves an existing one.
+- `start` validates an existing exercise and preserves it; it creates no file.
 - `check` never initializes or resets an attempt. It may write normal Rust build
   artifacts, but locked checks do not update source inputs or lockfiles.
 - Workspace symlinks and existing symlinks inside the isolated Rust build tree are
@@ -233,26 +310,39 @@ cargo fmt --all -- --check
 cargo test --locked
 cargo clippy --locked --all-targets -- -D warnings
 cargo build --locked
-python3 -B -m unittest discover -s tests -p test_rust_cli.py -v
-python3 -B -m unittest discover -s tests -p test_interactive_cli.py -v
-python3 -B -m unittest discover -s tests -p test_branch_policy.py -v
-python3 -B -m unittest discover -s tests -p test_main_hooks.py -v
-python3 -B -m unittest discover -s tests -p test_polyglot_cli.py -v
+python3 -B -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 The integration suite needs Python 3.11+ and Cargo on PATH. It runs the built
 `target/debug/polyglot`; set `POLYGLOT_BIN` to test a different binary. A missing
 binary fails with build instructions rather than silently skipping the suite.
-The fixtures are disposable copies in temporary directories, including paths with
-spaces and an unrelated working directory. Real local answers are never copied,
-reset, or checked by these tests. Unix-specific symlink/shim cases are skipped on
-other platforms; the current proof was exercised on macOS.
+The fixtures are isolated temporary copies, with temporary Git repositories where
+needed, paths with spaces, and unrelated working directories. Active fixture
+selection and explicit solution cases live in `tests/active_fixture.py`; tests do
+not copy, reset, or check real local learner answers. Legacy prototype tests remain
+supported. Unix-specific symlink/shim cases are skipped on other platforms. The
+130-test integration/regression suite passed on Python 3.15; the 29 reset tests
+also passed on Python 3.12. Eleven Rust unit tests passed on Rust 1.85 and 1.89,
+with format, Clippy, and locked offline build checks. Runtime platform validation
+so far is macOS only; this is not a full test run of older projects under `src/`.
 
 ## Not implemented yet
 
-No watch mode, persistent progress, automatic reset, editor launching, TUI, or
+No watch mode, persistent progress, editor launching, TUI, or
 release distribution. The local debug install above is supported. No Rustlings
 code was copied for these slices.
-The tracked exercise-file migration and safe reset design now take priority before
-watching and superseded-run handling. The Python prototype is retired only after
-later adoption checks.
+Tracked exercise files and explicit single-exercise reset are implemented. Reset
+requires the reviewed canonical blank to be committed at its path in local
+`refs/heads/main`. The Python prototype is retired only after later adoption
+checks. Upstream pinning would be needed if upstream code were copied; none was
+copied here. Learning exercises,
+not a general platform, remain the scope.
+
+## Related files
+
+- [Exercise authoring and preservation](exercises.md)
+- [Python track](../practice/python/README.md), [Rust track](../practice/rust/README.md)
+- [Catalog](../cli/src/model.rs), [workspace validation](../cli/src/workspace.rs),
+  [workflow](../cli/src/workflow.rs), [session](../cli/src/session.rs)
+- [Git policy/baseline](../cli/src/git.rs), [reset](../cli/src/reset.rs),
+  [native filesystem backend](../cli/src/reset/native.rs)

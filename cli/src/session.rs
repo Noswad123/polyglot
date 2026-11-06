@@ -4,9 +4,9 @@ use crate::model::{Exercise, Language, Outcome, CATALOG};
 use crate::workflow::{self, Context};
 use crate::{git, workspace};
 
-const HELP: &str = "Commands: Enter/check/c, hint/h, prompt, next/n, previous/p, list/l,
+const HELP: &str = "Commands: Enter/check/c, hint/h, prompt, reset/r, next/n, previous/p, list/l,
 language python|rust, help/?, quit/q.
-Edit and save the answer in your own editor, then check. Next always rechecks.";
+Edit and save the exercise file in your own editor, then check. Next always rechecks.";
 
 fn read_line(prompt: &str) -> Result<Option<String>, Outcome> {
     print!("{prompt}");
@@ -38,7 +38,7 @@ pub fn choose_language() -> Result<Option<&'static Exercise>, Outcome> {
 }
 
 pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome> {
-    workspace::prevalidate_start(&context.root, initial.language)?;
+    workspace::prevalidate_start(&context.root, initial)?;
     git::prepare_practice(&context.root, initial.language)?;
     context.start(initial)?;
     let mut track: Vec<_> = CATALOG
@@ -58,6 +58,14 @@ pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome>
             }
             "hint" | "h" => {
                 println!("Hint: {}", current.hint);
+                continue;
+            }
+            "reset" | "r" => {
+                match crate::reset::run(&context.root, current) {
+                    Ok(true) => context.show(current, Some((index, track.len()))),
+                    Ok(false) => {}
+                    Err(outcome) => println!("{outcome}"),
+                }
                 continue;
             }
             "prompt" => {
@@ -113,7 +121,7 @@ pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome>
                 }
             }
         };
-        // Commit selection only after exclusive preparation succeeds.
+        // Change selection only after validation succeeds.
         if let Err(outcome) = context.start(target) {
             println!("{outcome}");
             continue;

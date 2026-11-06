@@ -16,6 +16,7 @@ import time
 import unittest
 
 from git_fixture import isolated_git_env
+from active_fixture import copy_active_fixture, exercise_path, solve
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -58,19 +59,7 @@ class InteractiveCliTests(unittest.TestCase):
         self.root = self.base / "copied repository with spaces"
         self.cwd = self.base / "unrelated working directory"
         self.cwd.mkdir()
-        for language, names in {
-            "python": ("starter.py", "test_exercises.py", "README.md"),
-            "rust": ("Cargo.toml", "Cargo.lock", "starter.rs", "checks.rs"),
-        }.items():
-            destination = self.directory(language)
-            destination.mkdir(parents=True)
-            for name in names:
-                shutil.copy2(REPO / "practice" / language / name, destination / name)
-        rust_readme = REPO / "practice/rust/README.md"
-        if rust_readme.is_file():
-            shutil.copy2(rust_readme, self.directory("rust") / "README.md")
-        else:
-            (self.directory("rust") / "README.md").write_text("Rust fixture prompt.\n")
+        copy_active_fixture(self.root)
         self.env = isolated_git_env()
         self.env["PYTHONDONTWRITEBYTECODE"] = "1"
         self.env["CARGO_TERM_COLOR"] = "never"
@@ -88,8 +77,8 @@ class InteractiveCliTests(unittest.TestCase):
     def directory(self, language):
         return self.root / "practice" / language
 
-    def answer(self, language):
-        return self.directory(language) / ("answers.py" if language == "python" else "answers.rs")
+    def answer(self, language, name="hello"):
+        return exercise_path(self.root, language, name)
 
     def sources(self):
         return {
@@ -117,7 +106,7 @@ class InteractiveCliTests(unittest.TestCase):
         return result.stdout + result.stderr
 
     def solve(self, language):
-        self.answer(language).write_text(PYTHON_SOLUTION if language == "python" else RUST_SOLUTION)
+        solve(self.root, language)
 
     def selections(self, output):
         return re.findall(r"Exercise: ([a-z_/]+) \((\d+)/(\d+)\)", output)
@@ -134,7 +123,7 @@ class InteractiveCliTests(unittest.TestCase):
                 output = self.cli("show", selection, tools=False)
                 self.assertIn(f"Exercise: {selection}", output)
                 self.assertIn(title, output)
-                self.assertIn(f"Answer: {self.answer(selection.split('/')[0])}", output)
+                self.assertIn(f"Exercise file: {self.answer(*selection.split('/'))}", output)
                 self.assertIn("Prompt:", output)
                 self.assertNotIn("Hint:", output)
                 if selection.endswith("hello"):
@@ -177,18 +166,17 @@ class InteractiveCliTests(unittest.TestCase):
                 self.assertEqual(self.sources(), before)
 
     def test_menu_names_numbers_and_invalid_reprompt(self):
+        before = self.sources()
         for selection, language in (("python", "python"), ("1", "python"),
                                     ("rust", "rust"), ("2", "rust")):
             with self.subTest(selection=selection):
                 output = self.cli("practice", input=f"not a language\n{selection}\nq\n")
                 self.assertGreaterEqual(output.count("Choose a language"), 2, output)
                 self.assert_current(output, language + "/hello")
-                self.assertEqual(self.answer(language).read_bytes(),
-                                 (self.directory(language) / ("starter.py" if language == "python"
-                                                              else "starter.rs")).read_bytes())
-                self.answer(language).unlink()
+                self.assertEqual(self.sources(), before)
 
-    def test_initial_selection_metadata_and_exact_starter(self):
+    def test_initial_selection_metadata_and_unchanged_exercise(self):
+        before = self.sources()
         for index, selection in enumerate(IDS):
             language = selection.split("/")[0]
             with self.subTest(selection=selection):
@@ -196,16 +184,14 @@ class InteractiveCliTests(unittest.TestCase):
                 position, count = (index + 1, 3) if language == "python" else (1, 1)
                 self.assertIn(f"Exercise: {selection} ({position}/{count})", output)
                 self.assertIn(TITLES[index], output)
-                self.assertIn(f"Answer: {self.answer(language)}", output)
+                self.assertIn(f"Exercise file: {self.answer(*selection.split('/'))}", output)
                 self.assertIn("Prompt:", output)
                 self.assertNotIn("Hint:", output)
                 for command in ("check", "hint", "next", "previous", "list", "language", "quit"):
                     self.assertIn(command, output)
                 self.assertNotIn("End of track", output)
                 self.assertNotIn("all complete", output.lower())
-                starter = "starter.py" if language == "python" else "starter.rs"
-                self.assertEqual(self.answer(language).read_bytes(),
-                                 (self.directory(language) / starter).read_bytes())
+                self.assertEqual(self.sources(), before)
 
     def test_existing_shared_answer_is_never_overwritten(self):
         for language in ("python", "rust"):
@@ -216,9 +202,7 @@ class InteractiveCliTests(unittest.TestCase):
         self.assertEqual(self.sources(), before)
 
     def test_check_aliases_use_current_python_selector_without_advancing(self):
-        starter = (self.directory("python") / "starter.py").read_text()
-        self.answer("python").write_text(starter.replace(
-            'raise NotImplementedError("Implement hello")', 'print("Hello, World!")'))
+        solve(self.root, "python", "hello")
         before = self.sources()
         output = self.cli("practice", "python/hello", input="\ncheck\nc\nprompt\nq\n")
         self.assertEqual(output.count("Passed"), 3, output)
@@ -282,6 +266,7 @@ class InteractiveCliTests(unittest.TestCase):
 
     def test_language_switch_prepares_first_exercise_and_preserves_source(self):
         self.solve("python")
+        rust_before = self.answer("rust").read_bytes()
         original = self.answer("python").read_bytes()
         output = self.cli("practice", "python/length_of_last_word",
                           input="language rust\nprompt\nlanguage python\nprompt\nq\n",
@@ -289,8 +274,7 @@ class InteractiveCliTests(unittest.TestCase):
         self.assertIn("Exercise: rust/hello (1/1)", output)
         self.assert_current(output, "python/hello")
         self.assertEqual(self.answer("python").read_bytes(), original)
-        self.assertEqual(self.answer("rust").read_bytes(),
-                         (self.directory("rust") / "starter.rs").read_bytes())
+        self.assertEqual(self.answer("rust").read_bytes(), rust_before)
 
     def test_invalid_commands_and_language_recover_without_shell_or_writes(self):
         self.solve("python")
@@ -328,7 +312,7 @@ class InteractiveCliTests(unittest.TestCase):
 
     def test_failed_destination_preparation_retains_current_selection(self):
         self.solve("python")
-        (self.directory("rust") / "starter.rs").unlink()
+        self.answer("rust").unlink()
         before = self.sources()
         output = self.cli("practice", "python/find_in_string", tools=False,
                           input="language rust\nprompt\nhint\nq\n")
@@ -338,9 +322,9 @@ class InteractiveCliTests(unittest.TestCase):
         self.assertEqual(self.sources(), before)
 
     def test_failed_initial_preparation_is_blocked(self):
-        for language, starter in (("python", "starter.py"), ("rust", "starter.rs")):
+        for language in ("python", "rust"):
             with self.subTest(language=language):
-                (self.directory(language) / starter).unlink()
+                self.answer(language).unlink()
                 before = self.sources()
                 self.cli("practice", language, input="q\n", code=2, tools=False)
                 self.assertEqual(self.sources(), before)

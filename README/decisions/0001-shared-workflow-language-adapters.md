@@ -52,13 +52,14 @@ dispatch boundary and use the same orchestration for both languages.
 ### Exercise definition
 
 Carry a stable language-qualified ID, language, title, prompt/hint references,
-workspace identity, starter-to-attempt mapping, native check selector, and optional
+workspace identity, exercise-file path, native check selector, and optional
 Darkness references. Define only the fields required by the first two adapters;
 the serialization format is an implementation choice, not a reason to build a DSL.
 
-Exercise identity is distinct from workspace identity. The current three Python
-exercises must be able to share an answer file while selecting different checks.
-A Cargo target need not have the same layout as a Python module.
+Exercise identity is distinct from workspace identity. The initial proof used a
+shared answer file; ADR 0002 supersedes that layout with independent tracked
+modules and selected checks in a shared workspace. A Cargo target need not have
+the same layout as a Python module.
 
 ### Language adapter
 
@@ -71,7 +72,7 @@ shell commands in exercise metadata.
 
 Adapters do not select the next exercise, update personal notes, record mastery,
 or overwrite attempts. Add language-specific preparation hooks only when a real
-exercise requires them; ordinary starter preservation is shared behavior.
+exercise requires them; source preservation and reset remain shared policy.
 
 ### Process execution and workspace preparation
 
@@ -79,10 +80,9 @@ Execute argument vectors without shell interpolation. Supply an explicit working
 directory, preserve native diagnostic output, and retain process exit/signal
 information. Validate exercise paths against the intended workspace boundaries.
 
-Prepare attempts with exclusive creation, preserving existing files. `check` never
-creates or resets answers. Reject path conflicts clearly. Define partial-preparation
-behavior before supporting multi-file attempts; do not silently repair existing
-workspaces from newer starters.
+`start` validates tracked exercise files without creating or resetting them.
+`check` never initializes or restores source. Reject path conflicts clearly.
+Explicit reset follows ADR 0002; it must not silently repair unrelated files.
 
 Native tools may write normal build artifacts. Preservation means protecting
 learner sources, not promising that checking writes nothing. Running exercise code
@@ -130,7 +130,7 @@ The [roadmap](../../ROADMAP.md) defines acceptance checks for each gate.
 ## Watching and progress constraints
 
 One source file is not necessarily one exercise. Watch declared workspace/check
-inputs, accounting for the shared Python answer file and relevant tests/config.
+inputs, accounting for shared package/harness files and relevant tests/config.
 Prevent overlapping or superseded runs from publishing stale success results.
 
 Persisted progress must not treat an old pass as current validity after edits.

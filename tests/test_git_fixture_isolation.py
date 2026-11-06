@@ -12,6 +12,7 @@ import test_branch_policy
 import test_interactive_cli
 import test_main_hooks
 import test_rust_cli
+import test_reset_cli
 
 
 class GitFixtureIsolationTests(unittest.TestCase):
@@ -48,7 +49,8 @@ class GitFixtureIsolationTests(unittest.TestCase):
     def assert_setups_isolated(self, context):
         # Import modules, not TestCase classes, so discovery does not rerun their tests here.
         suites = (test_rust_cli.RustCliTests, test_interactive_cli.InteractiveCliTests,
-                  test_branch_policy.BranchPolicyTests, test_main_hooks.MainHookTests)
+                  test_branch_policy.BranchPolicyTests, test_main_hooks.MainHookTests,
+                  test_reset_cli.ResetCliTests)
         poison = {**context, "GIT_CONFIG_GLOBAL": str(self.config),
                   "GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "core.hooksPath",
                   "GIT_CONFIG_VALUE_0": str(self.hooks), "GIT_FUTURE_CONTEXT": "discard me"}

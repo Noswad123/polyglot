@@ -9,13 +9,13 @@ use super::{diagnostics, output, tool};
 use crate::model::{Exercise, NativeCheck, Outcome};
 use crate::workspace::safe_path;
 
-fn primary_span(diagnostic: &Value, source: &Path) -> bool {
+fn primary_span(diagnostic: &Value, directory: &Path, source: &Path) -> bool {
     diagnostic["spans"].as_array().is_some_and(|spans| {
         spans.iter().any(|span| {
             span["is_primary"] == true
                 && span["file_name"].as_str().is_some_and(|name| {
                     let path = Path::new(name);
-                    path == source || Some(path.as_os_str()) == source.file_name()
+                    path == source || (!path.is_absolute() && directory.join(path) == source)
                 })
         })
     })
@@ -111,9 +111,11 @@ pub fn check(
                     eprint!("{rendered}");
                 }
                 if diagnostic["level"] == "error" {
-                    if primary_span(diagnostic, &directory.join("answers.rs")) {
+                    if exercises.iter().any(|exercise| {
+                        primary_span(diagnostic, directory, &directory.join(exercise.file))
+                    }) {
                         answer_errors = true;
-                    } else if primary_span(diagnostic, &directory.join("checks.rs"))
+                    } else if primary_span(diagnostic, directory, &directory.join("checks.rs"))
                         || diagnostic["code"]["code"] == "E0463"
                         || diagnostic["message"]
                             .as_str()
@@ -260,18 +262,26 @@ mod tests {
 
     #[test]
     fn compiler_errors_require_a_primary_answer_span() {
-        let answer = Path::new("/checkout/practice/rust/answers.rs");
+        let directory = Path::new("/checkout/practice/rust");
+        let answer = &directory.join("exercises/hello.rs");
         assert!(primary_span(
-            &serde_json::json!({"spans": [{"file_name": "answers.rs", "is_primary": true}]}),
+            &serde_json::json!({"spans": [{"file_name": "exercises/hello.rs", "is_primary": true}]}),
+            directory,
             answer
         ));
         assert!(!primary_span(
-            &serde_json::json!({"spans": [{"file_name": "checks.rs", "is_primary": true}, {"file_name": "answers.rs", "is_primary": false}]}),
+            &serde_json::json!({"spans": [{"file_name": "checks.rs", "is_primary": true}, {"file_name": "exercises/hello.rs", "is_primary": false}]}),
+            directory,
             answer
         ));
-        assert!(!primary_span(&serde_json::json!({"spans": []}), answer));
+        assert!(!primary_span(
+            &serde_json::json!({"spans": []}),
+            directory,
+            answer
+        ));
         assert!(!primary_span(
             &serde_json::json!({"spans": [{"file_name": "/other/answers.rs", "is_primary": true}]}),
+            directory,
             answer
         ));
     }

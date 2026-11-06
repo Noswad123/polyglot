@@ -12,12 +12,13 @@ import time
 import unittest
 
 from git_fixture import isolated_git_env
+from active_fixture import copy_active_fixture, exercise_path, solve
 
 
 REPO = Path(__file__).resolve().parents[1]
 
 
-class BranchPolicyTests(unittest.TestCase):
+class BranchFixture:
     @classmethod
     def setUpClass(cls):
         cls.binary = Path(os.environ.get("POLYGLOT_BIN", REPO / "target/debug/polyglot")).absolute()
@@ -31,15 +32,7 @@ class BranchPolicyTests(unittest.TestCase):
         self.base = Path(self.temp.name).resolve()
         self.root = self.base / "fixture repository"
         self.env = {**isolated_git_env(), "PYTHONDONTWRITEBYTECODE": "1"}
-        for language, names in {
-            "python": ("starter.py", "test_exercises.py", "README.md"),
-            "rust": ("starter.rs", "checks.rs", "Cargo.toml", "Cargo.lock"),
-        }.items():
-            directory = self.root / "practice" / language
-            directory.mkdir(parents=True)
-            for name in names:
-                shutil.copy2(REPO / "practice" / language / name, directory / name)
-        shutil.copy2(REPO / ".gitignore", self.root / ".gitignore")
+        copy_active_fixture(self.root)
         self.git("init", "--initial-branch=main")
         self.git("add", ".")
         self.commit()
@@ -85,8 +78,13 @@ class BranchPolicyTests(unittest.TestCase):
         return output
 
     def answer(self, language="python"):
-        return self.root / "practice" / language / ("answers.py" if language == "python" else "answers.rs")
+        return exercise_path(self.root, language)
 
+    def legacy_answer(self):
+        return self.root / "practice/python/answers.py"
+
+
+class BranchPolicyTests(BranchFixture, unittest.TestCase):
     def test_clean_main_explicit_target_creates_language_branch(self):
         main, before = self.git("rev-parse", "main"), self.sources()
         output = self.cli("practice", "python/hello", input="q\n")
@@ -95,18 +93,15 @@ class BranchPolicyTests(unittest.TestCase):
         self.assertEqual(self.git("rev-parse", "main"), main)
         self.assertEqual(self.git("rev-parse", "HEAD"), main)
         self.assertEqual(self.git("status", "--porcelain"), "")
-        self.assertEqual(self.answer().read_bytes(), (self.answer().parent / "starter.py").read_bytes())
-        before[str(self.answer().relative_to(self.root))] = self.answer().read_bytes()
         self.assertEqual(self.sources(), before)
 
     def test_clean_main_menu_selection_creates_rust_branch(self):
-        main = self.git("rev-parse", "main")
+        main, before = self.git("rev-parse", "main"), self.sources()
         output = self.cli("practice", input="2\nq\n")
         self.assertIn("Created practice branch", output)
         self.assertRegex(self.git("branch", "--show-current"), r"^practice/rust-.+")
         self.assertEqual(self.git("rev-parse", "main"), main)
-        self.assertEqual(self.answer("rust").read_bytes(),
-                         (self.answer("rust").parent / "starter.rs").read_bytes())
+        self.assertEqual(self.sources(), before)
 
     def test_root_autobranch_ignores_poisoned_git_context(self):
         decoy = self.base / "decoy caller repository"
@@ -122,7 +117,6 @@ class BranchPolicyTests(unittest.TestCase):
         self.assertRegex(self.git("branch", "--show-current"), r"^practice/python-.+")
         self.assertEqual(self.git("rev-parse", "refs/heads/main"), main)
         self.assertEqual(self.git("rev-parse", "HEAD"), main)
-        before[str(self.answer().relative_to(self.root))] = self.answer().read_bytes()
         self.assertEqual(self.sources(), before)
         self.assertEqual({str(p.relative_to(decoy)): p.read_bytes()
                           for p in decoy.rglob("*") if p.is_file()}, decoy_before)
@@ -140,10 +134,10 @@ class BranchPolicyTests(unittest.TestCase):
     def test_existing_nonmain_dirty_branch_is_reused(self):
         self.git("switch", "-c", "feature/learner")
         (self.root / "notes.txt").write_text("keep untracked\n")
-        starter = self.answer().parent / "starter.py"
+        starter = self.answer()
         starter.write_bytes(starter.read_bytes() + b"\n# tracked learner edit\n")
-        self.git("add", "practice/python/starter.py")
-        self.answer().write_text("# ignored learner answer\n")
+        self.git("add", "practice/python/exercises/hello.py")
+        self.legacy_answer().write_text("# ignored learner answer\n")
         before, metadata = self.sources(), self.git_files()
         output = self.cli("practice", "python", input="q\n")
         self.assertIn("Using practice branch", output)
@@ -164,7 +158,7 @@ class BranchPolicyTests(unittest.TestCase):
         self.assertTrue(self.answer().is_file())
 
     def test_dirty_tracked_main_is_blocked(self):
-        starter = self.answer().parent / "starter.py"
+        starter = self.answer()
         starter.write_bytes(starter.read_bytes() + b"\n# do not lose\n")
         output = self.assert_blocked("practice", "python")
         self.assertRegex(output.lower(), r"git switch|git checkout")
@@ -179,7 +173,7 @@ class BranchPolicyTests(unittest.TestCase):
         self.assert_blocked("practice", "python")
 
     def test_ignored_files_do_not_make_main_dirty(self):
-        self.answer().write_bytes(b"# preserve ignored answer\n")
+        self.legacy_answer().write_bytes(b"# preserve ignored answer\n")
         (self.root / ".cache").write_bytes(b"ignored cache\n")
         before = self.sources()
         self.cli("practice", "python", input="q\n")
@@ -227,13 +221,14 @@ class BranchPolicyTests(unittest.TestCase):
         self.assertEqual(self.sources(), before)
         self.assertEqual(self.git_files(), metadata)
 
-    def test_missing_starter_does_not_autobranch(self):
-        (self.answer().parent / "starter.py").unlink()
+    def test_missing_exercise_does_not_autobranch(self):
+        self.answer().unlink()
         self.git("add", "-u")
         self.commit()
         self.assert_blocked("practice", "python")
 
     def test_conflicting_answer_does_not_autobranch(self):
+        self.answer().unlink()
         self.answer().mkdir()
         self.assert_blocked("practice", "python")
 
@@ -245,9 +240,7 @@ class BranchPolicyTests(unittest.TestCase):
             self.assertIn("git", output.lower())
 
     def test_read_only_and_check_need_neither_git_nor_nonmain(self):
-        starter = (self.answer().parent / "starter.py").read_text()
-        self.answer().write_text(starter.replace(
-            'raise NotImplementedError("Implement hello")', 'print("Hello, World!")'))
+        solve(self.root, "python", "hello")
         before, metadata = self.sources(), self.git_files()
         env = {**self.env, "PATH": ""}
         for repository in (True, False):
@@ -272,7 +265,6 @@ class BranchPolicyTests(unittest.TestCase):
 
     def test_live_session_external_main_switch_blocks_actions_but_allows_hint_quit(self):
         self.git("switch", "-c", "practice/live")
-        shutil.copy2(self.answer().parent / "starter.py", self.answer())
         process = subprocess.Popen(self.command("practice", "python/find_in_string"),
                                    cwd=self.base, env=self.env, stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,

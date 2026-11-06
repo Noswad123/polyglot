@@ -23,7 +23,7 @@ impl Context {
 
     pub fn start(&self, exercise: &Exercise) -> Result<(), Outcome> {
         git::require_practice_branch(&self.root)?;
-        workspace::start(&self.root, exercise.language)
+        workspace::start(&self.root, exercise)
     }
 
     pub fn show(&self, exercise: &Exercise, position: Option<(usize, usize)>) {
@@ -33,10 +33,10 @@ impl Context {
         }
         println!("Title: {}", exercise.title);
         println!(
-            "Answer: {}",
+            "Exercise file: {}",
             self.root
                 .join(exercise.language.workspace().directory)
-                .join(exercise.language.workspace().answers)
+                .join(exercise.file)
                 .display()
         );
         println!("Prompt: {}", exercise.prompt);
@@ -55,8 +55,10 @@ impl Context {
             Ok(directory) => directory,
             Err(outcome) => return outcome,
         };
-        if !directory.join(language.workspace().answers).is_file() {
-            return Outcome::Blocked(format!("no attempt; run start {} first", exercises[0].id));
+        for exercise in exercises {
+            if let Err(outcome) = workspace::prevalidate_start(&self.root, exercise) {
+                return outcome;
+            }
         }
         adapters::check(
             &self.root,

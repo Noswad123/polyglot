@@ -17,9 +17,10 @@ adapters**, preserving the Rustlings-style interaction across languages. See
 
 The [Rust CLI](README/rust-cli.md) supports the shared list/start/check workflow
 for Python and Rust through separate native adapters, plus a line-based practice
-session with prompts, hints, and navigation. Watching and resume are not implemented
-yet. The prototype and existing practice files remain available until the later
-adoption gate passes.
+session with prompts, hints, navigation, and per-exercise reset from committed
+`main`. Python and Rust now use tracked `exercises/` files instead of an active
+shared answer file. Watching and resume are not implemented yet. The prototype
+and legacy practice files remain available until the later adoption gate passes.
 
 To try the Rust proof from the repository root:
 
@@ -29,7 +30,7 @@ cargo build --locked
 ./target/debug/polyglot practice
 ```
 
-In the session, choose a language, edit the displayed answer in your own editor,
+In the session, choose a language, edit the displayed exercise in your own editor,
 then press Enter to check. Use `h` for a hint, `n` to recheck and advance after a
 pass, `p` to go back, and `q` to quit. Saves do not trigger checks yet.
 
@@ -68,13 +69,22 @@ different hook. It cannot stop editor changes, and local hooks can be bypassed;
 remote branch rules are a separate layer. See
 [ADR 0002](README/decisions/0002-pristine-main-practice-branches.md).
 
-The single tracked `exercises/` layout and reset mechanism are the next migration.
-Current ignored answer files are preserved until then. The retained Python
-prototype does **not** enforce this branch policy; use the shared Rust CLI for it.
+The active files are now `practice/python/exercises/*.py` and
+`practice/rust/exercises/hello.rs`. Current ignored legacy answer files are
+preserved, not automatically split or imported. The retained Python prototype
+does **not** enforce this branch policy or use the new layout.
+
+On a practice branch, `polyglot reset python/hello` (or session `reset`/`r`) asks
+before restoring only that exercise from a pinned commit of local `main`.
+Reset needs the reviewed blank file **already committed on main**; creating a new
+working-tree file is not enough. Until that baseline exists, it safely refuses.
+Changed existing files get private snapshot and original-inode recovery artifacts;
+the index is unchanged. See the [exercise lifecycle guide](README/exercises.md)
+before using reset or moving an older attempt into the new files.
 
 ## Start practicing
 
-The [Python starter track](practice/python/README.md) is the first self-contained
+The [Python exercises](practice/python/README.md) are the first self-contained
 practice path. It needs Python 3.11+ and no third-party packages or database.
 Python is the initial working example, not a prescribed primary language.
 
@@ -85,12 +95,12 @@ polyglot list --language python
 polyglot practice python/hello
 ```
 
-An unimplemented starter should fail. Make that check pass, then follow the
+An unimplemented exercise should fail. Make that check pass, then follow the
 [track instructions](practice/python/README.md) for the next exercise.
-`start` preserves existing answers; it does not reset your work. All three exercises
-share one answer file during the migration. Use `polyglot check python` to check
-the whole track. The Rust CLI resolves the Python interpreter explicitly; see its
-instructions for `--python` and `--root` overrides.
+`start` validates the selected existing file; it creates or resets nothing.
+Each exercise has its own module and test, so a broken sibling does not block an
+individual check. Use `polyglot check python` to check the whole track. The Rust CLI
+resolves Python explicitly; see `--python` and `--root` in its instructions.
 
 The Python prototype remains available for compatibility, not as a branch-safety
 entry point. Direct native commands remain in the track instructions; use them
@@ -117,7 +127,7 @@ evidence about this attempt, not a claim of permanent mastery.
 
 - **Darkness (`~/projects/darkness`):** concept notes, mental models, language
   comparisons, resources, personal learning priorities, and takeaways.
-- **This repository:** exercise prompts, starters, checks, runnable code, and
+- **This repository:** blank exercise modules, prompts, checks, runnable code, and
   instructions needed to run it. Small illustrative snippets may still live in notes.
 - **Polyglot CLI:** one front door for listing, starting, and checking practice.
   It delegates to native tools; it does not manage your notes or learning goals.
@@ -135,14 +145,16 @@ evidence about this attempt, not a claim of permanent mastery.
   branch creation, direct-commit safeguards, and migration limits.
 - [Rust CLI proof](README/rust-cli.md): build/run instructions for both adapters,
   tool selection, safety, and outcome codes.
-- [Python starter track](practice/python/README.md): prompts, checks, and retry instructions.
+- [Exercise lifecycle and authoring](README/exercises.md): tracked files, safe reset,
+  preserving older attempts, and creating or fixing exercises.
+- [Python exercises](practice/python/README.md): prompts, checks, and retry instructions.
 - [Rust proof exercise](practice/rust/README.md): a native check for the second adapter.
 - [Existing language code](src/): katas, scripts, projects, and experiments with
   varying levels of completeness. Existing implementations may reveal solutions.
 - [Older kata catalog and ideas](README/katas/index.md): a resource, not an active queue.
 - [Earlier vision](README/vision.md): preserved philosophy and platform proposals.
 
-Only the Python starter track and Rust proof exercise are documented as
+Only the Python exercises and Rust proof exercise are documented as
 self-contained practice paths.
 Keep the active scope small; use a few real sessions to decide what to add next.
 
@@ -151,5 +163,6 @@ Keep the active scope small; use a few real sessions to decide what to add next.
 These integration tests use disposable practice copies, not your local answers:
 
 ```sh
-python3 -m unittest discover -s tests -p test_polyglot_cli.py -v
+cargo build --locked
+python3 -B -m unittest discover -s tests -p 'test_*.py' -v
 ```

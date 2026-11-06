@@ -5,7 +5,7 @@
 **Accepted direction:** a Rust-hosted, Rustlings-inspired shared workflow with
 native language adapters. The Rust list/start/check proof is implemented for
 Python and Rust. A shared line-based session now supplies prompts, hints, and
-navigation; watching and resume remain future gates. The Python prototype is
+navigation and canonical per-exercise reset. Watching and resume remain future gates. The Python prototype is
 retained during adoption. See
 [ADR 0001](decisions/0001-shared-workflow-language-adapters.md) for the decision,
 boundaries, and adoption gates.
@@ -48,7 +48,8 @@ solutions and test infrastructure belong in Polyglot.
 
 ## Polyglot: executable practice
 
-Polyglot owns prompts, starters, checks, runnable examples, and local attempts. It
+Polyglot owns blank exercise modules, prompts, checks, runnable examples, and
+practice-branch attempts. It
 answers:
 
 > What can I practice, and did this attempt work?
@@ -78,8 +79,9 @@ for an incorrect solution or zero selected tests for success.
 
 The two built-in adapters now use the same list/start/check path; there is no
 dynamic plugin framework. The initial catalog uses one workspace per language,
-with distinct Python exercise IDs sharing its answer file. Add independent
-workspace metadata when a second workspace within one language needs it.
+with independent files and native selectors for each exercise. Python's package
+initializers do not import siblings. Add independent workspace metadata when a
+second workspace within one language needs it.
 Reuse suitable Rustlings patterns/code without importing Cargo assumptions into
 application state or adopting a full fork by default.
 
@@ -103,7 +105,9 @@ Code boundaries are explicit:
 - `cli/src/model.rs`: catalog, workspace mappings, native selectors, and outcomes.
 - `cli/src/workflow.rs`: shared preparation, metadata display, and check orchestration.
 - `cli/src/session.rs`: language selection and in-memory prompt/hint/navigation policy.
-- `cli/src/workspace.rs`: contained paths and preserving attempt creation.
+- `cli/src/workspace.rs`: contained paths and existing exercise-file validation.
+- `cli/src/reset.rs` and `cli/src/reset/native.rs`: shared confirmation, canonical
+  reset, descriptor-anchored file transactions, backups, and recovery.
 - `cli/src/adapters/`: tool resolution, native invocations, and classification.
 
 Native checks may produce build artifacts but must preserve learner sources and
@@ -124,9 +128,24 @@ An opt-in pre-commit guard protects staged exercise paths on main. It is not
 automatically installed, is not a filesystem lock, and does not replace remote
 branch policy. No Git configuration or remote settings are changed by the CLI.
 
-The shared answer files are still transitional. The next layout will use tracked
-per-exercise modules, with main as the canonical blank source and a separately
-specified reset policy. No migration or reset is performed in this increment.
+Active practice now uses tracked per-exercise modules. `start` validates an
+existing file without copying templates. Legacy starter/shared-answer files are
+retained for compatibility and preserving user work, not imported by the Rust CLI.
+
+Reset requires a non-main branch, pins strict local `refs/heads/main` once, and
+reads the actual regular-file blob with Git object replacements disabled. Missing
+canonical files block; uncommitted files or learner HEAD are never fallbacks.
+After confirmation, only the selected worktree file is restored. Its staged
+version, other files, and Git refs are unchanged.
+
+The macOS/Linux backend uses no-follow directory handles and conditional atomic
+operations. Changed existing files receive private snapshot backups and a lasting
+original-inode recovery artifact, so an editor's held descriptor cannot write into
+an inode that reset later discards. Late races or post-exchange failures report
+recovery paths and disclose whether the baseline was installed; do not assume
+every blocked result left source unchanged. Unsupported platforms/filesystems
+fail closed rather than using a destructive fallback. See the
+[lifecycle guide](exercises.md) for prerequisites, retention, and authoring.
 
 Session checks and one-shot checks use the same context and adapters. `next`
 rechecks before advancing, while `check` stays on the selected exercise. There is

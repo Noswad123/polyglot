@@ -1,7 +1,7 @@
-#[path = "answers.rs"]
-mod answers;
+#[path = "exercises/hello.rs"]
+mod exercise;
 
 #[test]
 fn hello() {
-    assert_eq!(answers::greeting(), "Hello, World!");
+    assert_eq!(exercise::greeting(), "Hello, World!");
 }

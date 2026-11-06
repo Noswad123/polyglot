@@ -1,0 +1,45 @@
+"""Copy only active exercise fixtures; never copy learner answers or bytecode."""
+
+from pathlib import Path
+import shutil
+
+
+REPO = Path(__file__).resolve().parents[1]
+SOLUTIONS = {
+    "hello": 'def hello():\n    print("Hello, World!")\n',
+    "find_in_string": "def find_in_string(string, substring):\n    return string.find(substring)\n",
+    "length_of_last_word": "def length_of_last_word(text):\n    words = text.split()\n    return len(words[-1]) if words else 0\n",
+}
+RUST_SOLUTION = 'pub fn greeting() -> &\'static str { "Hello, World!" }\n'
+
+
+def copy_active_fixture(root):
+    for language, names in {
+        "python": ("exercises", "tests", "README.md"),
+        "rust": ("Cargo.toml", "Cargo.lock", "checks.rs", "exercises"),
+    }.items():
+        destination = root / "practice" / language
+        destination.mkdir(parents=True)
+        for name in names:
+            source = REPO / "practice" / language / name
+            if source.is_dir():
+                shutil.copytree(source, destination / name,
+                                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+            else:
+                shutil.copy2(source, destination / name)
+    shutil.copy2(REPO / ".gitignore", root / ".gitignore")
+    rust_readme = REPO / "practice/rust/README.md"
+    (root / "practice/rust/README.md").write_bytes(
+        rust_readme.read_bytes() if rust_readme.is_file() else b"Rust fixture prompt.\n")
+
+
+def exercise_path(root, language="python", name="hello"):
+    return root / "practice" / language / "exercises" / (name + (".py" if language == "python" else ".rs"))
+
+
+def solve(root, language, name=None):
+    if language == "rust":
+        exercise_path(root, language).write_text(RUST_SOLUTION)
+    else:
+        for selected in ((name,) if name else SOLUTIONS):
+            exercise_path(root, language, selected).write_text(SOLUTIONS[selected])

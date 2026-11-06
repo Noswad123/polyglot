@@ -15,6 +15,7 @@ import tempfile
 import unittest
 
 from git_fixture import isolated_git_env
+from active_fixture import copy_active_fixture, exercise_path, solve
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -61,19 +62,7 @@ class RustCliTests(unittest.TestCase):
         self.root = self.base / "copied repository with spaces"
         self.cwd = self.base / "unrelated working directory"
         self.cwd.mkdir()
-        for language, names in {
-            "python": ("starter.py", "test_exercises.py", "README.md"),
-            "rust": ("Cargo.toml", "Cargo.lock", "starter.rs", "checks.rs"),
-        }.items():
-            destination = self.root / "practice" / language
-            destination.mkdir(parents=True)
-            for name in names:
-                shutil.copy2(REPO / "practice" / language / name, destination / name)
-        rust_readme = REPO / "practice/rust/README.md"
-        if rust_readme.is_file():
-            shutil.copy2(rust_readme, self.directory("rust") / "README.md")
-        else:
-            (self.directory("rust") / "README.md").write_text("Rust fixture prompt.\n")
+        copy_active_fixture(self.root)
         self.env = isolated_git_env()
         self.env["PYTHONDONTWRITEBYTECODE"] = "1"
         self.env["CARGO_TERM_COLOR"] = "never"
@@ -90,8 +79,8 @@ class RustCliTests(unittest.TestCase):
     def directory(self, language):
         return self.root / "practice" / language
 
-    def answer(self, language):
-        return self.directory(language) / ("answers.py" if language == "python" else "answers.rs")
+    def answer(self, language, name="hello"):
+        return exercise_path(self.root, language, name)
 
     def sources(self):
         """Cargo artifacts are allowed; fixture source mutations are not."""
@@ -103,11 +92,16 @@ class RustCliTests(unittest.TestCase):
             and path.is_file() and not path.is_symlink()
         }
 
+    def git_files(self):
+        directory = self.root / ".git"
+        return {str(path.relative_to(directory)): path.read_bytes()
+                for path in directory.rglob("*") if path.is_file()}
+
     def execute(self, command, *, cwd=None, env=None):
         return subprocess.run(
             [str(arg) for arg in command], cwd=cwd or self.cwd,
             env=self.env if env is None else env,
-            capture_output=True, text=True, timeout=90,
+            stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=90,
         )
 
     def assert_code(self, result, expected):
@@ -129,14 +123,12 @@ class RustCliTests(unittest.TestCase):
         return self.assert_code(result, code)
 
     def solve(self, language):
-        self.answer(language).write_text(
-            PYTHON_SOLUTION if language == "python" else RUST_SOLUTION
-        )
+        solve(self.root, language)
 
     def native(self, language):
         directory = self.directory(language)
         if language == "python":
-            command = [self.python, "-B", "-m", "unittest", "-v", "test_exercises"]
+            command = [self.python, "-B", "-m", "unittest", "discover", "-s", "tests", "-t", "."]
         else:
             command = [self.cargo, "test", "--offline", "--manifest-path",
                        directory / "Cargo.toml", "--test", "practice_checks",
@@ -178,12 +170,14 @@ class RustCliTests(unittest.TestCase):
                 self.assert_code(self.execute([self.binary, flag]), 2)
         self.assertEqual(self.sources(), before)
 
-    def test_start_copies_exact_bytes_and_preserves_shared_answers(self):
-        for language, starter in (("python", "starter.py"), ("rust", "starter.rs")):
+    def test_start_validates_existing_files_without_writes(self):
+        for language in ("python", "rust"):
             with self.subTest(language=language):
+                before = self.sources()
+                metadata = self.git_files()
                 self.cli("start", language + "/hello")
-                self.assertEqual(self.answer(language).read_bytes(),
-                                 (self.directory(language) / starter).read_bytes())
+                self.assertEqual(self.sources(), before)
+                self.assertEqual(self.git_files(), metadata)
                 edited = b"# edited learner bytes\r\n" if language == "python" else b"// edited\r\n"
                 self.answer(language).write_bytes(edited)
                 selections = IDS[:3] if language == "python" else IDS[3:]
@@ -191,14 +185,14 @@ class RustCliTests(unittest.TestCase):
                     self.cli("start", selection)
                     self.assertEqual(self.answer(language).read_bytes(), edited)
 
-    def test_concurrent_start_preserves_created_and_edited_answers(self):
-        for language, starter in (("python", "starter.py"), ("rust", "starter.rs")):
+    def test_concurrent_start_preserves_blank_and_edited_files(self):
+        for language in ("python", "rust"):
             for edited in (False, True):
                 with self.subTest(language=language, edited=edited):
                     if edited:
                         self.solve(language)
-                    expected = (self.answer(language) if edited else
-                                self.directory(language) / starter).read_bytes()
+                    expected = self.sources()
+                    metadata = self.git_files()
                     command = [str(self.binary), "--root", str(self.root), "--python", self.python,
                                "--cargo", self.cargo, "start", language + "/hello"]
                     processes = []
@@ -215,20 +209,24 @@ class RustCliTests(unittest.TestCase):
                             if process.poll() is None:
                                 process.kill()
                                 process.communicate()
-                    self.assertEqual(self.answer(language).read_bytes(), expected)
+                    self.assertEqual(self.sources(), expected)
+                    self.assertEqual(self.git_files(), metadata)
 
     def test_missing_attempts_are_blocked_without_creation(self):
+        for selection in IDS:
+            language, name = selection.split("/")
+            self.answer(language, name).unlink()
         for selection in (*IDS, "python", "rust"):
             with self.subTest(selection=selection):
                 result = self.cli("check", selection, code=2)
-                self.assertIn("start", result.stderr)
+                self.assertIn("Blocked:", result.stderr)
         self.assertFalse(self.answer("python").exists())
         self.assertFalse(self.answer("rust").exists())
 
-    def test_missing_starters_do_not_create_answers(self):
-        for language, starter in (("python", "starter.py"), ("rust", "starter.rs")):
+    def test_missing_exercises_are_not_invented_by_start(self):
+        for language in ("python", "rust"):
             with self.subTest(language=language):
-                (self.directory(language) / starter).unlink()
+                self.answer(language).unlink()
                 before = self.sources()
                 self.cli("start", language + "/hello", code=2)
                 self.assertEqual(self.sources(), before)
@@ -237,6 +235,7 @@ class RustCliTests(unittest.TestCase):
     def test_answer_directories_are_rejected(self):
         for language in ("python", "rust"):
             with self.subTest(language=language):
+                self.answer(language).unlink()
                 self.answer(language).mkdir()
                 for command in ("start", "check"):
                     self.cli(command, language + "/hello", code=2)
@@ -249,6 +248,7 @@ class RustCliTests(unittest.TestCase):
         for language in ("python", "rust"):
             with self.subTest(language=language):
                 try:
+                    self.answer(language).unlink()
                     self.answer(language).symlink_to(outside)
                 except (OSError, NotImplementedError) as error:
                     self.skipTest(f"symlinks unavailable: {error}")
@@ -304,19 +304,14 @@ class RustCliTests(unittest.TestCase):
         self.cli("check", "rust/hello")
 
     def test_each_python_id_can_pass_with_siblings_blank(self):
-        replacements = (
-            ('raise NotImplementedError("Implement hello")', 'print("Hello, World!")'),
-            ('raise NotImplementedError("Implement find_in_string")', 'return string.find(substring)'),
-            ('raise NotImplementedError("Implement length_of_last_word")',
-             'return len(text.split()[-1]) if text.split() else 0'),
-        )
-        starter = (self.directory("python") / "starter.py").read_text()
-        for selection, (old, new) in zip(IDS[:3], replacements):
+        for selection in IDS[:3]:
             with self.subTest(selection=selection):
-                self.assertIn(old, starter)
-                self.answer("python").write_text(starter.replace(old, new))
+                name = selection.split("/")[1]
+                starter = self.answer("python", name).read_text()
+                solve(self.root, "python", name)
                 self.cli("check", selection)
                 self.cli("check", "python", code=1)
+                self.answer("python", name).write_text(starter)
 
     def test_python_learner_syntax_and_assertion_failures(self):
         for source, diagnostic in (("def hello(:\n", "SyntaxError"),
@@ -325,6 +320,28 @@ class RustCliTests(unittest.TestCase):
                 self.answer("python").write_text(source)
                 result = self.cli("check", "python/hello", code=1)
                 self.assertIn(diagnostic, result.stdout + result.stderr)
+
+    def test_selected_python_is_independent_of_broken_or_missing_siblings(self):
+        solve(self.root, "python", "hello")
+        sibling = self.answer("python", "find_in_string")
+        sibling_harness = self.directory("python") / "tests/test_find_in_string.py"
+        for source in ("def broken(:\n", "raise RuntimeError('must not import sibling')\n", None):
+            with self.subTest(source=source):
+                if source is None:
+                    sibling.unlink()
+                    sibling_harness.unlink()
+                else:
+                    sibling.write_text(source)
+                    sibling_harness.write_text("def broken_harness(:\n")
+                before = self.sources()
+                self.cli("start", "python/hello")
+                self.cli("check", "python/hello")
+                self.cli("practice", "python/hello")
+                self.assert_code(self.execute(
+                    [self.python, "-B", "-m", "unittest", "tests.test_hello"],
+                    cwd=self.directory("python")), 0)
+                self.assertEqual(self.sources(), before)
+        self.cli("check", "python", code=2)
 
     def test_python_feedback_labels_actual_and_expected_output(self):
         self.answer("python").write_text(
@@ -353,7 +370,7 @@ class RustCliTests(unittest.TestCase):
         )
         for source, target, actual, expected in cases:
             with self.subTest(target=target, actual=actual):
-                self.answer("python").write_text(source)
+                self.answer("python", target.split("/")[1]).write_text(source)
                 result = self.cli("check", target, code=1)
                 diagnostic = result.stdout + result.stderr
                 self.assertIn(actual, diagnostic)
@@ -369,7 +386,7 @@ class RustCliTests(unittest.TestCase):
 
     def test_broken_python_harness_is_blocked(self):
         self.solve("python")
-        harness = self.directory("python") / "test_exercises.py"
+        harness = self.directory("python") / "tests/test_hello.py"
         for source in ("def broken(:\n", "raise RuntimeError('broken harness')\n"):
             with self.subTest(source=source):
                 harness.write_text(source)
@@ -377,13 +394,13 @@ class RustCliTests(unittest.TestCase):
 
     def test_unknown_python_native_selector_is_blocked(self):
         self.solve("python")
-        harness = self.directory("python") / "test_exercises.py"
+        harness = self.directory("python") / "tests/test_hello.py"
         harness.write_text(harness.read_text().replace("def test_hello(", "def renamed_hello("))
         self.cli("check", "python/hello", code=2)
 
     def test_python_skips_cannot_report_success(self):
         self.solve("python")
-        harness = self.directory("python") / "test_exercises.py"
+        harness = self.directory("python") / "tests/test_hello.py"
         harness.write_text(harness.read_text().replace(
             "    def test_hello(", '    @unittest.skip("fixture skip")\n    def test_hello('
         ))
@@ -455,7 +472,7 @@ class RustCliTests(unittest.TestCase):
                 self.cli("check", "python/hello", code=3)
 
     def test_python_checks_read_fresh_sources_despite_valid_timestamp_cache(self):
-        for filename in ("answers.py", "test_exercises.py"):
+        for filename in ("exercises/hello.py", "tests/test_hello.py"):
             with self.subTest(filename=filename):
                 self.solve("python")
                 source = self.directory("python") / filename

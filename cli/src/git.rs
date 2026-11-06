@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::model::{Language, Outcome};
 
-fn run(root: &Path, args: &[&str]) -> Result<String, Outcome> {
+pub fn raw(root: &Path, args: &[&str]) -> Result<Vec<u8>, Outcome> {
     let mut command = Command::new("git");
     command.arg("-C").arg(root).args(args);
     // An inherited Git context must not redirect --root to another repository.
@@ -26,6 +26,7 @@ fn run(root: &Path, args: &[&str]) -> Result<String, Outcome> {
     }
     let output = command
         .env("GIT_OPTIONAL_LOCKS", "0")
+        .env("GIT_NO_REPLACE_OBJECTS", "1")
         .output()
         .map_err(|error| Outcome::Blocked(format!("could not run Git: {error}")))?;
     if !output.status.success() {
@@ -36,7 +37,11 @@ fn run(root: &Path, args: &[&str]) -> Result<String, Outcome> {
             String::from_utf8_lossy(&output.stderr).trim()
         )));
     }
-    String::from_utf8(output.stdout)
+    Ok(output.stdout)
+}
+
+fn run(root: &Path, args: &[&str]) -> Result<String, Outcome> {
+    String::from_utf8(raw(root, args)?)
         .map(|text| text.trim_end_matches('\n').to_owned())
         .map_err(|_| Outcome::Blocked("Git output must be UTF-8".into()))
 }
@@ -72,13 +77,45 @@ fn branch(root: &Path) -> Result<String, Outcome> {
 }
 
 pub fn require_practice_branch(root: &Path) -> Result<(), Outcome> {
-    if branch(root)? == "main" {
+    practice_branch(root).map(|_| ())
+}
+
+pub fn practice_branch(root: &Path) -> Result<String, Outcome> {
+    let name = branch(root)?;
+    if name == "main" {
         return Err(Outcome::Blocked(
             "main is protected. Run `polyglot practice` to automatically create a branch on clean main, or run `git switch -c practice/<name>` to safely carry dirty work."
                 .into(),
         ));
     }
-    Ok(())
+    Ok(name)
+}
+
+pub fn reset_baseline(root: &Path, relative: &Path) -> Result<(String, Vec<u8>), Outcome> {
+    let unavailable = || {
+        Outcome::Blocked(format!(
+        "reset baseline is unavailable for {}. Commit the reviewed pristine exercise on main first (refs/heads/main); no working-tree or learner-HEAD fallback is used.", relative.display()
+    ))
+    };
+    let oid = run(root, &["rev-parse", "--verify", "refs/heads/main^{commit}"])
+        .map_err(|_| unavailable())?;
+    let path = relative.to_str().ok_or_else(unavailable)?;
+    let entry = raw(root, &["ls-tree", "-z", &oid, "--", path]).map_err(|_| unavailable())?;
+    let entry = entry.strip_suffix(&[0]).ok_or_else(unavailable)?;
+    let tab = entry
+        .iter()
+        .position(|byte| *byte == b'\t')
+        .ok_or_else(unavailable)?;
+    if &entry[tab + 1..] != path.as_bytes() {
+        return Err(unavailable());
+    }
+    let header = std::str::from_utf8(&entry[..tab]).map_err(|_| unavailable())?;
+    let fields: Vec<_> = header.split(' ').collect();
+    if fields.len() != 3 || !matches!(fields[0], "100644" | "100755") || fields[1] != "blob" {
+        return Err(unavailable());
+    }
+    let bytes = raw(root, &["cat-file", "blob", fields[2]]).map_err(|_| unavailable())?;
+    Ok((oid, bytes))
 }
 
 pub fn prepare_practice(root: &Path, language: Language) -> Result<(), Outcome> {

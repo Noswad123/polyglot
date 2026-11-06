@@ -1,7 +1,8 @@
 # ADR 0002: Pristine main and practice branches
 
-**Status:** Accepted; branch safeguards and an opt-in commit hook are implemented.
-Migration to tracked per-exercise files and reset are not implemented yet.
+**Status:** Accepted; branch safeguards, an opt-in commit hook, independent tracked
+exercise files, and explicit reset are implemented. Existing learner solutions
+are preserved in legacy files, not automatically migrated or committed.
 
 [Architecture](../architecture.md) · [Roadmap](../../ROADMAP.md)
 
@@ -12,10 +13,10 @@ attempts on a separate branch. Curriculum changes also use an authoring branch;
 practice solutions should not be merged back into `main`.
 
 Use Git to separate pristine material from practice, rather than maintaining a
-learner-facing starters/answers pair. The target layout is one tracked
+learner-facing starters/answers pair. The active layout is one tracked
 `practice/<language>/exercises/` directory, with independent modules and tests.
-That layout migration follows this branch-safety increment; current ignored
-`answers.py`/`answers.rs` files are preserved, not silently converted or discarded.
+Current ignored `answers.py`/`answers.rs` files are preserved, not silently
+converted or discarded, and are not imported by the Rust CLI.
 
 ## Rust CLI policy
 
@@ -26,7 +27,8 @@ That layout migration follows this branch-safety increment; current ignored
   branch automatically or moves the `main` ref.
 - On dirty `main`, it refuses automatic creation. The learner can explicitly use
   `git switch -c practice/my-session` to carry work to a new branch, or make main
-  clean first. The tool never stashes, resets, commits, fetches, or forces a switch.
+  clean first. The branch policy never stashes, restores files, commits, fetches,
+  or forces a switch. Only the separate explicit reset command restores an exercise.
 - `start` requires a non-`main` branch and does not create one automatically.
 - Practice/start require an exact top-level Git checkout or linked worktree with a
   committed, named HEAD. Detached, unborn, bare, nested-root, and non-repository
@@ -67,13 +69,28 @@ layer; no remote settings are changed by this implementation.
 The guard does not semantically prove that an exercise is blank. Changes to
 canonical exercises require review on an authoring branch before integration.
 
-## Reset and migration follow-up
+## Canonical reset and legacy preservation
 
-Before watch mode, replace the shared answer files with independent tracked
-exercise modules while preserving existing learner implementations separately.
-Do not use a learner branch's HEAD as a pristine reset source. A future reset must
-resolve an explicit canonical revision of `main`, back up the selected file,
-confirm replacement, and restore only that exercise without altering the index
-or unrelated files. The exact baseline/version policy is part of that next gate.
+`reset ID` and session `reset`/`r` require a non-main branch and accept only one
+explicit exercise. Resolve `refs/heads/main` to a full commit once per operation,
+then read that commit's exact regular-file blob. Disable Git object replacements;
+never use learner HEAD, working-tree contents, or a legacy starter as fallback.
+The latest reviewed local main is the baseline at reset start, not a permanently
+recorded practice-branch creation revision. A later main-ref change during the
+confirmation does not substitute another blob into that operation.
 
-No reset command, automatic migration, or new progress store is introduced here.
+The canonical file must already be committed on local main. New authoring files
+without that baseline are blocked. Existing pristine files require no write or
+backup. Other cases require `y`/`yes`; cancellation/EOF writes nothing.
+
+Restore only the selected worktree file, leaving the index and staged content
+unchanged. On macOS/Linux, safe directory-relative operations, atomic no-replace
+or exchange, private snapshot backups, and lasting original-inode recovery retain
+learner bytes. A late edit can yield a blocked result after the baseline was
+installed; diagnostics must explicitly identify that state and retained recovery.
+Other platforms/unsupported primitives block without an overwrite fallback.
+
+No shared answer file is automatically parsed or deleted. Move selected functions
+and needed imports manually on a practice branch, verify the checks, and preserve
+the old file until satisfied. See the [exercise lifecycle guide](../exercises.md).
+There is no automatic backup cleanup or new progress store.
