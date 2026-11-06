@@ -1,5 +1,6 @@
 import os
 import re
+from pathlib import Path
 
 def camel_to_snake(name: str) -> str:
     # Split camelCase or PascalCase into words and join with underscores
@@ -20,4 +21,4 @@ def rename_files_in_dir(root_dir: str):
                 os.rename(old_path, new_path)
 
 if __name__ == "__main__":
-    rename_files_in_dir("../katas")
+    rename_files_in_dir(str(Path(__file__).resolve().parents[3] / "solutions" / "python"))
