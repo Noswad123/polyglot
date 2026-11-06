@@ -6,11 +6,13 @@
 
 This implements the shared practice workflow and a line-based session.
 Python and Rust share prompt/hint presentation, navigation, and check orchestration.
-It is not yet the full edit-and-save Rustlings experience: watching remains next.
-The Python prototype remains available; no learner files are migrated or removed.
+Manual checks are intentional: save, then explicitly check. There is no auto-run
+on save or automatic advancement; watch mode is neither implemented nor planned.
+`polyglot` is the only supported practice CLI. The root Python prototype and
+obsolete starter/test files are retired, with no prototype fallback.
 
 Practice uses tracked, independent `exercises/` files on Git practice branches
-to keep `main` pristine. Legacy starters and ignored answers remain untouched;
+to keep `main` pristine. Ignored legacy answers are preserved if present;
 the shared Rust CLI never imports or uses them and does not migrate solutions.
 See [Exercise lifecycle](exercises.md) and
 [ADR 0002](decisions/0002-pristine-main-practice-branches.md).
@@ -19,6 +21,9 @@ See [Exercise lifecycle](exercises.md) and
 its exercise path in local `refs/heads/main`. New or uncommitted exercise paths
 are not a baseline; reset fails safely until they are integrated. There is no
 working-tree, learner-HEAD, or legacy-starter fallback, and no automatic commit.
+All four current blank files already have this committed baseline on local main;
+no additional baseline commit is needed for them. Newly authored files still need
+reviewed integration into main before reset can restore them.
 
 ## Build
 
@@ -48,7 +53,8 @@ polyglot practice
 Like the other local development tools, this builds the **debug** binary and
 installs it with executable permissions as `~/.local/bin/polyglot`, replacing an
 existing installed copy. `make install-dev` is an alias; neither target installs
-the older Python CLI. Use `make install-python` for that legacy tool.
+the unrelated experimental `pylearn` package. `make install-python` installs that
+package, not the retired root prototype or the active practice CLI.
 
 The install target creates the destination directory if needed, but does not
 change PATH. If it is not on PATH, invoke `~/.local/bin/polyglot` directly.
@@ -64,8 +70,7 @@ make install INSTALL_DIR="/path/to/dev/bin" TARGET_DIR="/path/to/build/cache"
 `TARGET_DIR` defaults to `CARGO_TARGET_DIR` when set, otherwise `target`. The build
 passes that directory explicitly to Cargo and installs its native debug binary.
 `make build` builds without installing; plain `make` still displays help.
-This is a local development install, not release packaging or adoption/retirement
-of the prototype.
+This is a local development install, not release packaging.
 
 ## API / Interfaces
 
@@ -141,10 +146,10 @@ returns `0` because the session ended normally, **not** because the exercises al
 passed. Use one-shot `check` for a machine-readable check exit code.
 
 There is no saved selection or progress; a new session starts at its requested
-target or language menu. Edits during an active native process are not yet tracked
-or used to invalidate that running result; superseded-run handling belongs to the
-watch increment. Finish editing and save before checking or resetting; do not edit
-while either operation is running.
+target or language menu. Edits during an active native process are not tracked
+or used to invalidate that running result. Finish editing and save before checking
+or resetting; do not edit while either operation is running. Optional persisted
+resume would be considered only if needed, not as a prerequisite for retirement.
 
 ## Read a prompt or hint without starting
 
@@ -231,13 +236,16 @@ make install-hooks
 
 This explicitly installs the tracked pre-commit guard, not a Git configuration
 change. It refuses to replace existing different hooks or configured hook systems;
-identical installed guards are recognized. No hook is installed by `make install`.
+identical installed guards are recognized. Updating the tracked source does not
+replace an already-installed older guard; integrate changes manually with that
+setup. No hook is installed by `make install`.
 The guard checks staged protected active exercise source paths, including new
 files, modifications, deletes, and renames, without
 modifying your files or index. See ADR 0002 for the protected paths and limits.
 
-This is not a filesystem lock: editors can still modify files, the old Python
-prototype does not enforce the branch policy, and local hooks can be bypassed.
+This is not a filesystem lock: editors can still modify files and local hooks can
+be bypassed. The guard covers active exercises and legacy ignored answer paths,
+not retired starter paths.
 Remote branch protection must be managed separately. Use a practice branch even
 when running native commands directly.
 
@@ -319,23 +327,21 @@ binary fails with build instructions rather than silently skipping the suite.
 The fixtures are isolated temporary copies, with temporary Git repositories where
 needed, paths with spaces, and unrelated working directories. Active fixture
 selection and explicit solution cases live in `tests/active_fixture.py`; tests do
-not copy, reset, or check real local learner answers. Legacy prototype tests remain
-supported. Unix-specific symlink/shim cases are skipped on other platforms. The
-130-test integration/regression suite passed on Python 3.15; the 29 reset tests
-also passed on Python 3.12. Eleven Rust unit tests passed on Rust 1.85 and 1.89,
-with format, Clippy, and locked offline build checks. Runtime platform validation
-so far is macOS only; this is not a full test run of older projects under `src/`.
+not copy, reset, or check real local learner answers. Retired prototype tests are
+not part of the active suite and are not required for authoring validation.
+Unix-specific symlink/shim cases are skipped on other platforms. Runtime platform
+validation so far is macOS only; this is not a full test run of older projects
+under `src/`.
 
-## Not implemented yet
+## Scope and deferrals
 
-No watch mode, persistent progress, editor launching, TUI, or
-release distribution. The local debug install above is supported. No Rustlings
-code was copied for these slices.
+No persistent progress, editor launching, TUI, or release distribution. Watch mode
+is deliberately out of scope, not a future delivery gate. The local debug install
+above is supported. No Rustlings code was copied for these slices.
 Tracked exercise files and explicit single-exercise reset are implemented. Reset
 requires the reviewed canonical blank to be committed at its path in local
-`refs/heads/main`. The Python prototype is retired only after later adoption
-checks. Upstream pinning would be needed if upstream code were copied; none was
-copied here. Learning exercises,
+`refs/heads/main`. The root Python prototype is retired. Upstream pinning would be
+needed if upstream code were copied; none was copied here. Learning exercises,
 not a general platform, remain the scope.
 
 ## Related files

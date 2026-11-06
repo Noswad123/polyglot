@@ -28,8 +28,7 @@ class MainHookTests(unittest.TestCase):
         shutil.copytree(REPO / ".githooks", self.root / ".githooks")
         shutil.copy2(REPO / "Makefile", self.root / "Makefile")
         shutil.copy2(REPO / ".gitignore", self.root / ".gitignore")
-        for relative in ("practice/python/starter.py", "practice/rust/starter.rs",
-                         "practice/python/exercises/hello.py", "practice/rust/exercises/hello.rs",
+        for relative in ("practice/python/exercises/hello.py", "practice/rust/exercises/hello.rs",
                          "docs.md"):
             path = self.root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -79,9 +78,8 @@ class MainHookTests(unittest.TestCase):
         self.assertEqual(path.read_bytes(), (self.root / ".githooks/pre-commit").read_bytes())
         self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o755)
 
-    def test_staged_legacy_starters_on_main_are_blocked(self):
-        for relative in ("practice/python/starter.py", "practice/rust/starter.rs",
-                         "practice/python/exercises/hello.py", "practice/rust/exercises/hello.rs"):
+    def test_staged_exercises_on_main_are_blocked(self):
+        for relative in ("practice/python/exercises/hello.py", "practice/rust/exercises/hello.rs"):
             with self.subTest(path=relative):
                 (self.root / relative).write_bytes(b"staged learner edit\n")
                 self.git("add", "--", relative)
@@ -111,17 +109,17 @@ class MainHookTests(unittest.TestCase):
                 self.git("restore", "--staged", "--", relative)
 
     def test_staged_protected_deletion_on_main_is_blocked(self):
-        self.git("rm", "practice/python/starter.py")
+        self.git("rm", "practice/python/exercises/hello.py")
         self.hook(blocked=True)
-        self.assertFalse((self.root / "practice/python/starter.py").exists())
+        self.assertFalse((self.root / "practice/python/exercises/hello.py").exists())
 
     def test_main_tag_does_not_bypass_protected_main_deletion(self):
         self.git("tag", "main")
-        self.git("rm", "practice/python/starter.py")
+        self.git("rm", "practice/python/exercises/hello.py")
         self.hook(blocked=True)
 
     def test_staged_rename_out_of_protected_path_on_main_is_blocked(self):
-        self.git("mv", "practice/python/starter.py", "renamed outside exercises.py")
+        self.git("mv", "practice/python/exercises/hello.py", "renamed outside exercises.py")
         self.hook(blocked=True)
         self.assertEqual((self.root / "renamed outside exercises.py").read_bytes(),
                          b"baseline fixture bytes\n")
@@ -133,12 +131,12 @@ class MainHookTests(unittest.TestCase):
 
     def test_protected_staged_changes_on_feature_branch_are_allowed(self):
         self.git("switch", "-c", "practice/fixture")
-        (self.root / "practice/python/starter.py").write_text("feature edit\n")
-        self.git("add", "practice/python/starter.py")
+        (self.root / "practice/python/exercises/hello.py").write_text("feature edit\n")
+        self.git("add", "practice/python/exercises/hello.py")
         self.hook(blocked=False)
 
     def test_unstaged_protected_edits_do_not_block_main(self):
-        (self.root / "practice/python/starter.py").write_text("unstaged learner edit\n")
+        (self.root / "practice/python/exercises/hello.py").write_text("unstaged learner edit\n")
         (self.root / "practice/python/answers.py").write_text("ignored learner answer\n")
         self.hook(blocked=False)
         (self.root / "docs.md").write_text("staged documentation\n")

@@ -15,6 +15,9 @@ pristine; implement solutions on a practice branch, not in a separate answers fi
 at its exercise path in local `refs/heads/main`. New or uncommitted paths are not
 a baseline; reset safely refuses until it exists. `start` does not create missing
 files or copy a starter.
+The current Rust blank is already committed on local main; no additional baseline
+commit is needed for it. Newly authored files still need reviewed integration
+there before becoming reset baselines.
 
 ## API / Interfaces
 
@@ -68,14 +71,18 @@ After the committed-main prerequisite above is met, retry with
 
 Missing tools or broken check configuration are blocked checks, not failed
 solutions. `check` does not initialize missing source. Save before checking or
-resetting and do not edit during either operation; watching is not implemented.
+resetting and do not edit during either operation. Explicit checks are intentional:
+Enter/`check`/`c` checks and stays selected; `next`/`n` rechecks before advancing.
+There is no auto-run on save, automatic advancement, or persisted progress, and
+watch mode is neither implemented nor planned.
 Reset changes only the selected worktree file, not the staged version. Preserve
 both `Backup:` and `Recovery:` artifacts; there is no automatic cleanup.
 
-Legacy `starter.rs` and ignored `answers.rs` remain untouched for preservation
-and compatibility. The shared Rust CLI and active `checks.rs` never import or use
-them. No user solutions were automatically copied or migrated. To reuse an older
-attempt, follow the [manual preservation steps](../../README/exercises.md#preserve-an-older-attempt).
+The obsolete `starter.rs` is retired, as is the root Python prototype; `polyglot`
+is the only supported practice CLI. Ignored `answers.rs` is preserved if present,
+with its ignore and optional hook protection. The CLI and active `checks.rs` never
+import or use it. No user solutions were automatically copied or migrated. To reuse
+an older attempt, follow the [manual preservation steps](../../README/exercises.md#preserve-an-older-attempt).
 
 ## Related files
 

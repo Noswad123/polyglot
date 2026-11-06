@@ -14,6 +14,9 @@ a small learning workflow, not a general exercise-pack platform.
 are not a baseline. Until that commit exists, reset blocks safely; it does not
 invent a blank or use the working tree, learner HEAD, or old starter. No automatic
 commit or learner-solution migration is implied.
+All four current blank modules are already committed on local main; no additional
+baseline commit is needed for them. The prerequisite still applies to newly
+authored files and to another checkout without those committed paths.
 
 ## API / Interfaces
 
@@ -35,7 +38,9 @@ Ordinary exercises need catalog/test changes, not a new adapter branch.
    clean main, or reuses a non-main branch. Dirty main is refused without stash.
 2. `start ID` validates an existing selected file and displays **Exercise file:**.
    It requires a non-main branch, copies no template, and launches no editor.
-3. Save the selected module and check it. Python tests import only their own
+3. Finish editing and save the selected module, then explicitly check it with
+   Enter/`check`/`c` in the session or a one-shot check. Manual checks are intentional;
+   saves never trigger checks. Python tests import only their own
    exercise and shared feedback; `exercises/__init__.py` has no re-exports.
    Broken/missing unselected siblings do not prevent selected checks. Rust
    `checks.rs` calls `greeting()` from `exercises/hello.rs`.
@@ -43,11 +48,15 @@ Ordinary exercises need catalog/test changes, not a new adapter branch.
    prerequisite above. Only that worktree file is restored; the index is unchanged.
 
 Standalone checks and read-only commands are allowed on main. Native commands and
-the legacy Python prototype do not enforce branch policy; select a practice branch
-yourself. The optional `make install-hooks` staged-path guard covers protected
+editors do not enforce branch policy; select a practice branch yourself. The root
+Python prototype is retired; `polyglot` is the only supported practice CLI.
+The optional `make install-hooks` staged-path guard covers protected
 active source additions, modifications, deletions, and renames on main. It is not
 an editor read-only lock, does not change remote protection, and installs no Git
-configuration. Reset never changes Git configuration, history, or the index.
+configuration. It also protects the two legacy ignored answer paths, not retired
+starter paths. It refuses different existing hooks or configured hook systems;
+updating its tracked source does not update an already-installed older hook.
+Reset never changes Git configuration, history, or the index.
 
 ## Edge Cases
 
@@ -77,7 +86,8 @@ unchanged in either case. Read diagnostics and preserve recovery artifacts.
 The native backend is macOS/Linux only; unsupported platforms/filesystem atomic
 primitives block without an overwrite fallback. macOS has runtime coverage; Linux
 implementation has not been runtime-tested. Save before checking/resetting and do
-not edit while either runs: watching and superseded-run handling are not implemented.
+not edit while either runs. No watch mode or auto-run on save is planned. Checks do
+not automatically advance or persist progress; `next` rechecks before advancing.
 
 ## Example usage
 
@@ -98,10 +108,11 @@ polyglot reset python/hello
 
 ### Preserve an older attempt
 
-Legacy Python `starter.py`, `test_exercises.py`, and ignored `answers.py`, plus
-Rust `starter.rs` and ignored `answers.rs`, remain untouched for compatibility and
-preservation. The shared Rust CLI never imports or uses them. No solution has been
-automatically copied or claimed migrated.
+The root Python prototype and obsolete Python/Rust starter and shared test files
+are retired. Ignored `practice/python/answers.py` and `practice/rust/answers.rs`
+are preserved if present; they are not required to exist. The CLI never imports
+or uses them, and their ignore and optional hook protection remain. No solution
+has been automatically copied or claimed migrated.
 
 To reuse your own older solution, first select a practice branch. Manually copy
 only the selected function and its needed imports into the corresponding active
@@ -124,9 +135,9 @@ solutions into main.
    valid implementation passes. Check selected isolation, including broken/missing
    siblings where applicable. Update `tests/active_fixture.py`'s explicit copy
    selection when needed and add a solution case for the new exercise.
-5. Run the [full regression commands](rust-cli.md#verify-the-implementation),
-   including legacy prototype coverage, against disposable fixtures, not personal
-   attempts. Keep validated solutions in test fixtures, not canonical modules.
+5. Run the [active regression commands](rust-cli.md#verify-the-implementation)
+   against disposable fixtures, not personal attempts. Keep validated solutions in
+   test fixtures, not canonical modules.
 6. Submit for PR review. The reviewed canonical blank must reach local main's
    committed tree before it becomes a reset baseline. Never merge learning
    solutions into main.

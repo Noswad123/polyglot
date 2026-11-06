@@ -5,12 +5,13 @@
 **Accepted direction:** a Rust-hosted, Rustlings-inspired shared workflow with
 native language adapters. The Rust list/start/check proof is implemented for
 Python and Rust. A shared line-based session now supplies prompts, hints, and
-navigation and canonical per-exercise reset. Watching and resume remain future gates. The Python prototype is
-retained during adoption. See
+navigation and canonical per-exercise reset. Manual checking is the intended
+workflow, not an interim step toward watching. The root Python prototype is retired;
+`polyglot` is the only supported practice CLI. See
 [ADR 0001](decisions/0001-shared-workflow-language-adapters.md) for the decision,
-boundaries, and adoption gates.
+boundaries, and adoption status.
 
-## One system, three responsibilities
+## Overview
 
 **Darkness = knowledge. Polyglot = practice. The CLI = access. A web UI is optional.**
 
@@ -20,7 +21,7 @@ product that must be completed independently.
 ```text
 You
  |
-Shared Rust workflow (target)
+Shared Rust workflow
 select → edit → check → hint → next
  |
 Exercise definition + safe workspace preparation
@@ -61,11 +62,12 @@ exercise is evidence about an attempt, not a declaration of mastery.
 No backend service or database is needed for the current practice path. A future
 storage choice should follow a concrete requirement, not precede it.
 
-## Shared workflow and native adapters (target)
+## API / Interfaces
 
 The Rust workflow owns selection, safe preparation, check orchestration, feedback,
-and shared hints/navigation policy. The first line-based session is implemented;
-watching, superseded-run handling, and resume follow in separate delivery gates.
+and shared hints/navigation policy. The line-based session uses explicit checks;
+there is no watch mode or plan to add one. Persisted resume is optional future work
+only if needed, not a retirement gate.
 It must not contain Cargo/Python command construction or assume `.rs` files.
 
 Exercise definitions connect stable IDs to workspaces, prompts, hints, native check
@@ -85,7 +87,7 @@ second workspace within one language needs it.
 Reuse suitable Rustlings patterns/code without importing Cargo assumptions into
 application state or adopting a full fork by default.
 
-## Current Rust proof
+## Example usage
 
 ```sh
 cargo build --locked
@@ -96,8 +98,10 @@ cargo build --locked
 ./target/debug/polyglot practice rust/hello
 ```
 
-See the [proof instructions](rust-cli.md) for tool selection, root overrides,
+See the [CLI instructions](rust-cli.md) for tool selection, root overrides,
 outcome codes, preservation guarantees, and isolated test commands.
+
+## Related files
 
 Code boundaries are explicit:
 
@@ -115,7 +119,7 @@ locked inputs. Python checks execute fresh source instead of cached bytecode.
 Missing tools/configuration are blocked, and ambiguous results are indeterminate.
 This is a local practice tool, not a sandbox or arbitrary exercise-pack executor.
 
-## Pristine main and practice branches
+## Data Flow
 
 [ADR 0002](decisions/0002-pristine-main-practice-branches.md) separates the canonical
 exercise baseline on `main` from learner branches. `cli/src/git.rs` owns exact-root
@@ -126,17 +130,25 @@ available for validating canonical material.
 
 An opt-in pre-commit guard protects staged exercise paths on main. It is not
 automatically installed, is not a filesystem lock, and does not replace remote
-branch policy. No Git configuration or remote settings are changed by the CLI.
+branch policy. It covers active exercise sources and legacy ignored answer paths,
+not retired starters. Tracked guard updates do not replace already-installed old
+hooks; the installer refuses different existing hooks or configured hook systems.
+No Git configuration or remote settings are changed by the CLI.
 
 Active practice now uses tracked per-exercise modules. `start` validates an
-existing file without copying templates. Legacy starter/shared-answer files are
-retained for compatibility and preserving user work, not imported by the Rust CLI.
+existing file without copying templates. Obsolete starters and their shared test
+harness are retired. Legacy ignored answer files are preserved if present and are
+not imported or migrated by the CLI.
 
 Reset requires a non-main branch, pins strict local `refs/heads/main` once, and
 reads the actual regular-file blob with Git object replacements disabled. Missing
 canonical files block; uncommitted files or learner HEAD are never fallbacks.
+All four current blank files are already committed on local main. Newly authored
+files still need reviewed integration there before they become reset baselines.
 After confirmation, only the selected worktree file is restored. Its staged
 version, other files, and Git refs are unchanged.
+
+## Edge Cases
 
 The macOS/Linux backend uses no-follow directory handles and conditional atomic
 operations. Changed existing files receive private snapshot backups and a lasting
@@ -150,34 +162,19 @@ fail closed rather than using a destructive fallback. See the
 Session checks and one-shot checks use the same context and adapters. `next`
 rechecks before advancing, while `check` stays on the selected exercise. There is
 no saved pass used as a navigation gate; selection and language switches are
-committed only after safe preparation succeeds. In-flight edits are not tracked
-until the watch increment. Session quit success does not mean all checks passed.
+committed only after safe preparation succeeds. Finish editing and save before
+checking/resetting; do not edit during either operation. Saves do not trigger
+checks, and passing does not automatically advance or persist progress. Session
+quit success does not mean all checks passed.
 
-## Retained interface: Python prototype
+## Historical prototype retirement
 
-The working interface remains repository-local:
-
-```sh
-python3 polyglot.py list --language python
-python3 polyglot.py start python/hello
-python3 polyglot.py check python/hello
-python3 polyglot.py check python
-```
-
-It currently supports only the existing three Python starter exercises. They share
-one local `answers.py` file. Selecting another exercise does not reset that file.
-`check` does not create or reset answers, and failure is reported as a nonzero exit
-status from the native test runner.
-
-Keep this prototype and direct native commands usable during the Rust proof.
-Retirement is gated on real sessions and behavior/preservation parity, not merely
-on a Rust binary compiling. `make install` now supports a local Rust debug binary
-at `~/.local/bin/polyglot`; release packaging remains separate.
-Separate per-language CLIs are not the target; existing `pylearn` code remains
-untouched.
-
-The Python prototype does not implement Git branch safeguards. It remains a
-compatibility tool, not the recommended entry point for protected practice.
+The root `polyglot.py` prototype and obsolete practice starters/tests are retired;
+there is no prototype fallback. `make install` installs the Rust debug binary at
+`~/.local/bin/polyglot`; release packaging remains separate. Direct native checks
+remain available but, like editors, do not enforce branch safeguards. The unrelated
+`src/python/pylearn` package, `pyproject.toml`, uv tooling, and `make install-python`
+remain experiments, not active practice entry points.
 
 ## Integration rules
 
@@ -190,8 +187,9 @@ compatibility tool, not the recommended entry point for protected practice.
 - Practice must not depend on a web service, notes database, or progress service.
 - The Rust host explicitly resolves its Python interpreter rather than assuming
   the host process already supplies one.
-- Watch and resume behavior must account for shared workspaces and stale checks;
-  completion history must not become a mastery score.
+- Checks are explicitly requested after saving; no file watchers or auto-run on
+  save are planned. Any future optional resume must not treat old passes as current
+  validity or turn completion history into a mastery score.
 
 ## Later capabilities, not current promises
 

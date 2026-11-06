@@ -14,6 +14,9 @@ your non-main branch; dirty `main` is refused without stashing anything.
 committed at its exercise path in local `refs/heads/main`. New or uncommitted
 paths are not a baseline. Neither `start` nor `reset` invents a missing exercise
 or copies a legacy starter; reset fails safely until the baseline is available.
+All three current Python blanks are already committed on local main; no additional
+baseline commit is needed for them. Newly authored files still need reviewed
+integration there before becoming reset baselines.
 
 ## API / Interfaces
 
@@ -38,7 +41,9 @@ or copies a legacy starter; reset fails safely until the baseline is available.
 The shared Rust CLI selects a static catalog entry, validates the workspace and
 selected files, and displays **Exercise file:**. `start` only selects an existing
 file; it does not copy a template or launch an editor. Edit and save that module,
-then check it. Each test imports only its corresponding exercise and shared
+then explicitly check it with Enter/`check`/`c` in the session or a one-shot check.
+Manual checking is intentional, not a step toward auto-run on save. Each test
+imports only its corresponding exercise and shared
 `tests/feedback.py`. `exercises/__init__.py` has no re-exports, so a broken or
 missing unselected sibling does not block a selected check.
 
@@ -88,16 +93,20 @@ before resetting; keep both printed backup and recovery paths.
 ## Edge Cases
 
 `check` never initializes or resets source. Finish editing and save before checking
-or resetting; do not edit during either operation. There is no watch mode.
+or resetting; do not edit during either operation. Watch mode is neither implemented
+nor planned. Checks stay on the selected exercise; `next`/`n` rechecks before
+advancing. There is no automatic advancement or persisted progress.
 A missing selected file requires restoration from the committed-main baseline,
 not automatic starter copying. A selected check still requires its common package
 and feedback files and its own test harness.
 
-Legacy `starter.py`, `test_exercises.py`, and ignored `answers.py` (including any
-user implementation) remain untouched for compatibility and preservation. They
-are not imported or used by the shared Rust CLI. The older `python3 polyglot.py`
-workflow remains a separate prototype, not the active workflow above. Nothing has
-automatically migrated learner solutions; see the [manual preservation steps](../../README/exercises.md#preserve-an-older-attempt).
+The root Python prototype, `starter.py`, and shared `test_exercises.py` are retired;
+`polyglot` is the only supported practice CLI. Ignored `answers.py` is preserved if
+present, with its ignore and optional hook protection, but is never imported or
+used by the CLI. Nothing has automatically migrated learner solutions; see the
+[manual preservation steps](../../README/exercises.md#preserve-an-older-attempt).
+The unrelated experimental `src/python/pylearn` package, `pyproject.toml`, uv tooling,
+and `make install-python` are not this practice workflow or the retired prototype.
 
 ## Related files
 

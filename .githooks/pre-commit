@@ -13,9 +13,7 @@ branch=$(git symbolic-ref --quiet HEAD) || {
 # counts as deleting it. Git pathspecs also handle spaces/newlines in filenames.
 git diff --cached --quiet --no-ext-diff --no-renames -- \
     ':(glob)practice/*/exercises/**' \
-    'practice/python/starter.py' \
     'practice/python/answers.py' \
-    'practice/rust/starter.rs' \
     'practice/rust/answers.rs'
 status=$?
 

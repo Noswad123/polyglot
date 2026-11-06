@@ -1,8 +1,10 @@
 # ADR 0001: Shared practice workflow with native language adapters
 
-**Status:** Accepted; the Phase 2 two-language list/start/check proof is implemented
-and validated, with the first shared line-based prompt/hint/navigation session
-implemented. Watching, resume, and adoption remain gated.
+**Status:** Accepted; the two-language list/start/check workflow and shared
+line-based prompt/hint/navigation session are implemented. The user chose manual
+checks and retirement of the root Python prototype, superseding this ADR's earlier
+watching and retirement gates. Watch mode is not planned; optional persisted
+resume is not a retirement prerequisite.
 
 [Architecture](../architecture.md) · [Roadmap](../../ROADMAP.md)
 
@@ -10,16 +12,19 @@ implemented. Watching, resume, and adoption remain gated.
 
 Polyglot is intended to offer the Rustlings user flow across several programming
 languages. The desired experience is select → edit → check → hint → next, with
-watching and resume support introduced incrementally. Rust is the chosen host
+checks explicitly requested after saving. Rust is the chosen host
 language for that experience, not the required exercise language.
 
-The current `polyglot.py` is a useful Python-only prototype. Its three exercises
-share `practice/python/answers.py` but select different unittest methods. It
-establishes preservation and invocation behavior, not the final architecture.
+Historically, `polyglot.py` was a Python-only prototype. Its three exercises shared
+`practice/python/answers.py` but selected different unittest methods. It established
+preservation and invocation behavior, not the final architecture, and is now retired
+along with obsolete starter/test files. Ignored learner answers remain preserved
+if present, with no automatic migration.
 
-The first Rust slice now exposes the same Python exercises plus one isolated Rust
-exercise. It preserves the prototype rather than replacing it. See the
-[proof instructions](../rust-cli.md) for current commands and validation.
+The shared Rust CLI exposes the same Python contracts plus one isolated Rust
+exercise using independent tracked modules. `polyglot` is the only supported
+practice CLI; there is no prototype fallback. See the
+[CLI instructions](../rust-cli.md) for current commands and validation.
 
 Rustlings demonstrates the interaction we want, but its current execution path
 includes Cargo build/test/Clippy, Rust binary execution, and `.rs` paths. Reusing
@@ -43,7 +48,9 @@ boundary. Dynamic plugins and a generalized runner framework remain out of scope
 ### Shared workflow
 
 Own exercise selection, safe attempt preparation, check orchestration, result
-presentation, hints, and navigation, with watching and resume policy added later.
+presentation, hints, and navigation. Manual checks are intentional: finish editing
+and save before checking or resetting, and do not edit during either operation.
+There is no auto-run on save or automatic advancement/progress tracking.
 
 It must not construct Cargo commands, understand Python imports, or scatter
 language conditionals throughout application state. Select an adapter at one
@@ -112,26 +119,31 @@ fallback. Validate the supported version and make the resolved interpreter visib
 Do not automatically install dependencies, create environments, or silently switch
 interpreters after a check fails.
 
-## Delivery and adoption gates
+## Delivery and adoption status
 
 1. **Two-language vertical slice:** list/start/check uses the same Rust workflow
    for the existing Python exercises and one isolated Rust exercise. No watcher,
    persisted progress, TUI, or automatic reset is required for this proof.
-2. **Interaction parity:** add hints and navigation, then watching, while keeping
-   native commands and explicit check mode usable.
-3. **Resume:** persist minimal local session state only after check semantics and
-   workspace invalidation are established.
-4. **Adoption:** demonstrate real sessions and preservation/behavior parity before
-   proposing retirement or wrapping of `polyglot.py`. Do not remove existing code
-   or migrate user attempts as a side effect of introducing Rust.
+2. **Interaction:** hints, navigation, and explicit checks are implemented. Native
+   commands remain documented, but do not enforce the CLI's branch safeguards.
+   The earlier plan to add watching is superseded by the user's manual-check choice.
+3. **Resume:** no persisted selection or progress is implemented. Consider minimal
+   local session state only if real practice needs it; it is not a retirement gate.
+4. **Adoption:** the user chose retirement of `polyglot.py` and obsolete practice
+   scaffolding. Ignored learner attempts are preserved, not migrated or deleted.
+   The separate experimental `src/python/pylearn` package, `pyproject.toml`, uv
+   tooling, and `make install-python` are not the retired prototype or active CLI.
 
-The [roadmap](../../ROADMAP.md) defines acceptance checks for each gate.
+The [roadmap](../../ROADMAP.md) tracks delivery and acceptance checks; the manual
+workflow and retirement status above supersede the earlier watch/adoption gates.
 
-## Watching and progress constraints
+## Manual checks and progress constraints
 
-One source file is not necessarily one exercise. Watch declared workspace/check
-inputs, accounting for shared package/harness files and relevant tests/config.
-Prevent overlapping or superseded runs from publishing stale success results.
+One source file is not necessarily one exercise; native checks can depend on shared
+package/harness files and tests/configuration. No file watchers, save-triggered
+checks, or superseded-run watch gates are planned. `check` stays on the selected
+exercise; `next` rechecks current saved source before advancing. Edits during a
+running native check are not tracked to invalidate its result.
 
 Persisted progress must not treat an old pass as current validity after edits.
 Completion history, current check validity, and mastery are different concepts.
@@ -147,7 +159,8 @@ requirement. No adapter or workflow step automatically edits Darkness.
 ## Alternatives and consequences
 
 - **Extend Python indefinitely:** technically feasible and fastest initially, but
-  not the chosen Rust-hosted direction. Keep it as the compatibility baseline.
+  not the chosen Rust-hosted direction. The root prototype is now retired rather
+  than retained as a compatibility baseline.
 - **Generalize a full Rustlings fork:** potentially saves interaction work, but
   brings Cargo-centric assumptions and upstream maintenance. Selective reuse keeps
   the scope smaller; a substantial fork would require revisiting this decision.

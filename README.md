@@ -9,7 +9,7 @@ immediate feedback, and repeated attempts across the languages I'm studying.
 Start simple, practice often, and develop idiomatic fluency. Multiple languages
 are welcome; implementing every concept in every language is not a requirement.
 
-## Direction and current status
+## Overview
 
 The accepted direction is a **Rust-based shared workflow with native language
 adapters**, preserving the Rustlings-style interaction across languages. See
@@ -18,11 +18,12 @@ adapters**, preserving the Rustlings-style interaction across languages. See
 The [Rust CLI](README/rust-cli.md) supports the shared list/start/check workflow
 for Python and Rust through separate native adapters, plus a line-based practice
 session with prompts, hints, navigation, and per-exercise reset from committed
-`main`. Python and Rust now use tracked `exercises/` files instead of an active
-shared answer file. Watching and resume are not implemented yet. The prototype
-and legacy practice files remain available until the later adoption gate passes.
+`main`. Python and Rust use tracked `exercises/` files instead of an active
+shared answer file. `polyglot` is the only supported practice CLI; the root Python
+prototype and obsolete starter/test files are retired. Existing ignored legacy
+answers are preserved if present, with no automatic migration.
 
-To try the Rust proof from the repository root:
+To build and use the shared CLI from the repository root:
 
 ```sh
 cargo build --locked
@@ -32,7 +33,11 @@ cargo build --locked
 
 In the session, choose a language, edit the displayed exercise in your own editor,
 then press Enter to check. Use `h` for a hint, `n` to recheck and advance after a
-pass, `p` to go back, and `q` to quit. Saves do not trigger checks yet.
+pass, `p` to go back, and `q` to quit. Manual checks are intentional: finish editing
+and save before checking or resetting, and do not edit during either operation.
+There is no auto-run on save, automatic advancement, or persisted progress.
+Watch mode is neither implemented nor planned; persisted resume is optional future
+work only if needed, not a prerequisite for retiring the prototype.
 
 To install the development binary alongside other local tools:
 
@@ -45,7 +50,8 @@ This builds the Rust debug binary and installs it as `~/.local/bin/polyglot`.
 Use `make install-dev` as an alias, or override `INSTALL_DIR`. The bin directory
 must be on PATH to invoke `polyglot` by name. Rerun the target after code changes.
 The installed binary remains bound to this checkout by default; use `--root` for
-another checkout. The older Python installer is now `make install-python`.
+another checkout. `make install-python` installs the unrelated experimental
+`pylearn` package, not the retired root prototype or the active practice CLI.
 
 ## Pristine main and practice branches
 
@@ -65,19 +71,24 @@ commands and standalone checks remain available on main.
 
 For an optional guard against direct exercise commits on main, run
 `make install-hooks`. It does not change Git configuration or replace an existing
-different hook. It cannot stop editor changes, and local hooks can be bypassed;
-remote branch rules are a separate layer. See
+different hook. Updating the tracked guard does not update an already-installed
+older hook; integrate changes manually with that setup. It cannot stop editor
+changes, and local hooks can be bypassed; remote branch rules are a separate layer. See
 [ADR 0002](README/decisions/0002-pristine-main-practice-branches.md).
 
 The active files are now `practice/python/exercises/*.py` and
 `practice/rust/exercises/hello.rs`. Current ignored legacy answer files are
-preserved, not automatically split or imported. The retained Python prototype
-does **not** enforce this branch policy or use the new layout.
+preserved if present, not automatically split or imported. The optional guard
+covers active `practice/*/exercises/**` paths and the two legacy answer paths,
+not retired starter paths. Editor and native commands do not enforce branch safety.
 
 On a practice branch, `polyglot reset python/hello` (or session `reset`/`r`) asks
 before restoring only that exercise from a pinned commit of local `main`.
-Reset needs the reviewed blank file **already committed on main**; creating a new
-working-tree file is not enough. Until that baseline exists, it safely refuses.
+All four current blank files are already committed on local `main`; no additional
+baseline commit is needed for them. A newly authored file still needs reviewed
+integration into local `main` before reset can restore it; a working-tree file is
+not enough. Uncommitted cleanup on main still makes it dirty and blocks automatic
+practice-branch creation until you explicitly branch or reconcile those changes.
 Changed existing files get private snapshot and original-inode recovery artifacts;
 the index is unchanged. See the [exercise lifecycle guide](README/exercises.md)
 before using reset or moving an older attempt into the new files.
@@ -102,9 +113,8 @@ Each exercise has its own module and test, so a broken sibling does not block an
 individual check. Use `polyglot check python` to check the whole track. The Rust CLI
 resolves Python explicitly; see `--python` and `--root` in its instructions.
 
-The Python prototype remains available for compatibility, not as a branch-safety
-entry point. Direct native commands remain in the track instructions; use them
-on a practice branch too.
+Direct native commands remain in the track instructions; use them on a practice
+branch too. They do not enforce the CLI's branch safeguards.
 
 The three exercises are a small setup-and-feedback path, not a full curriculum:
 
@@ -132,7 +142,9 @@ evidence about this attempt, not a claim of permanent mastery.
 - **Polyglot CLI:** one front door for listing, starting, and checking practice.
   It delegates to native tools; it does not manage your notes or learning goals.
 - **Optional platform work:** the older `pylearn` CLI, database, frontend, and
-  backend remain separate experiments. None is required for the starter track.
+  backend remain separate experiments. `src/python/pylearn`, `pyproject.toml`, uv
+  tooling, and `make install-python` are unrelated to the retired root prototype.
+  None is required for the active practice tracks.
 
 ## Find your way around
 
@@ -140,10 +152,10 @@ evidence about this attempt, not a claim of permanent mastery.
 - [Target architecture](README/architecture.md): Darkness as knowledge, Polyglot as
   practice, and a shared Rust workflow with native adapters as the target.
 - [Architecture decision](README/decisions/0001-shared-workflow-language-adapters.md):
-  adapter boundaries, outcome semantics, and adoption gates.
+  adapter boundaries, outcome semantics, and adoption status.
 - [Pristine-main decision](README/decisions/0002-pristine-main-practice-branches.md):
   branch creation, direct-commit safeguards, and migration limits.
-- [Rust CLI proof](README/rust-cli.md): build/run instructions for both adapters,
+- [Shared Rust CLI](README/rust-cli.md): build/run instructions for both adapters,
   tool selection, safety, and outcome codes.
 - [Exercise lifecycle and authoring](README/exercises.md): tracked files, safe reset,
   preserving older attempts, and creating or fixing exercises.

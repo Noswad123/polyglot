@@ -26,17 +26,19 @@ for the current implementation and integration rules.
 
 The direction is accepted in
 [ADR 0001](README/decisions/0001-shared-workflow-language-adapters.md).
-The Python CLI is a working prototype, not the final implementation language.
+The root Python prototype is retired; the supported practice CLI is Rust-based.
 The Rust list/start/check workflow and two native adapters are implemented and
 validated. The first shared line-based prompt/hint/navigation session is also
-implemented; watch/resume and adoption remain future gates.
-The initial Python-only milestones below remain completed historical work; later
-gates supersede the earlier sequencing without discarding the prototype.
+implemented. Explicit checks are the intended interaction; watch mode and
+save-triggered checking are out of scope by user choice. Resume is optional,
+not a prerequisite for using the app.
+The initial Python-only milestones below remain historical work. Their recorded
+validation does not imply that the retired prototype is still supported.
 
 The Git ownership decision is recorded in
 [ADR 0002](README/decisions/0002-pristine-main-practice-branches.md): main is
 canonical and learner work belongs on another branch. This reprioritizes tracked
-per-exercise files and reset ahead of watch mode. The Rust CLI now uses independent
+per-exercise files and reset. The Rust CLI now uses independent
 tracked exercise modules and explicit reset; legacy shared answer files are
 retained untouched, not automatically imported. Canonical baseline commits still
 require user review and integration into main.
@@ -46,7 +48,7 @@ require user review and integration into main.
 | Space | Authoritative content |
 |---|---|
 | Darkness (`~/projects/darkness`) | Concept explanations, mental models, language comparisons, resources, learning takeaways, and personal learning priorities |
-| Polyglot | Exercise prompts, starters, tests, runnable examples, implementations, and run instructions |
+| Polyglot | Exercise modules, prompts, tests, runnable examples, implementations, and run instructions |
 | Polyglot CLI | Finding exercises, safely preparing attempts, and invoking native checks |
 | Optional services and UI | Later interfaces or storage, only if practice demonstrates a need |
 
@@ -162,7 +164,7 @@ Implemented and validated; see the [Rust proof instructions](README/rust-cli.md)
 - [x] Tests use isolated workspaces, not real learner attempts or Darkness.
 
 No watcher, progress store, automatic reset, dependency installer, or UI is needed
-to pass this gate. Keep the current Python CLI available throughout.
+to pass this gate. The Python CLI was retained during that proof and is now retired.
 
 **Validation completed:** Rust/Cargo 1.89.0 on macOS; format, three Rust unit tests,
 Clippy with warnings denied, and locked offline build all passed. The 26 isolated
@@ -176,18 +178,15 @@ Current boundaries: one workspace mapping per language; native output is buffere
 until each process finishes; Rust classification uses Cargo JSON and libtest text.
 That validation covered the non-interactive proof, not a full-repository test run.
 
-## Phase 3 — Add the Rustlings-style interaction
+## Phase 3 — Rustlings-style interaction with explicit checks
 
 **Start only after:** the two-language proof gate passes.
 
 - [x] Add prompt/hint presentation and next/previous selection through shared
       session policy; adapters do not control navigation.
 - [x] Demonstrate select → edit → check → hint → next in both languages.
-- [ ] Add watching as a separate increment, accounting for selected exercise files,
-      shared package/harness files, and
-      relevant test/config inputs rather than assuming one file per exercise.
-- [ ] Cancel or supersede old runs safely; do not display stale success after an
-      edit or a change of selected exercise.
+- [x] Keep checking deliberate: Enter/`check`/`c` checks the selected exercise;
+      `next` rechecks before advancing. No checking on save or automatic advancement.
 - [x] Keep explicit check commands available outside interactive mode.
 
 **First increment validated:** `practice [python|rust|ID]` provides an in-memory,
@@ -196,20 +195,21 @@ check and advances only on success. Normal checks do not advance; quit/EOF ends
 the session without claiming completion. Navigation prepares before committing
 selection, preserving shared answers across exercises and languages.
 
-All 20 isolated interaction tests and all 26 adapter regressions passed with
+At this milestone, all 20 isolated interaction tests and all 26 adapter regressions passed with
 Python 3.12.11 and 3.15.0 on macOS. Three Rust unit tests, format, Clippy with
 warnings denied, locked offline build, and all 11 prototype regressions passed.
 Coverage includes a live external edit after a pass, blocked-check recovery,
 boundaries, failed destination preparation, menus, hints, and preservation.
 
-**Still open:** watching and stale in-flight result handling. The session does
-not observe edits while a check is running; save edits before requesting a check.
-This phase is partially complete, not the full save-triggered Rustlings flow.
+**Accepted interaction:** the user explicitly chose manual checks, not watch mode.
+This interaction phase is complete for that scope. Save edits before requesting a
+check or reset and wait for it to finish before editing again. There is no pending
+save-triggered or background-checking increment.
 
 **Acceptance:** the same user flow works across both languages, preserves raw
 native feedback, and remains usable when note references are unavailable.
 
-## Branch safety and exercise layout — before watch mode
+## Branch safety and independent exercise layout
 
 The learner-facing layout decision supersedes the shared-answer-file prototype.
 Deliver Git safety first, then migrate the files without losing attempts.
@@ -222,8 +222,7 @@ Deliver Git safety first, then migrate the files without losing attempts.
 - [x] Add an explicit opt-in staged-exercise commit guard without overwriting
       existing hooks or changing Git configuration.
 - [x] Implement independent modules under `practice/<language>/exercises/` and
-      selected test imports; remove the active starters/answers split. The new
-      canonical files need a reviewed authoring commit before main can supply them.
+      selected test imports; remove the active starters/answers split.
 - [x] Preserve existing shared answer implementations untouched, keeping them out
       of the pristine baseline; document explicit manual copying without guessing
       at shared imports/helpers or deleting the original files.
@@ -232,11 +231,13 @@ Deliver Git safety first, then migrate the files without losing attempts.
       snapshot backup and lasting original-inode recovery, and no index changes.
 - [x] Validate blank main versus edited practice branches and reset behavior in
       isolated committed fixtures, including late saves and staged content.
-- [ ] Review/integrate the new canonical blank files into real local main, then
-      try the updated layout/reset in practice before adding watch mode.
+- [x] Confirm that all four canonical blank modules are committed in local main;
+      no additional baseline commit is needed for these existing exercises.
+- [ ] Try the updated layout/reset in a personal practice session. New authored
+      exercises still need reviewed integration into main before reset can use them.
 
-**Scope limit:** CLI guards apply to the shared Rust entry point. Editors and the
-retained Python prototype do not gain filesystem protection; local hooks are
+**Scope limit:** CLI guards apply to the shared Rust entry point. Editors and
+direct native tools do not gain filesystem protection; local hooks are
 optional and bypassable. Remote main-branch rules are owner-managed separately.
 The initial branch-safety increment did not migrate layout or add reset. The next
 increment now implements both while preserving the legacy files. `start` only
@@ -261,9 +262,10 @@ Clippy with warnings denied, and locked offline build passed. Legacy attempts in
 this checkout were not modified. Platform runtime coverage is macOS; Linux reset
 runtime validation remains open. The new blanks are not committed automatically.
 
-## Phase 4 — Add minimal local resume behavior
+## Phase 4 — Optional minimal local resume behavior
 
-**Start only after:** interaction and check invalidation behavior are established.
+**Start only if:** repeated practice shows that remembering the selected exercise
+is useful. This is not required for the explicit-check workflow or prototype retirement.
 
 - [ ] Store the selected language/exercise and minimal completion history locally.
 - [ ] Define how changed sources or check definitions invalidate current results.
@@ -274,21 +276,30 @@ runtime validation remains open. The new blanks are not committed automatically.
 current correctness nor a mastery score. No database or notes synchronization is
 required; adapters do not write session state.
 
-## Phase 5 — Adopt the Rust CLI before retiring the prototype
+## Phase 5 — Consolidate the supported Rust CLI
 
-**Start only after:** the prior gates pass and real sessions confirm the workflow.
+Prototype retirement was explicitly approved independently of optional resume.
+The shared Rust CLI is now the sole supported practice entry point.
 
-- [ ] Compare the Rust entry point against the prototype's selection, preservation,
-      working-directory, and failure-reporting behavior.
+- [x] Re-run selection, preservation, working-directory, failure-reporting, and
+      reset regressions after removing the unused prototype.
 - [ ] Use both Python and Rust exercises in real practice sessions.
 - [x] Document build/run requirements and recommend the validated, branch-guarded
       Rust entry point in the README. This safety-driven documentation switch does
-      not retire the prototype or complete the real-session adoption gate.
-- [ ] Propose wrapping or retiring `polyglot.py` separately. Do not delete it,
-      existing `pylearn` code, or learner attempts as an incidental migration.
+      not imply every language track has been used in a real session.
+- [x] Retire the root Python prototype, its prototype-only tests, aggregate legacy
+      harness, and unused starter files. Preserve learner answers if present and
+      leave the unrelated packaged `src/python/pylearn` experiment untouched.
 
 **Acceptance:** the replacement is useful in practice, not merely compilable.
 Installation/distribution can be added without making a web service necessary.
+
+**Cleanup validation:** 119 active integration/regression tests passed after
+removing the 11 obsolete root-prototype tests. All 11 Rust unit tests, format,
+Clippy with warnings denied, locked offline build, and diff checks passed. Active
+exercise files and learner answers were not deleted; the four canonical blank
+files were confirmed in committed local main. These counts supersede earlier
+prototype-inclusive totals for the current suite.
 
 ## Practice and curriculum discipline throughout
 
@@ -307,6 +318,8 @@ proof. Two adapters do not imply two mandatory learning tracks.
 ## Deferred, not required
 
 - Database-backed mastery and automated next-exercise selection.
+- Watch mode, file-save monitoring, and automatic/background checks. Manual
+  checks are an intentional workflow decision, not an unfinished feature.
 - Notes ingestion, synchronization, shared schemas, and CQRS integration.
 - New frontend/backend work for the learning platform.
 - A CLI per language, dynamic plugins, or a generalized framework that replaces
@@ -321,9 +334,9 @@ programming-practice session.
 
 ## Current next action
 
-The branch guard, independent exercise layout, and explicit reset are implemented.
-Review the canonical blank files on an authoring branch and integrate them into
-local main so reset has a committed source; the CLI intentionally has no fallback
-for new files absent from main. Preserve legacy attempts until manually copied and
-verified. Then try a real reset session before watch mode, config invalidation,
-and superseded-run handling. Persisted progress/prototype retirement remain gated.
+Use the supported manual `polyglot practice` flow and try a selected exercise/reset
+cycle. The four current blank modules already have a committed main baseline.
+Preserve any older personal attempts until copied and verified. Choose one primary
+language and a useful next learning capability; add practice content rather than
+watch infrastructure. Resume remains optional. This cleanup is uncommitted and
+does not create, switch, or merge branches automatically.

@@ -1,8 +1,9 @@
 # ADR 0002: Pristine main and practice branches
 
 **Status:** Accepted; branch safeguards, an opt-in commit hook, independent tracked
-exercise files, and explicit reset are implemented. Existing learner solutions
-are preserved in legacy files, not automatically migrated or committed.
+exercise files, and explicit reset are implemented. Ignored legacy learner answers
+are preserved if present, not automatically migrated or committed. The root Python
+prototype and obsolete practice starters/tests are retired.
 
 [Architecture](../architecture.md) · [Roadmap](../../ROADMAP.md)
 
@@ -42,21 +43,25 @@ Standalone list/show/hint/check remain usable on `main` and without Git. One-sho
 checking is useful for validating canonical material; it does not prepare answers.
 Native tools may still produce their usual build artifacts.
 
-Only Rust CLI commands enforce this policy. The retained Python prototype and
-direct native/editor commands do not acquire a Git guard automatically.
+Only the shared Rust CLI enforces this policy. `polyglot` is the only supported
+practice CLI; direct native/editor commands do not acquire a Git guard automatically.
 
 ## Protecting direct commits
 
 An optional `.githooks/pre-commit` guard rejects staged exercise changes on `main`.
-It covers the target `practice/*/exercises/**` tree plus the transitional Python
-and Rust starter/answer files, including deletions and renames out of protected
-paths. It does not reject unrelated staged documentation or tooling changes.
+It covers `practice/*/exercises/**`, `practice/python/answers.py`, and
+`practice/rust/answers.rs`, including deletions and renames out of protected paths.
+Retired starter paths are not protected. It does not reject unrelated staged
+documentation or tooling changes.
 
 Activate it explicitly with `make install-hooks`. Installation creates an
 executable hook in Git's default hook directory without changing Git config.
 Existing different hooks, symlinks, or a configured `core.hooksPath` are not
 overwritten; integrate the guard with that setup manually. It is not installed by
 `make install` or by entering practice. Linked worktrees may share the hook directory.
+Updating the tracked guard does not update an already-installed older hook; it is
+a different existing hook and the installer refuses to replace it. Integrate guard
+changes manually with the existing setup.
 
 ## Enforcement limits
 
@@ -79,9 +84,13 @@ The latest reviewed local main is the baseline at reset start, not a permanently
 recorded practice-branch creation revision. A later main-ref change during the
 confirmation does not substitute another blob into that operation.
 
-The canonical file must already be committed on local main. New authoring files
-without that baseline are blocked. Existing pristine files require no write or
-backup. Other cases require `y`/`yes`; cancellation/EOF writes nothing.
+The canonical file must already be committed on local main. All four current blank
+files have that baseline; no additional baseline commit is needed for them. Newly
+authored files still need reviewed integration into main; without that baseline
+reset blocks. Uncommitted cleanup on main still blocks automatic practice-branch
+creation until the user explicitly branches or reconciles changes. Existing
+pristine files require no write or backup. Other cases require `y`/`yes`;
+cancellation/EOF returns `0` and writes nothing.
 
 Restore only the selected worktree file, leaving the index and staged content
 unchanged. On macOS/Linux, safe directory-relative operations, atomic no-replace
@@ -89,6 +98,12 @@ or exchange, private snapshot backups, and lasting original-inode recovery retai
 learner bytes. A late edit can yield a blocked result after the baseline was
 installed; diagnostics must explicitly identify that state and retained recovery.
 Other platforms/unsupported primitives block without an overwrite fallback.
+Snapshot files use `0600` and new private directories `0700`. Preserve both printed
+`Backup:` and `Recovery:` paths, including any private adjacent recovery artifact
+when a safe cross-filesystem move is unavailable. macOS has runtime coverage; Linux
+has not been runtime-tested. Finish editing and save before checking/resetting,
+and do not edit during either operation. Manual checks are intentional; no
+auto-run on save or watch mode is planned.
 
 No shared answer file is automatically parsed or deleted. Move selected functions
 and needed imports manually on a practice branch, verify the checks, and preserve
