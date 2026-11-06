@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::model::{Exercise, Language, Outcome, CATALOG};
-use crate::{adapters, workspace};
+use crate::{adapters, git, workspace};
 
 pub struct Context {
     pub root: PathBuf,
@@ -22,6 +22,7 @@ impl Context {
     }
 
     pub fn start(&self, exercise: &Exercise) -> Result<(), Outcome> {
+        git::require_practice_branch(&self.root)?;
         workspace::start(&self.root, exercise.language)
     }
 
@@ -39,6 +40,13 @@ impl Context {
                 .display()
         );
         println!("Prompt: {}", exercise.prompt);
+    }
+
+    pub fn check_practice(&self, exercises: &[&Exercise]) -> Outcome {
+        match git::require_practice_branch(&self.root) {
+            Ok(()) => self.check(exercises),
+            Err(outcome) => outcome,
+        }
     }
 
     pub fn check(&self, exercises: &[&Exercise]) -> Outcome {

@@ -2,6 +2,7 @@ use std::io::{self, Write};
 
 use crate::model::{Exercise, Language, Outcome, CATALOG};
 use crate::workflow::{self, Context};
+use crate::{git, workspace};
 
 const HELP: &str = "Commands: Enter/check/c, hint/h, prompt, next/n, previous/p, list/l,
 language python|rust, help/?, quit/q.
@@ -37,6 +38,8 @@ pub fn choose_language() -> Result<Option<&'static Exercise>, Outcome> {
 }
 
 pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome> {
+    workspace::prevalidate_start(&context.root, initial.language)?;
+    git::prepare_practice(&context.root, initial.language)?;
     context.start(initial)?;
     let mut track: Vec<_> = CATALOG
         .iter()
@@ -50,7 +53,7 @@ pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome>
         let target = match line.as_str() {
             "q" | "quit" => break,
             "" | "check" | "c" => {
-                println!("{}", context.check(&[current]));
+                println!("{}", context.check_practice(&[current]));
                 continue;
             }
             "hint" | "h" => {
@@ -62,7 +65,7 @@ pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome>
                 continue;
             }
             "next" | "n" => {
-                let outcome = context.check(&[current]);
+                let outcome = context.check_practice(&[current]);
                 println!("{outcome}");
                 if outcome != Outcome::Passed {
                     continue;
@@ -74,6 +77,10 @@ pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome>
                 track[index + 1]
             }
             "previous" | "p" => {
+                if let Err(outcome) = git::require_practice_branch(&context.root) {
+                    println!("{outcome}");
+                    continue;
+                }
                 if index == 0 {
                     println!("Already at the first exercise");
                     continue;

@@ -2,6 +2,12 @@
 
 [Home](../../README.md) · [Roadmap](../../ROADMAP.md)
 
+Use the shared Rust CLI's `polyglot practice python` for branch-aware practice:
+it leaves clean main for a practice branch before preparing work. Direct native
+commands and the older Python prototype below do not enforce that policy; select
+a non-main branch yourself before using them. The current shared answer file is
+transitional; tracked independent `exercises/` modules and reset are next.
+
 Three small exercises to establish a repeatable practice loop. They adapt existing
 katas without changing their reference solutions. Use Python 3.11+; no package
 installation, virtual environment, database, or Polyglot CLI is required.

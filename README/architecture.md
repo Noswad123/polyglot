@@ -88,11 +88,10 @@ application state or adopting a full fork by default.
 ```sh
 cargo build --locked
 ./target/debug/polyglot list
-./target/debug/polyglot start python/hello
+./target/debug/polyglot practice python/hello
+# After editing/checking in the session, quit; the practice branch stays selected.
 ./target/debug/polyglot check python/hello
-./target/debug/polyglot start rust/hello
-./target/debug/polyglot check rust/hello
-./target/debug/polyglot practice
+./target/debug/polyglot practice rust/hello
 ```
 
 See the [proof instructions](rust-cli.md) for tool selection, root overrides,
@@ -111,6 +110,23 @@ Native checks may produce build artifacts but must preserve learner sources and
 locked inputs. Python checks execute fresh source instead of cached bytecode.
 Missing tools/configuration are blocked, and ambiguous results are indeterminate.
 This is a local practice tool, not a sandbox or arbitrary exercise-pack executor.
+
+## Pristine main and practice branches
+
+[ADR 0002](decisions/0002-pristine-main-practice-branches.md) separates the canonical
+exercise baseline on `main` from learner branches. `cli/src/git.rs` owns exact-root
+checkout validation and branch policy, not the language adapters. Practice creates
+a branch only from clean main; direct start requires an existing non-main branch.
+Session actions revalidate after external branch changes. Standalone checks remain
+available for validating canonical material.
+
+An opt-in pre-commit guard protects staged exercise paths on main. It is not
+automatically installed, is not a filesystem lock, and does not replace remote
+branch policy. No Git configuration or remote settings are changed by the CLI.
+
+The shared answer files are still transitional. The next layout will use tracked
+per-exercise modules, with main as the canonical blank source and a separately
+specified reset policy. No migration or reset is performed in this increment.
 
 Session checks and one-shot checks use the same context and adapters. `next`
 rechecks before advancing, while `check` stays on the selected exercise. There is
@@ -140,6 +156,9 @@ on a Rust binary compiling. `make install` now supports a local Rust debug binar
 at `~/.local/bin/polyglot`; release packaging remains separate.
 Separate per-language CLIs are not the target; existing `pylearn` code remains
 untouched.
+
+The Python prototype does not implement Git branch safeguards. It remains a
+compatibility tool, not the recommended entry point for protected practice.
 
 ## Integration rules
 

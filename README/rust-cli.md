@@ -7,6 +7,11 @@ Python and Rust share prompt/hint presentation, navigation, and check orchestrat
 It is not yet the full edit-and-save Rustlings experience: watching remains next.
 The Python prototype remains available; no learner files are migrated or removed.
 
+Practice now uses Git branches to keep `main` pristine. Branch safeguards are
+implemented; the existing shared answer files have not yet been migrated to the
+planned tracked `exercises/` layout. See
+[ADR 0002](decisions/0002-pristine-main-practice-branches.md).
+
 ## Build
 
 Requires Rust/Cargo 1.85+ to build. Python checks require Python 3.11+; listing and
@@ -60,14 +65,13 @@ of the prototype.
 ./target/debug/polyglot list --language python
 ./target/debug/polyglot list --language rust
 
-./target/debug/polyglot start python/hello
-# Edit practice/python/answers.py, then:
-./target/debug/polyglot check python/hello
-
-./target/debug/polyglot start rust/hello
-# Edit practice/rust/answers.rs, then:
-./target/debug/polyglot check rust/hello
+./target/debug/polyglot practice python/hello
+./target/debug/polyglot practice rust/hello
 ```
+
+For one-shot preparation, first create or select a non-`main` branch, then use
+`start ID`, edit the displayed file, and run `check ID`. `start` will not silently
+switch branches. Standalone `check` never initializes an attempt.
 
 The other Python IDs are `python/find_in_string` and
 `python/length_of_last_word`. `check python` and `check rust` check a whole track.
@@ -90,7 +94,7 @@ workspace within one language is needed, not through a plugin framework now.
 ```
 
 Without a target, choose `python`/`rust` or `1`/`2` at the language menu. Quit or
-EOF before selection creates no answer. Entering a session safely prepares the
+EOF before selection creates no answer or branch. Entering a session safely prepares the
 selected answer, preserving existing work, and displays the exercise, position,
 answer path, and task. Hints appear only when requested.
 
@@ -132,6 +136,46 @@ watch increment. For now, finish editing and save before requesting a check.
 
 These commands do not create attempts or launch language tools. `show` displays
 the task and answer path without revealing the hint; `hint` displays only the hint.
+
+## Pristine main and practice branches
+
+`practice` requires the root of a Git checkout/worktree with a committed named
+HEAD. It creates a unique `practice/<language>-...` branch from clean `main`, or
+reuses your existing non-`main` branch. Your branch remains selected after quitting;
+the CLI does not switch you back or discard work.
+
+Dirty `main` is blocked, including untracked files other than ignored files. If
+you want to carry that work onto a branch, do so explicitly with an unused name:
+
+```sh
+git switch -c practice/my-session
+polyglot practice
+```
+
+The CLI does not stash, reset, commit, fetch, or force branch changes. Detached or
+unborn HEAD, bare/non-repositories, and a root nested inside another repo are
+blocked. Existing ignored attempts remain intact during this transitional layout.
+
+Session checks and navigation refuse to proceed if you externally switch to
+`main`. Hints, prompts, listing, and quitting remain available. Standalone
+list/show/hint/check are permitted on main and do not require Git.
+
+To add protection against direct exercise commits on main:
+
+```sh
+make install-hooks
+```
+
+This explicitly installs the tracked pre-commit guard, not a Git configuration
+change. It refuses to replace existing different hooks or configured hook systems;
+identical installed guards are recognized. No hook is installed by `make install`.
+The guard checks staged exercise paths, including deletes and renames, without
+modifying your files or index. See ADR 0002 for the protected paths and limits.
+
+This is not a filesystem lock: editors can still modify files, the old Python
+prototype does not enforce the branch policy, and local hooks can be bypassed.
+Remote branch protection must be managed separately. Use a practice branch even
+when running native commands directly.
 
 ## Roots and tool selection
 
@@ -191,6 +235,8 @@ cargo clippy --locked --all-targets -- -D warnings
 cargo build --locked
 python3 -B -m unittest discover -s tests -p test_rust_cli.py -v
 python3 -B -m unittest discover -s tests -p test_interactive_cli.py -v
+python3 -B -m unittest discover -s tests -p test_branch_policy.py -v
+python3 -B -m unittest discover -s tests -p test_main_hooks.py -v
 python3 -B -m unittest discover -s tests -p test_polyglot_cli.py -v
 ```
 
@@ -207,5 +253,6 @@ other platforms; the current proof was exercised on macOS.
 No watch mode, persistent progress, automatic reset, editor launching, TUI, or
 release distribution. The local debug install above is supported. No Rustlings
 code was copied for these slices.
-Next comes watching and superseded-run handling; the Python prototype is retired
-only after later adoption checks.
+The tracked exercise-file migration and safe reset design now take priority before
+watching and superseded-run handling. The Python prototype is retired only after
+later adoption checks.

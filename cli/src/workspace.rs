@@ -55,6 +55,17 @@ pub fn validate(root: &Path, language: Language) -> Result<PathBuf, Outcome> {
     Ok(directory)
 }
 
+pub fn prevalidate_start(root: &Path, language: Language) -> Result<(), Outcome> {
+    let directory = validate(root, language)?;
+    let workspace = language.workspace();
+    if !directory.join(workspace.answers).is_file() {
+        let starter = directory.join(workspace.starter);
+        fs::read(&starter)
+            .map_err(|error| Outcome::Blocked(format!("{}: {error}", starter.display())))?;
+    }
+    Ok(())
+}
+
 pub fn start(root: &Path, language: Language) -> Result<(), Outcome> {
     let directory = validate(root, language)?;
     let workspace = language.workspace();

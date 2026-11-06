@@ -1,0 +1,35 @@
+#!/bin/sh
+# Optional local safeguard. It does not make working-tree files read-only.
+set -u
+
+branch=$(git symbolic-ref --quiet HEAD) || {
+    printf '%s\n' 'Polyglot: commit from a named branch, not detached HEAD.' >&2
+    exit 1
+}
+
+[ "$branch" = refs/heads/main ] || exit 0
+
+# Disable rename detection so moving an exercise out of a protected path still
+# counts as deleting it. Git pathspecs also handle spaces/newlines in filenames.
+git diff --cached --quiet --no-ext-diff --no-renames -- \
+    ':(glob)practice/*/exercises/**' \
+    'practice/python/starter.py' \
+    'practice/python/answers.py' \
+    'practice/rust/starter.rs' \
+    'practice/rust/answers.rs'
+status=$?
+
+case "$status" in
+    0) exit 0 ;;
+    1)
+        printf '%s\n' \
+            'Polyglot: exercise changes cannot be committed directly on main.' \
+            'Create a practice or authoring branch: git switch -c practice/<name>' \
+            'Your staged and working-tree changes have not been modified.' >&2
+        exit 1
+        ;;
+    *)
+        printf '%s\n' 'Polyglot: could not validate staged exercise changes; commit blocked.' >&2
+        exit 1
+        ;;
+esac

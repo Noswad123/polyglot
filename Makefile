@@ -55,6 +55,7 @@ help:
 	@echo "  make install                   - Install it to $(INSTALL_DIR)/polyglot"
 	@echo "  make install-dev               - Alias for make install"
 	@echo "  make install INSTALL_DIR=...    - Override the local binary directory"
+	@echo "  make install-hooks             - Opt in to the main exercise commit guard"
 	@echo ""
 	@echo "Legacy CLI commands (LANG controls only these):"
 	@echo ""
@@ -117,6 +118,10 @@ install: build
 	install -m 0755 "$(TARGET_DIR)/debug/polyglot" "$(INSTALL_DIR)/polyglot"
 
 install-dev: install
+
+.PHONY: install-hooks
+install-hooks:
+	sh .githooks/install.sh
 
 .PHONY: reinstall
 reinstall:

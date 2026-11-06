@@ -1,4 +1,5 @@
 mod adapters;
+mod git;
 mod model;
 mod session;
 mod workflow;
@@ -23,6 +24,7 @@ Commands:
 IDs: python/hello, python/find_in_string, python/length_of_last_word, rust/hello
 Global options must precede the command. --help shows this help.
 Start preserves existing answers. Check never creates answers.
+Start requires a non-main Git branch. Practice creates one from clean main.
 ";
 
 fn select(value: &str, track: bool) -> Result<Vec<&'static Exercise>, Outcome> {

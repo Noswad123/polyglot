@@ -15,8 +15,7 @@ The accepted direction is a **Rust-based shared workflow with native language
 adapters**, preserving the Rustlings-style interaction across languages. See
 [ADR 0001](README/decisions/0001-shared-workflow-language-adapters.md).
 
-The commands below use the working Python prototype. The
-[Rust CLI proof](README/rust-cli.md) now supports the same list/start/check workflow
+The [Rust CLI](README/rust-cli.md) supports the shared list/start/check workflow
 for Python and Rust through separate native adapters, plus a line-based practice
 session with prompts, hints, and navigation. Watching and resume are not implemented
 yet. The prototype and existing practice files remain available until the later
@@ -47,6 +46,32 @@ must be on PATH to invoke `polyglot` by name. Rerun the target after code change
 The installed binary remains bound to this checkout by default; use `--root` for
 another checkout. The older Python installer is now `make install-python`.
 
+## Pristine main and practice branches
+
+`main` is the canonical exercise baseline. `polyglot practice` creates a unique
+practice branch from clean main, or reuses your current non-main branch. On dirty
+main it stops without stashing or resetting anything. To carry existing work to
+a branch explicitly, choose an unused name:
+
+```sh
+git switch -c practice/my-session
+polyglot practice
+```
+
+`polyglot start` requires an existing non-main branch. Practice/start require the
+exact root of a committed Git checkout or worktree, not detached HEAD. Read-only
+commands and standalone checks remain available on main.
+
+For an optional guard against direct exercise commits on main, run
+`make install-hooks`. It does not change Git configuration or replace an existing
+different hook. It cannot stop editor changes, and local hooks can be bypassed;
+remote branch rules are a separate layer. See
+[ADR 0002](README/decisions/0002-pristine-main-practice-branches.md).
+
+The single tracked `exercises/` layout and reset mechanism are the next migration.
+Current ignored answer files are preserved until then. The retained Python
+prototype does **not** enforce this branch policy; use the shared Rust CLI for it.
+
 ## Start practicing
 
 The [Python starter track](practice/python/README.md) is the first self-contained
@@ -56,22 +81,20 @@ Python is the initial working example, not a prescribed primary language.
 From the repository root:
 
 ```sh
-python3 polyglot.py list --language python
-python3 polyglot.py start python/hello
-
-# Edit practice/python/answers.py, starting with hello(). Then check it:
-python3 polyglot.py check python/hello
+polyglot list --language python
+polyglot practice python/hello
 ```
 
 An unimplemented starter should fail. Make that check pass, then follow the
 [track instructions](practice/python/README.md) for the next exercise.
 `start` preserves existing answers; it does not reset your work. All three exercises
-share one answer file. Use `python3 polyglot.py check python` to check the whole
-track. The CLI works from another directory when invoked by its absolute script
-path, and uses the Python interpreter that launched it.
+share one answer file during the migration. Use `polyglot check python` to check
+the whole track. The Rust CLI resolves the Python interpreter explicitly; see its
+instructions for `--python` and `--root` overrides.
 
-These Python-prototype commands remain repository-local; `make install` installs
-the shared Rust CLI instead. Direct native commands remain in the track instructions.
+The Python prototype remains available for compatibility, not as a branch-safety
+entry point. Direct native commands remain in the track instructions; use them
+on a practice branch too.
 
 The three exercises are a small setup-and-feedback path, not a full curriculum:
 
@@ -108,6 +131,8 @@ evidence about this attempt, not a claim of permanent mastery.
   practice, and a shared Rust workflow with native adapters as the target.
 - [Architecture decision](README/decisions/0001-shared-workflow-language-adapters.md):
   adapter boundaries, outcome semantics, and adoption gates.
+- [Pristine-main decision](README/decisions/0002-pristine-main-practice-branches.md):
+  branch creation, direct-commit safeguards, and migration limits.
 - [Rust CLI proof](README/rust-cli.md): build/run instructions for both adapters,
   tool selection, safety, and outcome codes.
 - [Python starter track](practice/python/README.md): prompts, checks, and retry instructions.

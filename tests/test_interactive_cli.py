@@ -15,6 +15,8 @@ import threading
 import time
 import unittest
 
+from git_fixture import isolated_git_env
+
 
 REPO = Path(__file__).resolve().parents[1]
 IDS = ("python/hello", "python/find_in_string", "python/length_of_last_word", "rust/hello")
@@ -69,11 +71,19 @@ class InteractiveCliTests(unittest.TestCase):
             shutil.copy2(rust_readme, self.directory("rust") / "README.md")
         else:
             (self.directory("rust") / "README.md").write_text("Rust fixture prompt.\n")
-        self.env = os.environ.copy()
+        self.env = isolated_git_env()
         self.env["PYTHONDONTWRITEBYTECODE"] = "1"
         self.env["CARGO_TERM_COLOR"] = "never"
         for key in ("CARGO_TARGET_DIR", "RUSTFLAGS", "CARGO_ENCODED_RUSTFLAGS"):
             self.env.pop(key, None)
+        shutil.copy2(REPO / ".gitignore", self.root / ".gitignore")
+        for args in (("init", "--initial-branch=main"), ("add", "."),
+                     ("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                      "-c", "commit.gpgsign=false", "commit", "--no-gpg-sign", "-m", "Fixture"),
+                     ("switch", "-c", "practice/fixture")):
+            result = subprocess.run(["git", *args], cwd=self.root, env=self.env,
+                                    capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def directory(self, language):
         return self.root / "practice" / language
@@ -86,6 +96,7 @@ class InteractiveCliTests(unittest.TestCase):
             str(path.relative_to(self.root)): path.read_bytes()
             for path in self.root.rglob("*")
             if "target" not in path.relative_to(self.root).parts
+            and ".git" not in path.relative_to(self.root).parts
             and path.is_file() and not path.is_symlink()
         }
 
@@ -99,7 +110,7 @@ class InteractiveCliTests(unittest.TestCase):
         result = subprocess.run(
             self.command(*args, tools=tools), input=input, text=True,
             capture_output=True, cwd=self.cwd,
-            env=self.env if tools else {**self.env, "PATH": ""}, timeout=90,
+            env=self.env, timeout=90,
         )
         self.assertEqual(result.returncode, code,
                          f"{result.args!r}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}")

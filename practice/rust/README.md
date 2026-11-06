@@ -23,18 +23,21 @@ Build the proof CLI from the repository root:
 
 ```sh
 cargo build --locked
-./target/debug/polyglot start rust/hello
-# Edit practice/rust/answers.rs, then:
-./target/debug/polyglot check rust/hello
+./target/debug/polyglot practice rust/hello
 ```
 
-`start` preserves an existing answer. `check rust` checks the Rust track, currently
+Practice creates a branch from clean main or reuses a non-main branch. Edit and
+save the displayed answer, then press Enter to check. One-shot `start` requires
+an existing non-main branch and preserves an existing answer. `check rust` checks the Rust track, currently
 the same single exercise. Missing tools or broken check configuration are blocked
 checks, not failed solutions. See the CLI instructions for tool overrides.
 
 ## Direct native alternative
 
 From the repository root:
+
+Select a non-main branch first; native commands do not enforce the CLI's branch
+guard. Choose an unused name if creating one with `git switch -c practice/my-session`.
 
 ```sh
 cp -n practice/rust/starter.rs practice/rust/answers.rs

@@ -33,6 +33,12 @@ implemented; watch/resume and adoption remain future gates.
 The initial Python-only milestones below remain completed historical work; later
 gates supersede the earlier sequencing without discarding the prototype.
 
+The Git ownership decision is recorded in
+[ADR 0002](README/decisions/0002-pristine-main-practice-branches.md): main is
+canonical and learner work belongs on another branch. This reprioritizes tracked
+per-exercise files and reset ahead of watch mode. Existing shared answer files
+remain transitional and are not silently migrated.
+
 ## Ownership boundaries
 
 | Space | Authoritative content |
@@ -200,6 +206,40 @@ This phase is partially complete, not the full save-triggered Rustlings flow.
 **Acceptance:** the same user flow works across both languages, preserves raw
 native feedback, and remains usable when note references are unavailable.
 
+## Branch safety and exercise layout — before watch mode
+
+The learner-facing layout decision supersedes the shared-answer-file prototype.
+Deliver Git safety first, then migrate the files without losing attempts.
+
+- [x] Record main as the canonical blank baseline and practice on non-main branches.
+- [x] Automatically create a unique practice branch from clean main; preserve
+      existing non-main branches and refuse dirty-main/detached/unborn contexts.
+- [x] Guard direct start and revalidate session checks/navigation after external
+      branch changes. Keep standalone inspection/checks usable on main.
+- [x] Add an explicit opt-in staged-exercise commit guard without overwriting
+      existing hooks or changing Git configuration.
+- [ ] Migrate to independent tracked modules under `practice/<language>/exercises/`
+      and independent test imports; remove the learner-facing starters/answers split.
+- [ ] Preserve existing answer implementations during migration, keeping them out
+      of the pristine baseline and avoiding silent deletion or overwrite.
+- [ ] Specify the canonical revision/reset policy and implement per-exercise reset
+      with confirmation, backup, and no index/unrelated-file changes.
+- [ ] Validate blank main versus edited practice branches and reset behavior before
+      introducing watchers for the new layout.
+
+**Scope limit:** CLI guards apply to the shared Rust entry point. Editors and the
+retained Python prototype do not gain filesystem protection; local hooks are
+optional and bypassable. Remote main-branch rules are owner-managed separately.
+No layout migration or reset command is included in the branch-safety increment.
+
+**Validation:** 100 isolated Python 3.15 integration/regression tests passed,
+including 22 branch-policy, 15 hook, and four hostile-Git-context fixture-isolation
+tests. Three Rust unit tests, format, Clippy with warnings denied, and locked
+offline build passed. No branches, hooks, configuration, index entries, or commits
+were changed in the real checkout by those tests; fixture commits use temporary
+repositories and isolated Git configuration.
+The 22 branch, 15 hook, and four isolation tests also passed with Python 3.12.11.
+
 ## Phase 4 — Add minimal local resume behavior
 
 **Start only after:** interaction and check invalidation behavior are established.
@@ -220,8 +260,9 @@ required; adapters do not write session state.
 - [ ] Compare the Rust entry point against the prototype's selection, preservation,
       working-directory, and failure-reporting behavior.
 - [ ] Use both Python and Rust exercises in real practice sessions.
-- [ ] Document build/run requirements and switch the README's primary commands
-      only after the replacement is validated.
+- [x] Document build/run requirements and recommend the validated, branch-guarded
+      Rust entry point in the README. This safety-driven documentation switch does
+      not retire the prototype or complete the real-session adoption gate.
 - [ ] Propose wrapping or retiring `polyglot.py` separately. Do not delete it,
       existing `pylearn` code, or learner attempts as an incidental migration.
 
@@ -260,7 +301,7 @@ programming-practice session.
 ## Current next action
 
 Phases 1, 1b, and the Phase 2 proof gate are complete; Phase 3 prompt/hint/navigation
-is validated. Try `practice` without retiring the Python prototype. The next code
-change is the separate watch increment, including shared-file/config invalidation
-and superseded-run handling. Do not introduce persisted progress or retire the
-prototype before their later gates pass.
+and the branch guard are implemented. Next migrate to tracked per-exercise files
+and safe reset with main as the pristine baseline. Watch mode follows that layout
+gate, including config invalidation and superseded-run handling. Do not introduce
+persisted progress or retire the prototype before their later gates pass.

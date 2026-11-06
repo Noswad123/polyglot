@@ -14,6 +14,8 @@ import sys
 import tempfile
 import unittest
 
+from git_fixture import isolated_git_env
+
 
 REPO = Path(__file__).resolve().parents[1]
 IDS = (
@@ -72,12 +74,18 @@ class RustCliTests(unittest.TestCase):
             shutil.copy2(rust_readme, self.directory("rust") / "README.md")
         else:
             (self.directory("rust") / "README.md").write_text("Rust fixture prompt.\n")
-        self.env = os.environ.copy()
+        self.env = isolated_git_env()
         self.env["PYTHONDONTWRITEBYTECODE"] = "1"
         self.env["CARGO_TERM_COLOR"] = "never"
         # Keep caller-specific build flags/target redirections out of fixtures.
         for key in ("CARGO_TARGET_DIR", "RUSTFLAGS", "CARGO_ENCODED_RUSTFLAGS"):
             self.env.pop(key, None)
+        shutil.copy2(REPO / ".gitignore", self.root / ".gitignore")
+        for args in (("init", "--initial-branch=main"), ("add", "."),
+                     ("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                      "-c", "commit.gpgsign=false", "commit", "--no-gpg-sign", "-m", "Fixture"),
+                     ("switch", "-c", "practice/fixture")):
+            self.assert_code(self.execute(["git", *args], cwd=self.root), 0)
 
     def directory(self, language):
         return self.root / "practice" / language
@@ -91,6 +99,7 @@ class RustCliTests(unittest.TestCase):
             str(path.relative_to(self.root)): path.read_bytes()
             for path in self.root.rglob("*")
             if "target" not in path.relative_to(self.root).parts
+            and ".git" not in path.relative_to(self.root).parts
             and path.is_file() and not path.is_symlink()
         }
 
@@ -316,6 +325,39 @@ class RustCliTests(unittest.TestCase):
                 self.answer("python").write_text(source)
                 result = self.cli("check", "python/hello", code=1)
                 self.assertIn(diagnostic, result.stdout + result.stderr)
+
+    def test_python_feedback_labels_actual_and_expected_output(self):
+        self.answer("python").write_text(
+            PYTHON_SOLUTION.replace('print("Hello, World!")', 'print("Hello, World!\\n")')
+        )
+        for result in (
+            self.cli("check", "python/hello", code=1),
+            self.assert_code(self.native("python"), 1),
+        ):
+            diagnostic = result.stdout + result.stderr
+            self.assertIn(r"Your output: 'Hello, World!\n\n'", diagnostic)
+            self.assertIn(r"Expected output: 'Hello, World!\n'", diagnostic)
+            self.assertIn(r"Whitespace: \n = newline; \t = tab.", diagnostic)
+            self.assertNotIn(" != ", diagnostic)
+
+    def test_python_feedback_labels_result_and_return_value(self):
+        cases = (
+            (PYTHON_SOLUTION.replace("return string.find(substring)", "return -99"),
+             "python/find_in_string", "Your result: -99", "Expected result: 8"),
+            (PYTHON_SOLUTION.replace("return len(words[-1]) if words else 0", "return -99"),
+             "python/length_of_last_word", "Your result: -99", "Expected result: 5"),
+            (PYTHON_SOLUTION.replace('print("Hello, World!")', 'print("Hello, World!"); return 42'),
+             "python/hello", "Your return value: 42", "Expected return value: None"),
+            (PYTHON_SOLUTION.replace("return string.find(substring)", "return False"),
+             "python/find_in_string", "Your result: False (type: bool)", "Expected result type: int"),
+        )
+        for source, target, actual, expected in cases:
+            with self.subTest(target=target, actual=actual):
+                self.answer("python").write_text(source)
+                result = self.cli("check", target, code=1)
+                diagnostic = result.stdout + result.stderr
+                self.assertIn(actual, diagnostic)
+                self.assertIn(expected, diagnostic)
 
     def test_rust_learner_compile_and_assertion_failures(self):
         for source, diagnostic in (("pub fn greeting() -> &'static str { 42 }\n", "mismatched types"),
