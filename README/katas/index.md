@@ -6,16 +6,16 @@
 A kata is a focused challenge for deliberate, repeatable practice. This is the
 front door to the **full existing collection: 37 normalized topic families**, not
 just the five curated contracts. The inventory includes 20 question documents
-(five curated, 15 draft) and 17 code-only topics needing questions, with 70 source
-artifacts across eight languages: 60 original unverified legacy files plus ten
-checked examples (five Python, five Rust). Ten bindings are
+(five curated, 15 draft) and 17 code-only topics needing questions, with 74 source
+artifacts across eight languages: 60 original unverified legacy files plus 14
+checked examples (five Python, five Rust, four additional Hello examples). Fourteen bindings are
 active practice. The directory and filenames remain unchanged to preserve links;
 there is no requirement to implement every problem in every language.
 
 Start practice with the [Python track](../../practice/python/README.md) or the
 [Rust track](../../practice/rust/README.md). Stored code under
 [`practice/`](../../practice/) is study material outside the active exercises, not
-blanks to overwrite. Only the ten curated examples have current native-check
+blanks to overwrite. Only the 14 curated examples have current native-check
 evidence; discovery never reads, imports, or executes any stored source.
 
 ## API / Interfaces
@@ -27,7 +27,7 @@ blank path, and native check selector. Intentional binding differences are expli
 
 | Question / problem ID | Python binding | Rust binding | Readiness |
 |---|---|---|---|
-| [Hello World](hello_world.md) · `hello-world` | `python/hello` | `rust/hello` | Contract ready; both bindings have native blanks + checks. |
+| [Hello World](hello_world.md) · `hello-world` | `python/hello` | `rust/hello` | Six native blanks + checks; also `typescript/hello`, `go/hello`, `bash/hello`, `lua/hello`. |
 | [Find in String](find_in_string.md) · `find-in-string` | `python/find_in_string` | `rust/find_in_string` | Contract ready; both native blanks + checks. |
 | [Length of Last Word](lengthOfLastWord.md) · `length-of-last-word` | `python/length_of_last_word` | `rust/length_of_last_word` | Contract ready; both native blanks + checks. |
 | [Binary Search](binarySearch.md) · `binary-search` | `python/binary_search` | `rust/binary_search` | Contract ready; both native blanks + checks. |
@@ -39,7 +39,7 @@ Readiness terms are distinct:
 - **Native blank + checks:** a catalog binding selects a learner-editable exercise
   and its native harness. A blank is intentionally unsolved, not a passing solution.
 - **Solution artifact:** stored source, possibly partial, empty, or accompanied by
-  tests/demos. The original 60 legacy artifacts are unverified; the ten checked
+  tests/demos. The original 60 legacy artifacts are unverified; the 14 checked
   examples have native-test evidence, not proof of all behavior.
 - **Stored solution validation:** evidence about a published example, distinct from
   question curation, native practice readiness, committed reset readiness, and user
@@ -48,10 +48,12 @@ Readiness terms are distinct:
   practice-ready. **Missing:** no question document registered, not missing code.
 - **Pending:** no active binding; not an obligation to complete a mastery matrix.
 
-Only Python and Rust have active adapters here: five bindings each.
-Go, JavaScript, TypeScript, and other source examples are not newly
-active adapters or new exercise implementations. No claim is made that the whole
-library has been converted. A question may be curated without a binding; question
+Native language order is Python, Rust, TypeScript, Go, Bash, Lua. Python and Rust
+have five bindings each; the other four have Hello World only. Track instructions:
+[TypeScript](../../practice/typescript/README.md), [Go](../../practice/go/README.md),
+[Bash](../../practice/bash/README.md), [Lua](../../practice/lua/README.md).
+JavaScript and Lisp remain inventory-only; no JavaScript practice is available.
+The whole library has not been converted. A question may be curated without a binding; question
 status, reference availability, native binding readiness, and a committed reset
 baseline are independent. The five linked contracts remain authoritative for common
 behavior; general concept explanations remain in Darkness.
@@ -73,7 +75,7 @@ pretty-printed JSON. It fits within 80 columns with `Problem ID`, `Question`
 (status), `Solutions` (implementation language list, same 18-character width), and `Practice` (runnable native
 languages, e.g. `python, rust`; `-` means not converted). There is no duplicate
 title column. The footer summarizes 37 topics,
-20 docs, 70 solution artifacts, and ten native bindings; its “not all checked” legend
+20 docs, 74 solution artifacts, and 14 native bindings; its “not all checked” legend
 distinguishes mixed stored implementations from native practice languages and explains
 how to get details. JSON or `question ID` retains titles, exact native binding IDs,
 and full source paths. Mixed or repeated format flags are rejected.
@@ -87,7 +89,7 @@ selected native binding. Language-specific hints stay in the CLI catalog and are
 available through `polyglot hint`. The five curated question bodies contain no
 solutions or implementation-code hints; drafts may retain legacy inventories and
 examples. `list`, `practice`, `start`, `check`, `reset`, `hint`, and `show` still
-select only the ten active bindings (or supported track targets), not references.
+select only the 14 active bindings (or supported track targets), not references.
 Guessed IDs such as `python/stack` and `python/boggle` block without writes or
 branch changes. Metadata listing needs no root files, Git, or tools: this is a
 static catalog, not a runtime filesystem audit.
@@ -98,13 +100,13 @@ static catalog, not a runtime filesystem audit.
 2. Decide the common contract, examples, edge cases, and any binding differences.
 3. Create or promote the `Problem` in `cli/src/library.rs`, explicitly setting its
    status, optional document, and references. Editing Markdown alone never curates
-   it. Keep existing filenames stable. Reference labels do not extend the two-language
+   it. Keep existing filenames stable. Reference labels do not extend the six-language
    native `Language` enum.
 4. For practice, add an independent native blank/checks and an `Exercise` binding
    in `cli/src/model.rs` referencing a curated problem, keeping hints there.
 5. Add CLI/root fixtures for discovery, full-Markdown display, binding selection,
    and native check behavior. `tests/test_library_inventory.py` independently
-   covers all 20 non-index document paths and all 70 source artifacts;
+   covers all 20 non-index document paths and all 74 source artifacts;
    new in-scope source additions fail the audit until registered. This is coverage,
    not execution or validation of legacy solutions.
    Rust bindings use `NativeCheck::Rust(RustCheck { target, selector, harness })`;
@@ -130,9 +132,9 @@ Empty drafts are allowed (Sudoku is a draft, not missing). Active selection stil
 requires a curated nonempty contract, validated before automatic branching; native
 checks remain document-independent. Question-body edits are read at runtime;
 metadata/binding edits require build/install. Reset prerequisites are unchanged:
-the six existing blanks have committed baselines; each new path, including the
-four new Rust blanks, needs a reviewed canonical blob in local `main` before reset
-can restore it. A working-tree file is insufficient. No whole-library reset readiness is implied.
+each newly added path needs a reviewed canonical blank committed in local `main`
+before reset can restore it. A working-tree file is insufficient. Catalog presence
+does not imply committed reset readiness.
 
 ### Remaining conversion queue
 
@@ -194,8 +196,8 @@ are excluded. Multiple in-file variants (stocks, Jump Game, Remove Duplicates)
 belong to one topic family, not separate topics/artifacts. Historical deleted Rust
 Pong is not restored or counted. No legacy source is executed or validated here.
 
-The ten checked examples below bring the current total to **70**: Python 26,
-Rust 6, TypeScript 27, JavaScript 3, Go 3, Bash 2, Lua 2, and Lisp 1. Legacy
+The 14 checked examples below bring the current total to **74**: Python 26,
+Rust 6, TypeScript 28, Go 4, Bash 3, Lua 3, JavaScript 3, and Lisp 1. Legacy
 implementations, Users/database projects, and their manifests remain unchanged.
 
 ### Checked examples for curated questions
@@ -213,6 +215,13 @@ nothing; these checks do not certify the other 60 files or record user progress.
 | `length-of-last-word` | [length_of_last_word.py](../../practice/python/soutions/curated/length_of_last_word.py) | [length_of_last_word.rs](../../practice/rust/solutions/curated/length_of_last_word.rs) |
 | `binary-search` | [binary_search.py](../../practice/python/soutions/curated/binary_search.py) | [binary_search.rs](../../practice/rust/solutions/curated/binary_search.rs) |
 | `fibonacci` | [fibonacci.py](../../practice/python/soutions/curated/fibonacci.py) | [fibonacci.rs](../../practice/rust/solutions/curated/fibonacci.rs) |
+
+| Problem | Additional checked Hello example |
+|---|---|
+| `hello-world` | [TypeScript](../../practice/typescript/solutions/curated/hello_world.ts) |
+| `hello-world` | [Go](../../practice/go/solutions/curated/hello_world.go) |
+| `hello-world` | [Bash](../../practice/bash/solutions/curated/hello_world.sh) |
+| `hello-world` | [Lua](../../practice/lua/solutions/curated/hello_world.lua) |
 
 ### Original legacy sources (unverified)
 

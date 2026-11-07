@@ -13,11 +13,13 @@ The [shared question library](katas/index.md) owns exercise instructions and
 common contracts. One question can have many native language bindings; general
 concept notes remain canonical in Darkness. All 37 topic families are discoverable:
 five curated contracts, 15 drafts/project sketches, and 17 code-only topics needing
-questions. Ten bindings are active practice: all five curated questions in Python
-and Rust. Stored sources mix 60 unverified legacy implementations and ten examples
+questions. Fourteen bindings are active practice: all five curated questions in Python
+and Rust, plus Hello in TypeScript, Go, Bash, and Lua. Stored sources mix 60
+unverified legacy implementations and 14 examples
 checked against current native tests, not proven for all behavior. The preserved
 ideas backlog is separate. Existing `README/katas/` paths
-remain stable to avoid breaking links. No other language tracks were converted.
+remain stable to avoid breaking links. JavaScript and Lisp remain inventory-only;
+there is no JavaScript practice track or migration of original code into blanks.
 
 **Baseline prerequisite:** a reviewed canonical blank must be committed to local
 `refs/heads/main` before reset can restore it. New or uncommitted exercise paths
@@ -39,6 +41,10 @@ commit or learner-solution migration is implied.
 | `rust/length_of_last_word` | [length-of-last-word](katas/lengthOfLastWord.md) | `practice/rust/exercises/length_of_last_word.rs` | `length_of_last_word` in `length_of_last_word_checks` |
 | `rust/binary_search` | [binary-search](katas/binarySearch.md) | `practice/rust/exercises/binary_search.rs` | `binary_search` in `binary_search_checks` |
 | `rust/fibonacci` | [fibonacci](katas/fibonacci.md) | `practice/rust/exercises/fibonacci.rs` | `fibonacci` in `fibonacci_checks` |
+| `typescript/hello` | [hello-world](katas/hello_world.md) | `practice/typescript/exercises/hello.ts` | `tests/check_hello.cjs`, config + static API probe |
+| `go/hello` | [hello-world](katas/hello_world.md) | `practice/go/exercises/hello.go` | `TestHello` in `tests/hello_test.go` |
+| `bash/hello` | [hello-world](katas/hello_world.md) | `practice/bash/exercises/hello.sh` | `tests/check_hello.sh` |
+| `lua/hello` | [hello-world](katas/hello_world.md) | `practice/lua/exercises/hello.lua` | `tests/check_hello.lua` |
 
 `cli/src/library.rs` declares `Problem { id, title, question_status, question_doc,
 references }` and the full `PROBLEMS` registry. Documents are optional; references
@@ -49,6 +55,10 @@ bindings. Each `Exercise` has a qualified `id`, workspace-relative
 `NativeCheck::Rust(RustCheck { target, selector, harness })`: the Cargo target,
 exact libtest selector, and workspace-relative harness path. The typed `problem`
 reference links to the authoritative shared contract, not duplicated question text.
+Native language order is Python, Rust, TypeScript, Go, Bash, Lua. TypeScript's
+selector carries `harness`, `config`, and `api`; Go/Bash/Lua selectors carry their
+native `harness`. Tool overrides are `--python`, `--cargo`, `--node`, `--tsc`,
+`--go`, `--bash`, and `--lua`, alongside `--root`, all before the command.
 Common titles/contracts are not
 repeated in each binding. Stable problem IDs use hyphens, e.g. `binary-search`;
 qualified exercise IDs retain native underscores, e.g. `python/binary_search`.
@@ -83,6 +93,12 @@ need catalog/test changes, not a new adapter branch.
    `tests/<exercise>.rs` harnesses includes only its own exercise. The Rust adapter
    builds only the selected explicit Cargo target. Track checks require all five
    to pass, run sequentially, and may stop on the first non-pass.
+   The four additional tracks each check only Hello. TypeScript performs real
+   static API checking and runtime execution; Go uses isolated offline test JSON;
+   TypeScript/Bash/Lua use separate reports and backend-managed file stdout capture.
+   They reject load-time output and compare exact newline bytes. Do not invoke the
+   TypeScript or Lua harness bare; private regular-file stdout is required. See
+   their track READMEs for setup, tools, and contracts.
 5. Retry explicitly with `reset ID` or session `reset`/`r`, after the baseline
    prerequisite above. Only that worktree file is restored; the index is unchanged.
 
@@ -198,7 +214,7 @@ solutions into main.
    `cli/src/library.rs` first (or promote/reuse an existing problem); keep established
    document paths stable. Explicitly promote a reviewed contract to `Curated` before
    binding it: Markdown edits alone never change status. A curated problem need not
-   have a binding. Reference-language labels do not extend the two-variant native
+    have a binding. Reference-language labels do not extend the six-variant native
    `Language` enum or add an adapter.
 3. Add an `Exercise` in `cli/src/model.rs` referencing that problem, with a qualified ID, file, language,
    native-signature-only prompt, hint, and native selector. Do not duplicate the
@@ -218,7 +234,8 @@ solutions into main.
    siblings where applicable. Update `tests/active_fixture.py`'s `QUESTIONS`,
    explicit copy selection, IDs, `EXAMPLE_PATHS`, `SOLUTIONS`, and `RUST_SOLUTIONS`
    as applicable: fixtures must copy shared Markdown as well as native inputs.
-   All ten published examples are read as text, then copied into disposable
+    `HELLO_EXAMPLE_PATHS` covers the four additional Hello examples.
+    All 14 published examples are read as text, then copied into disposable
    learner sources. Expected native outputs are fixed independently of examples;
    never use personal learner files as fixtures or overwrite their attempts.
 5. Run the [active regression commands](rust-cli.md#verify-the-implementation)
@@ -227,7 +244,7 @@ solutions into main.
     or fixture inputs, never in canonical blank modules. Update track links and library readiness only
    after the contract, binding, blank, checks, and fixtures are in place.
    `tests/test_library_inventory.py` independently audits all 20 non-index question
-   paths and 70 source artifacts (60 original legacy files plus ten examples);
+    paths and 74 source artifacts (60 original legacy files plus 14 examples);
    register new in-scope sources or the audit
    fails. It excludes tests/specs, manifests, generated files, playgrounds, and the
    ideas backlog, and never validates legacy solutions. Draft discovery is not
@@ -246,8 +263,8 @@ if upstream code is copied; a learning-workflow resemblance alone requires none.
 
 ### Collection layout and execution limits
 
-The [inventory](katas/index.md) links all 70 source artifacts across 37 topics:
-the original 60 legacy files plus ten checked examples.
+The [inventory](katas/index.md) links all 74 source artifacts across 37 topics:
+the original 60 legacy files plus 14 checked examples.
 Their roots are intentionally mixed; preserve existing names and subdirectories:
 
 | Collection | Repository-relative root |
@@ -255,11 +272,13 @@ Their roots are intentionally mixed; preserve existing names and subdirectories:
 | Python attempts | `practice/python/soutions/` (existing spelling) |
 | Checked Python examples | `practice/python/soutions/curated/` |
 | Checked Rust examples | `practice/rust/solutions/curated/` |
+| Checked TypeScript/Go/Bash/Lua Hello examples | `practice/<language>/solutions/curated/` |
 | Rust Users project | `practice/rust/solutions/users/` (including `src/main.rs`) |
 | TypeScript, JavaScript, Go, Bash, Lua, Lisp | `practice/<language>/` (Go Users retains `users/`) |
 
-The curated directories contain one example per curated question per language,
-including `hello_world.py` and `hello_world.rs` (the Rust function is `greeting`).
+Python/Rust curated directories contain one example per curated question;
+TypeScript/Go/Bash/Lua each contain only Hello. These include `hello_world.py` and
+`hello_world.rs` (the Rust function is `greeting`).
 Their metadata notes say “Example checked against current native tests; not a proof
 of all behavior.” Browsing never executes them. Legacy attempts remain unverified
 and unchanged, not additional native bindings. TypeScript specs
@@ -267,7 +286,10 @@ retain their own harness expectations; Chai/Mocha dependencies and execution are
 not verified here. Rust Users is a standalone isolated Cargo workspace, not the
 active Rust exercise package. HTTP examples may bind ports; Users examples may
 create or change databases and handle credentials. Inspect source and dependencies
-before running them; do not use them to validate the ten native bindings.
+before running them; do not use them to validate the 14 native bindings. The private
+TypeScript 5.9.3 package supports the new Hello check only; it does not repair the
+legacy Chai/Mocha specs. Install explicitly with
+`npm ci --ignore-scripts --prefix practice/typescript`; graders never auto-install.
 
 The seven old Python pytest files and compatibility import bridge were removed,
 not moved into the active unittest track. They are not available validation.
@@ -281,6 +303,8 @@ metadata. Root tests live in `tests/`; native Python tests remain in
 
 - [Python contracts/native commands](../practice/python/README.md)
 - [Rust contract/native command](../practice/rust/README.md)
+- Hello-only tracks: [TypeScript](../practice/typescript/README.md),
+  [Go](../practice/go/README.md), [Bash](../practice/bash/README.md), [Lua](../practice/lua/README.md)
 - [Shared question library and conversion queue](katas/index.md)
 - [Preserved source inventory](katas/index.md#solutions-for-documented-topics-unverified)
 - [Full inventory/types](../cli/src/library.rs), [native bindings](../cli/src/model.rs),

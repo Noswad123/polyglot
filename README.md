@@ -16,9 +16,9 @@ adapters**, preserving the Rustlings-style interaction across languages. See
 [ADR 0001](README/decisions/0001-shared-workflow-language-adapters.md).
 
 The [Rust CLI](README/rust-cli.md) supports the shared list/start/check workflow
-for Python and Rust through separate native adapters, plus a line-based practice
+for Python, Rust, TypeScript, Go, Bash, and Lua through native adapters, plus a line-based practice
 session with prompts, hints, navigation, and per-exercise reset from committed
-`main`. Python and Rust use tracked `exercises/` files instead of an active
+`main`. All six languages use tracked `exercises/` files instead of an active
 shared answer file. `polyglot` is the only supported practice CLI; the root Python
 prototype and obsolete starter/test files are retired. Existing ignored legacy
 answers are preserved if present, with no automatic migration.
@@ -81,7 +81,7 @@ polyglot questions > /tmp/polyglot-questions.json
 `Problem ID`, `Question` (status), `Solutions` (wrapped language list), and
 `Practice` (runnable languages, e.g. `python, rust`; `-` means not converted)
 columns fit within 80 columns without a duplicate title column. The footer gives
-aggregate totals (including 70 solution artifacts) and a “not all checked” legend
+aggregate totals (including 74 solution artifacts) and a “not all checked” legend
 distinguishing stored implementations from native practice. Use JSON or `question ID` for titles, exact binding IDs, and
 full solution paths. Choose at most one format flag; mixing or repeating flags
 is rejected. Default/`--json` output has no human header or footer.
@@ -99,15 +99,19 @@ or native binding changes still require a build/install. Native checks do not
 depend on question-file availability.
 
 The inventory registers five curated contracts, 15 drafts/project sketches, and
-17 topics still needing question documents: 20 existing documents and 70 source
+17 topics still needing question documents: 20 existing documents and 74 source
 artifacts across eight languages under `practice/`: the original 60 unverified legacy
-implementations plus ten checked examples (five Python, five Rust). Each new example
+implementations plus 14 checked examples (five Python, five Rust, and one Hello
+each in TypeScript, Go, Bash, and Lua). Each new example
 has a metadata note: “Example checked against current native tests; not a proof of
 all behavior.” Discovery never reads or executes these sources.
 `questions` lists all 37 topics; `question ID` also accepts drafts and code-only
-topics. `list` and practice commands expose ten active bindings: all five curated
-questions in both Python and Rust, in the same question order. Solution-language labels do
-not add native adapters. Use the curated contract when porting a question.
+topics. `list` and practice commands expose 14 active bindings: all five curated
+questions in both Python and Rust, plus Hello World in TypeScript, Go, Bash, and Lua.
+Native language/menu order is Python, Rust, TypeScript, Go, Bash, Lua. JavaScript
+and Lisp are inventory-only; there is no JavaScript practice track. Solution-language
+labels do not add native adapters. Metadata discovery is read-only and tool-free.
+Use the curated contract when porting a question.
 
 ## Pristine main and practice branches
 
@@ -132,18 +136,17 @@ older hook; integrate changes manually with that setup. It cannot stop editor
 changes, and local hooks can be bypassed; remote branch rules are a separate layer. See
 [ADR 0002](README/decisions/0002-pristine-main-practice-branches.md).
 
-The active files are now `practice/python/exercises/*.py` and
-`practice/rust/exercises/*.rs`. Current ignored legacy answer files are
+The active files are under `practice/<language>/exercises/` for all six native
+languages. Current ignored legacy answer files are
 preserved if present, not automatically split or imported. The optional guard
 covers active `practice/*/exercises/**` paths and the two legacy answer paths,
 not retired starter paths. Editor and native commands do not enforce branch safety.
 
 On a practice branch, `polyglot reset python/hello` (or session `reset`/`r`) asks
 before restoring only that exercise from a pinned commit of local `main`.
-The six existing blank files have committed baselines. Any new
-binding—including newly converted katas—becomes reset-ready only after its reviewed
-blank reaches local `main`; a working-tree file is not enough. In particular, the
-four new Rust blanks need that integration before reset can restore them.
+Any newly added binding becomes reset-ready only after its reviewed blank is
+committed at its path on local `main`; a working-tree file is not enough. Reset
+readiness is a committed-tree prerequisite, not implied by catalog registration.
 Uncommitted changes on main still block automatic
 practice-branch creation until you explicitly branch or reconcile them.
 Changed existing files get private snapshot and original-inode recovery artifacts;
@@ -168,18 +171,32 @@ An unimplemented exercise should fail. Make that check pass, then follow the
 `start` validates the selected existing file; it creates or resets nothing.
 Each exercise has its own module and test, so a broken sibling does not block an
 individual check. Use `polyglot check python` to check the whole track. The Rust CLI
-resolves Python explicitly; see `--python` and `--root` in its instructions.
+resolves native tools explicitly; see `--python`, `--cargo`, `--node`, `--tsc`,
+`--go`, `--bash`, `--lua`, and `--root` in its instructions. Options precede commands.
 
 Direct native commands remain in the track instructions; use them on a practice
 branch too. They do not enforce the CLI's branch safeguards.
 
-Both tracks cover the same five questions, a small practice path rather than a full curriculum:
+Python and Rust cover the same five questions, a small practice path rather than a full curriculum:
 
 1. **Hello World:** functions and observable output; skip quickly if familiar.
 2. **Find in String:** return values and text searches.
 3. **Length of Last Word:** text cleanup and edge cases.
 4. **Binary Search:** sorted search, boundaries, and boolean results.
 5. **Fibonacci:** exact sequence length and recurrence.
+
+The four additional tracks are Hello-only: [TypeScript](practice/typescript/README.md)
+(Node 18+, TypeScript 5+), [Go](practice/go/README.md) (1.20+),
+[Bash](practice/bash/README.md) (3.2+), and [Lua](practice/lua/README.md) (5.1+).
+TypeScript's private package/lock pins 5.9.3; explicitly install from the root with
+`npm ci --ignore-scripts --prefix practice/typescript`. Grading never auto-installs.
+TypeScript checks the real static exported synchronous `hello(): void` API, exact
+newline output, and `undefined` return. Go returns the greeting without a newline
+from `Hello() string` in `package exercises`. Bash requires exact newline stdout
+and status 0; Lua requires exact newline stdout and no values or a single `nil`.
+TypeScript/Bash/Lua reject load-time output and use separate reports with
+backend-managed file capture. Follow the CLI workflow rather than invoking the
+TypeScript or Lua harness bare.
 
 ## A practice session
 
@@ -214,7 +231,7 @@ evidence about this attempt, not a claim of permanent mastery.
   adapter boundaries, outcome semantics, and adoption status.
 - [Pristine-main decision](README/decisions/0002-pristine-main-practice-branches.md):
   branch creation, direct-commit safeguards, and migration limits.
-- [Shared Rust CLI](README/rust-cli.md): build/run instructions for both adapters,
+- [Shared Rust CLI](README/rust-cli.md): build/run instructions for all six native languages,
   tool selection, safety, and outcome codes.
 - [Exercise lifecycle and authoring](README/exercises.md): tracked files, safe reset,
   preserving older attempts, and creating or fixing exercises.
@@ -228,8 +245,8 @@ evidence about this attempt, not a claim of permanent mastery.
   backlog—not today's assignment list.
 - [Earlier vision](README/vision.md): preserved philosophy and platform proposals.
 
-Only the five-question Python and Rust tracks are documented as
-self-contained practice paths.
+Python and Rust have five-question paths; TypeScript, Go, Bash, and Lua have
+bounded Hello-only paths. No original inventory code is migrated into exercises.
 Keep the active scope small; use a few real sessions to decide what to add next.
 
 ## Check the CLI implementation

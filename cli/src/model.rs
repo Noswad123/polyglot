@@ -9,13 +9,38 @@ pub use crate::library::{
 pub enum Language {
     Python,
     Rust,
+    TypeScript,
+    Go,
+    Bash,
+    Lua,
 }
 
 impl Language {
+    pub const ALL: [Self; 6] = [
+        Self::Python,
+        Self::Rust,
+        Self::TypeScript,
+        Self::Go,
+        Self::Bash,
+        Self::Lua,
+    ];
+
+    pub fn names() -> String {
+        Self::ALL
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join("|")
+    }
+
     pub fn parse(value: &str) -> Option<Self> {
         match value {
             "python" => Some(Self::Python),
             "rust" => Some(Self::Rust),
+            "typescript" => Some(Self::TypeScript),
+            "go" => Some(Self::Go),
+            "bash" => Some(Self::Bash),
+            "lua" => Some(Self::Lua),
             _ => None,
         }
     }
@@ -34,6 +59,22 @@ impl Language {
                 directory: "practice/rust",
                 inputs: &["Cargo.toml", "Cargo.lock", "target"],
             },
+            Self::TypeScript => Workspace {
+                directory: "practice/typescript",
+                inputs: &["package.json"],
+            },
+            Self::Go => Workspace {
+                directory: "practice/go",
+                inputs: &[],
+            },
+            Self::Bash => Workspace {
+                directory: "practice/bash",
+                inputs: &[],
+            },
+            Self::Lua => Workspace {
+                directory: "practice/lua",
+                inputs: &[],
+            },
         }
     }
 }
@@ -43,6 +84,10 @@ impl fmt::Display for Language {
         f.write_str(match self {
             Self::Python => "python",
             Self::Rust => "rust",
+            Self::TypeScript => "typescript",
+            Self::Go => "go",
+            Self::Bash => "bash",
+            Self::Lua => "lua",
         })
     }
 }
@@ -56,6 +101,20 @@ pub struct Workspace {
 pub enum NativeCheck {
     Python(&'static str),
     Rust(RustCheck),
+    TypeScript {
+        harness: &'static str,
+        config: &'static str,
+        api: &'static str,
+    },
+    Go {
+        harness: &'static str,
+    },
+    Bash {
+        harness: &'static str,
+    },
+    Lua {
+        harness: &'static str,
+    },
 }
 
 #[derive(Clone, Copy)]
@@ -186,6 +245,34 @@ pub const CATALOG: &[Exercise] = &[
             harness: "tests/fibonacci.rs",
         }),
     },
+    Exercise {
+        id: "typescript/hello", file: "exercises/hello.ts", language: Language::TypeScript,
+        problem: &HELLO_WORLD,
+        prompt: "Export function hello(): void. Print exactly Hello, World! followed by one newline and return undefined.",
+        hint: "Consider the difference between returning text and writing a line to the console.",
+        check: NativeCheck::TypeScript { harness: "tests/check_hello.cjs", config: "tests/hello.tsconfig.json", api: "tests/hello_api.ts" },
+    },
+    Exercise {
+        id: "go/hello", file: "exercises/hello.go", language: Language::Go,
+        problem: &HELLO_WORLD,
+        prompt: "In package exercises, implement func Hello() string returning exactly Hello, World! without a newline. Printing is not a substitute.",
+        hint: "A string literal can be returned directly; the caller decides how to display it.",
+        check: NativeCheck::Go { harness: "tests/hello_test.go" },
+    },
+    Exercise {
+        id: "bash/hello", file: "exercises/hello.sh", language: Language::Bash,
+        problem: &HELLO_WORLD,
+        prompt: "Define the hello shell function. When called, print exactly Hello, World! and one newline, with status 0. Do not run a top-level demo.",
+        hint: "Consider printf and the exit status of the function's final command.",
+        check: NativeCheck::Bash { harness: "tests/check_hello.sh" },
+    },
+    Exercise {
+        id: "lua/hello", file: "exercises/hello.lua", language: Language::Lua,
+        problem: &HELLO_WORLD,
+        prompt: "Define global function hello(). When called, print exactly Hello, World! and one newline; return no values or a single nil. Do not run a top-level demo.",
+        hint: "Consider how print terminates a line and what happens without a return statement.",
+        check: NativeCheck::Lua { harness: "tests/check_hello.lua" },
+    },
 ];
 
 #[derive(Debug, PartialEq, Eq)]
@@ -237,7 +324,17 @@ mod tests {
                 .iter()
                 .filter(|exercise| std::ptr::eq(exercise.problem, problem))
                 .collect();
-            assert_eq!(bindings.len(), 2);
+            assert_eq!(
+                bindings
+                    .iter()
+                    .filter(|e| matches!(e.language, Language::Python | Language::Rust))
+                    .count(),
+                2
+            );
+            assert_eq!(
+                bindings.len(),
+                if problem.id == HELLO_WORLD.id { 6 } else { 2 }
+            );
             assert!(bindings
                 .iter()
                 .any(|exercise| exercise.language == Language::Python));
@@ -326,16 +423,16 @@ mod tests {
         }
         assert_eq!(problems.len(), 37);
         assert_eq!(documents.len(), 20);
-        assert_eq!(references.len(), 70);
+        assert_eq!(references.len(), 74);
         assert_eq!(statuses, [5, 15, 17]);
         for (language, count) in [
             ("python", 26),
-            ("typescript", 27),
+            ("typescript", 28),
             ("javascript", 3),
-            ("go", 3),
+            ("go", 4),
             ("rust", 6),
-            ("bash", 2),
-            ("lua", 2),
+            ("bash", 3),
+            ("lua", 3),
             ("lisp", 1),
         ] {
             assert_eq!(languages[language], count);
@@ -351,6 +448,6 @@ mod tests {
                 .iter()
                 .any(|problem| std::ptr::eq(*problem, exercise.problem)));
         }
-        assert_eq!(exercises.len(), 10);
+        assert_eq!(exercises.len(), 14);
     }
 }

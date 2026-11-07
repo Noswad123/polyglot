@@ -1,10 +1,12 @@
 # ADR 0001: Shared practice workflow with native language adapters
 
-**Status:** Accepted; the two-language list/start/check workflow and shared
+**Status:** Accepted; the initial two-language list/start/check workflow and shared
 line-based prompt/hint/navigation session are implemented. The user chose manual
 checks and retirement of the root Python prototype, superseding this ADR's earlier
 watching and retirement gates. Watch mode is not planned; optional persisted
 resume is not a retirement prerequisite.
+Current adoption extends Hello World to TypeScript, Go, Bash, and Lua through the
+same workflow; the original two-language proof below remains the historical gate.
 
 [Architecture](../architecture.md) · [Roadmap](../../ROADMAP.md)
 
@@ -22,7 +24,8 @@ along with obsolete starter/test files. Ignored learner answers remain preserved
 if present, with no automatic migration.
 
 The shared Rust CLI exposes all five curated contracts in both Python and Rust
-using independent tracked modules (ten bindings). `polyglot` is the only supported
+using independent tracked modules, plus Hello in TypeScript, Go, Bash, and Lua
+(14 bindings total). `polyglot` is the only supported
 practice CLI; there is no prototype fallback. See the
 [CLI instructions](../rust-cli.md) for current commands and validation.
 
@@ -54,7 +57,7 @@ There is no auto-run on save or automatic advancement/progress tracking.
 
 It must not construct Cargo commands, understand Python imports, or scatter
 language conditionals throughout application state. Select an adapter at one
-dispatch boundary and use the same orchestration for both languages.
+dispatch boundary and use the same orchestration for every native language.
 
 ### Exercise definition
 
@@ -69,8 +72,8 @@ the serialization format is an implementation choice, not a reason to build a DS
 
 The static inventory in `cli/src/library.rs` now registers 37 topic families:
 five curated, 15 draft, and 17 missing questions, covering 20 existing documents
-and 70 source artifacts across eight languages: 60 original unverified legacy files
-plus ten checked examples, five per native language. `questions` defaults
+and 74 source artifacts across eight languages: 60 original unverified legacy files
+plus 14 checked examples (five each Python/Rust, one each TypeScript/Go/Bash/Lua). `questions` defaults
 to strict JSON-only stdout; `questions --json` remains an explicit alias, with the
 same metadata schema and no human header/footer. Paths remain repository-relative,
 but now point to the mixed `practice/` collection roots. JSON retains `references` with
@@ -80,7 +83,7 @@ is compatibility metadata, not a verification claim. Internal reference types st
 not pretty-printed JSON. Its columns are `Problem ID`, `Question` (status),
 `Solutions` (wrapped implementation languages, same 18-character width), and `Practice` (runnable native languages, or `-`
 for not converted), with no duplicate title. Aggregate totals and a legend
-include 70 solution artifacts, mark stored implementations “not all checked”, distinguish
+include 74 solution artifacts, mark stored implementations “not all checked”, distinguish
 them from native practice, and direct readers to JSON
 or `question ID` for titles, exact binding IDs, and full source paths. Mixing or
 repeating format flags is invalid. For human browsing use
@@ -98,12 +101,13 @@ Shared question documents remain in `README/katas/`. Human question detail
 uses a `Solutions` heading. This storage/label change does not change the five
 curated contracts or adapter boundaries.
 
-`cli/src/model.rs` supplies ten native bindings: all five curated questions in
-Python and Rust, in the same question order. Reference-language labels are not native
-adapters; the native `Language` enum remains Python/Rust. A curated contract may
+`cli/src/model.rs` supplies 14 native bindings: all five curated questions in
+Python and Rust, plus Hello in TypeScript, Go, Bash, and Lua. The native enum/menu
+order is Python, Rust, TypeScript, Go, Bash, Lua. JavaScript and Lisp remain
+inventory-only; reference-language labels are not native adapters. A curated contract may
 have no binding. Question readiness, reference availability, native practice, and
 stored-solution validation, user progress, and committed reset readiness are separate.
-The ten examples carry “Example checked against current native tests; not a proof
+The 14 examples carry “Example checked against current native tests; not a proof
 of all behavior.” Legacy files remain uncertified. Markdown edits are visible at runtime but
 never automatically promote a question or register a binding. Active selection
 still requires a curated, nonempty safe document before automatic branching;
@@ -127,6 +131,19 @@ the selected target, so broken or missing siblings do not block an individual
 check. Whole-track Rust checks run sequentially, may stop at the first non-pass,
 and pass only when all five pass. This is adapter metadata, not new shared-workflow
 language branching or one aggregate target.
+
+The current Hello extension uses a real TypeScript compiler-API program and exact
+static `() => void` named-export probe before synchronous runtime checks. The private
+package/lock pins TypeScript 5.9.3; users install explicitly with
+`npm ci --ignore-scripts --prefix practice/typescript`. Go copies only the selected
+source/test into private scratch, runs offline test JSON, and requires `TestHello`
+and package completion. Bash/Lua harnesses validate function status/return arity.
+TypeScript/Bash/Lua reject load-time stdout, compare exact newline output, and use
+backend-managed file captures plus separate reports; TypeScript/Lua harnesses must
+not be run bare. Go returns greeting text without a newline in `package exercises`.
+Tool selection, version requirements, and failure classification remain adapter
+responsibilities; grading never installs dependencies or toolchains. See the
+[CLI guide](../rust-cli.md#roots-and-tool-selection) for all overrides.
 
 Initially, two concrete adapters and a small internal interface or enum are enough.
 Do not introduce plugin discovery, dynamic loading, an adapter SDK, or arbitrary
@@ -188,7 +205,10 @@ interpreters after a check fails.
 4. **Adoption:** the user chose retirement of `polyglot.py` and obsolete practice
    scaffolding. Ignored learner attempts are preserved, not migrated or deleted.
    The separate experimental Python package has since been removed as well.
-   Root Python configuration is development/test tooling, not a runtime package.
+    Root Python configuration is development/test tooling, not a runtime package.
+5. **Bounded six-language adoption:** Hello now runs in TypeScript, Go, Bash, and Lua,
+   without migrating legacy implementations, introducing JavaScript practice,
+   changing manual session policy, or expanding to full curriculum parity.
 
 The [roadmap](../../ROADMAP.md) tracks delivery and acceptance checks; the manual
 workflow and retirement status above supersede the earlier watch/adoption gates.
@@ -235,7 +255,7 @@ to catch a Rust-only design before more features or exercise tracks depend on it
 
 These links describe the reviewed design, not a pinned code dependency. Pin a
 revision if implementation copies code; no upstream code was copied for the
-current two-language proof.
+initial two-language proof or the current six-language Hello increment.
 
 ## Related files
 

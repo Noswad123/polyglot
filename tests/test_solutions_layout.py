@@ -1,5 +1,6 @@
 """Persistent layout checks; legacy servers and databases are never executed."""
 
+import json
 import stat
 import unittest
 
@@ -15,6 +16,11 @@ class SolutionsLayoutTests(unittest.TestCase):
 
     def test_supporting_tests_and_manifests(self):
         self.assertEqual(len(list((REPO / IMPLEMENTATION_ROOTS["typescript"]).glob("*.spec.ts"))), 17)
+        package = json.loads((REPO / "practice/typescript/package.json").read_text())
+        self.assertIs(package["private"], True)
+        self.assertEqual(package["devDependencies"], {"typescript": "5.9.3"})
+        lock = json.loads((REPO / "practice/typescript/package-lock.json").read_text())
+        self.assertEqual(lock["packages"]["node_modules/typescript"]["version"], "5.9.3")
         for language, relative in (
             ("javascript", "package.json"),
             ("go", "users/go.mod"),

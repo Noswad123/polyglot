@@ -6,8 +6,7 @@ use crate::{adapters, git, workspace};
 
 pub struct Context {
     pub root: PathBuf,
-    pub python: Option<PathBuf>,
-    pub cargo: Option<PathBuf>,
+    pub tools: adapters::Tools,
 }
 
 impl Context {
@@ -155,14 +154,7 @@ impl Context {
                 return outcome;
             }
         }
-        adapters::check(
-            &self.root,
-            &directory,
-            language,
-            exercises,
-            self.python.as_deref(),
-            self.cargo.as_deref(),
-        )
+        adapters::check(&self.root, &directory, language, exercises, &self.tools)
     }
 }
 

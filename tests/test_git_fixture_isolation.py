@@ -15,6 +15,7 @@ import test_rust_cli
 import test_reset_cli
 import test_question_library
 import test_library_inventory
+import test_additional_hello
 
 
 class GitFixtureIsolationTests(unittest.TestCase):
@@ -53,7 +54,8 @@ class GitFixtureIsolationTests(unittest.TestCase):
         suites = (test_rust_cli.RustCliTests, test_interactive_cli.InteractiveCliTests,
                   test_branch_policy.BranchPolicyTests, test_main_hooks.MainHookTests,
                   test_reset_cli.ResetCliTests, test_question_library.QuestionLibraryTests,
-                  test_library_inventory.LibraryInventoryTests)
+                  test_library_inventory.LibraryInventoryTests,
+                  test_additional_hello.AdditionalHelloTests)
         poison = {**context, "GIT_CONFIG_GLOBAL": str(self.config),
                   "GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "core.hooksPath",
                   "GIT_CONFIG_VALUE_0": str(self.hooks), "GIT_FUTURE_CONTEXT": "discard me"}

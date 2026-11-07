@@ -16,12 +16,12 @@ import time
 import unittest
 
 from git_fixture import isolated_git_env
-from active_fixture import IDS, copy_active_fixture, exercise_path, solve
+from active_fixture import IDS, PAIRED_IDS, LANGUAGES, copy_active_fixture, exercise_path, solve, tool_overrides
 
 
 REPO = Path(__file__).resolve().parents[1]
 TITLES = ("Hello, World!", "Find in String", "Length of Last Word",
-          "Binary Search", "Fibonacci") * 2
+          "Binary Search", "Fibonacci") * 2 + ("Hello, World!",) * 4
 PYTHON_SOLUTION = '''def hello():
     print("Hello, World!")
 
@@ -93,7 +93,8 @@ class InteractiveCliTests(unittest.TestCase):
         missing = str(self.base / "missing executable")
         return [str(self.binary), "--root", str(self.root),
                 "--python", self.python if tools else missing,
-                "--cargo", self.cargo if tools else missing, *args]
+                "--cargo", self.cargo if tools else missing,
+                *tool_overrides(None if tools else missing), *args]
 
     def cli(self, *args, input="", code=0, tools=True):
         result = subprocess.run(
@@ -147,7 +148,7 @@ class InteractiveCliTests(unittest.TestCase):
         before = self.sources()
         for command in ("show", "hint", "practice"):
             for target in ("../python/hello", "python/../hello", "/python/hello",
-                           "python/hello/", "python/nope", "go/hello", "", "hello"):
+                           "python/hello/", "python/nope", "javascript/hello", "", "hello"):
                 with self.subTest(command=command, target=target):
                     self.cli(command, target, code=2, tools=False)
             self.cli(command, "python/hello", "extra", code=2, tools=False)
@@ -167,8 +168,8 @@ class InteractiveCliTests(unittest.TestCase):
 
     def test_menu_names_numbers_and_invalid_reprompt(self):
         before = self.sources()
-        for selection, language in (("python", "python"), ("1", "python"),
-                                    ("rust", "rust"), ("2", "rust")):
+        for selection, language in [(selection, language) for index, language in enumerate(LANGUAGES, 1)
+                                    for selection in (language, str(index))]:
             with self.subTest(selection=selection):
                 output = self.cli("practice", input=f"not a language\n{selection}\nq\n")
                 self.assertGreaterEqual(output.count("Choose a language"), 2, output)
@@ -181,7 +182,7 @@ class InteractiveCliTests(unittest.TestCase):
             language = selection.split("/")[0]
             with self.subTest(selection=selection):
                 output = self.cli("practice", selection, input="q\n", tools=False)
-                position, count = index % 5 + 1, 5
+                position, count = (index % 5 + 1, 5) if index < 10 else (1, 1)
                 self.assertIn(f"Exercise: {selection} ({position}/{count})", output)
                 self.assertIn(TITLES[index], output)
                 self.assertIn(f"Exercise file: {self.answer(*selection.split('/'))}", output)
@@ -245,7 +246,7 @@ class InteractiveCliTests(unittest.TestCase):
         self.assertEqual(output.count("Passed"), 6, output)
         self.assertEqual(output.count("test result:"), 6, output)
         self.assertGreaterEqual(output.count("End of track"), 2, output)
-        for index, selection in enumerate(IDS[5:], 1):
+        for index, selection in enumerate(PAIRED_IDS[5:], 1):
             self.assertIn((selection, str(index), "5"), self.selections(output))
         self.assert_current(output, "rust/hello")
         self.assertEqual(self.sources(), before)
@@ -266,7 +267,7 @@ class InteractiveCliTests(unittest.TestCase):
     def test_rust_list_contains_only_current_language(self):
         output = self.cli("practice", "rust", input="list\nl\nq\n", tools=False)
         rows = re.findall(r"(?:^|practice> )([a-z_/]+)\t", output, re.MULTILINE)
-        self.assertEqual(rows, list(IDS[5:]) * 2)
+        self.assertEqual(rows, list(PAIRED_IDS[5:]) * 2)
 
     def test_language_switch_prepares_first_exercise_and_preserves_source(self):
         self.solve("python")
@@ -284,7 +285,7 @@ class InteractiveCliTests(unittest.TestCase):
         self.solve("python")
         before = self.sources()
         sentinel = self.cwd / "must not exist"
-        for invalid in ("language go", "language", "language rust extra",
+        for invalid in ("language javascript", "language", "language rust extra",
                         "nonsense", f'touch "{sentinel}"', "next extra"):
             with self.subTest(invalid=invalid):
                 baseline = self.cli("practice", "python/find_in_string", input="q\n", tools=False)

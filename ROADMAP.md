@@ -27,8 +27,8 @@ for the current implementation and integration rules.
 The direction is accepted in
 [ADR 0001](README/decisions/0001-shared-workflow-language-adapters.md).
 The root Python prototype is retired; the supported practice CLI is Rust-based.
-The Rust list/start/check workflow and two native adapters are implemented and
-validated. The first shared line-based prompt/hint/navigation session is also
+The Rust list/start/check workflow initially proved two native adapters and now
+supports Python, Rust, TypeScript, Go, Bash, and Lua. The shared line-based prompt/hint/navigation session is also
 implemented. Explicit checks are the intended interaction; watch mode and
 save-triggered checking are out of scope by user choice. Resume is optional,
 not a prerequisite for using the app.
@@ -44,13 +44,15 @@ retained untouched, not automatically imported. Canonical baseline commits still
 require user review and integration into main.
 
 Discovery now covers the complete current-file inventory: 37 topic families,
-20 question documents, and 70 solution artifacts in the user-selected
+20 question documents, and 74 solution artifacts in the user-selected
 language directories under `practice/`.
-The artifacts include the original 60 legacy files and ten examples checked
+The artifacts include the original 60 legacy files and 14 examples checked
 against the current native tests, not a proof of all behavior.
 The JSON `references` field is retained for export compatibility. Question readiness
 and native practice availability are separate: only five contracts are curated
-and all five have Python and Rust bindings (ten runnable exercises). Earlier
+and all five have Python and Rust bindings; Hello additionally has TypeScript,
+Go, Bash, and Lua bindings (14 runnable exercises). JavaScript and Lisp remain
+inventory-only; no JavaScript practice track is introduced. Earlier
 five-question milestones describe that
 curated subset, not the size of the original collection.
 
@@ -373,7 +375,8 @@ Keep discovery metadata independent from executable exercise bindings.
 - [x] Let `question ID` inspect drafts and missing-question topics without inventing
       a contract. Show empty drafts explicitly and label reference paths unverified.
 - [x] Keep `list` and all practice/check/reset selection restricted to the existing
-      six bindings. Discoverability must not create stubs or enable more adapters.
+      six bindings at this historical milestone (now 14 after the batches below).
+      Discoverability must not create stubs or enable more adapters.
 - [x] Independently audit every question document and source artifact against the
       repository tree, so future inventory additions cannot silently disappear.
 
@@ -502,13 +505,14 @@ does not convert the other 32 inventory topics or add another language adapter.
 - [x] Publish five checked Python and five checked Rust examples under the existing
       implementation roots' `curated/` directories. Reuse their text only as inputs
       in disposable fixtures; expected outputs remain independently defined.
-- [x] Preserve all 60 legacy artifacts. The inventory now has 70 artifacts, of which
+- [x] Preserve all 60 legacy artifacts. At this milestone the inventory had 70 artifacts, of which
       the ten new examples carry explicit native-test evidence, not a proof of all
       behavior. No stored solution is automatically copied into learner files.
 - [x] Validate selected checks, both language sessions, wrong-contract/API mutants,
       zero/ignored tests, sibling isolation, branch guards, and per-file reset.
-- [ ] Review and integrate the four new canonical Rust blanks into local main before
-      using reset for those paths. The six existing blank paths already have baselines.
+- Reset prerequisite (all authored paths): a reviewed canonical blank must be
+  committed at its path on local main before reset can restore it. This historical
+  batch does not establish the checkout's current integration status.
 
 **Validation:** 162 isolated integration/regression tests passed with Python 3.15.
 All 16 Rust units passed on Rust 1.85 and 1.89. Root and native harness formatting,
@@ -518,6 +522,80 @@ exercises, not by modifying real attempts. Independent example probes and wrong,
 missing, or private API checks also passed with Cargo/Rust 1.85. Runtime validation is macOS; Linux
 runtime validation remains open. No servers, databases, watch mode, or persistent
 progress were introduced.
+
+## Six-language Hello World increment
+
+### Overview
+
+The current bounded extension adds Hello World in TypeScript, Go, Bash, and Lua
+to the five-question Python/Rust tracks. Native order is Python, Rust, TypeScript,
+Go, Bash, Lua: **14 bindings, 74 artifacts**. Artifact counts are Python 26,
+Rust 6, TypeScript 28, Go 4, Bash 3, Lua 3, JavaScript 3, Lisp 1. The original 60
+legacy files remain inventory; 14 curated examples carry native-test evidence,
+not proof of all behavior. Topic/document readiness remains 37 topics, 20 docs,
+five curated, 15 draft, 17 missing. JavaScript and Lisp are inventory-only.
+
+### API / Interfaces
+
+- TypeScript: exported synchronous `hello(): void`, exact greeting plus newline,
+  runtime return `undefined`; real compiler-API static checking, not transpile-only.
+  Node 18+ and TypeScript 5+; private package/lock pins 5.9.3. Setup is explicitly
+  `npm ci --ignore-scripts --prefix practice/typescript`, never a grading step.
+- Go: `Hello() string` in `package exercises`, returning greeting without newline;
+  Go 1.20+ with automatic toolchain downloads disabled.
+- Bash: `hello` function, exact newline stdout and status 0; Bash 3.2+.
+- Lua: global `hello()`, exact newline stdout, no values or one `nil`; Lua 5.1+
+  with regular-file stdout flush/seek support.
+
+All use the shared CLI with global `--root` and native overrides `--python`,
+`--cargo`, `--node`, `--tsc`, `--go`, `--bash`, `--lua` before the command.
+
+### Data Flow
+
+Go checks only selected copied files in private scratch through offline test JSON.
+TypeScript emits only the exercise/API probe into private CommonJS scratch.
+TypeScript/Bash/Lua separate completion reports from backend-managed file stdout
+capture and reject import/source/load-time output. Their exact greeting must come
+from the function. TypeScript and Lua harnesses must not be invoked bare; use the
+CLI to provide the required private regular-file capture. Metadata browsing remains
+read-only and tool-free; it does not load or execute inventory sources.
+
+### Edge Cases
+
+Missing/unsupported tools and broken harness/configuration block; attributable
+learner errors fail. Zero/skipped tests and early exits without trustworthy
+completion do not pass. New canonical blanks require review and a commit at their
+paths on local main before reset works; no catalog entry implies that integration.
+`practice` branches only from clean main or reuses non-main; `start`/`reset` need
+an existing non-main branch. No automatic commits, dependency installs,
+original-code migration, JavaScript track, watcher, automatic advancement,
+progress store, or database are introduced.
+
+**Validation completed:** all 183 isolated regression tests passed without skips,
+including authored local links and 21 additional Hello tests. All 16 Rust unit
+tests passed on both the default toolchain and Rust 1.85; formatting, strict Clippy,
+locked build, and diff whitespace checks passed. Independent review caught and
+verified fixes for deferred Bash EXIT-trap output and Go type/generic API error
+attribution. Native checks used installed host tools; Bash 3.2 was also exercised.
+Minimum Node, Go, and Lua runtime versions have not been tested as a version matrix.
+
+### Example usage
+
+```sh
+polyglot questions --pretty
+polyglot show typescript/hello
+polyglot practice go/hello
+# Save the displayed exercise, then request a check explicitly.
+polyglot check bash/hello
+polyglot check lua/hello
+```
+
+### Related files
+
+- [Shared Hello contract](README/katas/hello_world.md), [full inventory](README/katas/index.md)
+- Track setup: [TypeScript](practice/typescript/README.md), [Go](practice/go/README.md),
+  [Bash](practice/bash/README.md), [Lua](practice/lua/README.md)
+- [CLI/tool resolution](README/rust-cli.md), [native regression cases](tests/test_additional_hello.py)
 
 ## Practice and curriculum discipline throughout
 
@@ -541,7 +619,7 @@ proof. Two adapters do not imply two mandatory learning tracks.
 - Notes ingestion, synchronization, shared schemas, and CQRS integration.
 - New frontend/backend work for the learning platform.
 - A CLI per language, dynamic plugins, or a generalized framework that replaces
-  native tools. The shared Rust workflow and two built-in adapters are in scope.
+   native tools. The shared Rust workflow and six native languages are in scope.
 - A full Rustlings fork by default, automatic environment setup, or a broad rewrite
   of existing exercises before the two-language proof.
 - Bulk note cleanup, wholesale directory migration, and complete language parity.
@@ -552,9 +630,11 @@ programming-practice session.
 
 ## Current next action
 
-Review the paired-track batch on an authoring branch and integrate the four new
-Rust blanks into main for canonical reset. Then use the complete curated set in
-either language, choosing meaningful practice rather than more infrastructure.
+Review the six-language Hello increment on an authoring branch; any newly added
+canonical blank must be committed at its path on local main before reset can work.
+No commits or integration are automatic.
+Then choose a meaningful practice session: the complete curated set in Python/Rust
+or Hello in TypeScript, Go, Bash, or Lua, rather than more infrastructure.
 `questions --pretty` distinguishes full-library inventory from runnable bindings
 and checked examples. Practice remains manual; no watch mode is planned. Preserve
 older attempts until copied and verified. No real-checkout commits, branch changes,

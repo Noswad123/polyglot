@@ -12,7 +12,7 @@ import time
 import unittest
 
 from git_fixture import isolated_git_env
-from active_fixture import IDS, copy_active_fixture, exercise_path, solve
+from active_fixture import IDS, LANGUAGES, copy_active_fixture, exercise_path, solve, tool_overrides
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -49,7 +49,7 @@ class BranchFixture:
 
     def command(self, *args):
         return [str(self.binary), "--root", str(self.root), "--python", self.python,
-                "--cargo", str(self.base / "missing cargo"), *args]
+                "--cargo", str(self.base / "missing cargo"), *tool_overrides(), *args]
 
     def cli(self, *args, input="", code=0, env=None):
         result = subprocess.run(self.command(*args), cwd=self.base, env=env or self.env,
@@ -87,13 +87,16 @@ class BranchFixture:
 class BranchPolicyTests(BranchFixture, unittest.TestCase):
     def test_clean_main_explicit_target_creates_language_branch(self):
         main, before = self.git("rev-parse", "main"), self.sources()
-        output = self.cli("practice", "python/hello", input="q\n")
-        self.assertIn("Created practice branch", output)
-        self.assertRegex(self.git("branch", "--show-current"), r"^practice/python-.+")
-        self.assertEqual(self.git("rev-parse", "main"), main)
-        self.assertEqual(self.git("rev-parse", "HEAD"), main)
-        self.assertEqual(self.git("status", "--porcelain"), "")
-        self.assertEqual(self.sources(), before)
+        for language in LANGUAGES:
+            with self.subTest(language=language):
+                self.git("switch", "main")
+                output = self.cli("practice", language + "/hello", input="q\n")
+                self.assertIn("Created practice branch", output)
+                self.assertRegex(self.git("branch", "--show-current"), "^practice/" + language + r"-.+")
+                self.assertEqual(self.git("rev-parse", "main"), main)
+                self.assertEqual(self.git("rev-parse", "HEAD"), main)
+                self.assertEqual(self.git("status", "--porcelain"), "")
+                self.assertEqual(self.sources(), before)
 
     def test_clean_main_menu_selection_creates_rust_branch(self):
         main, before = self.git("rev-parse", "main"), self.sources()
@@ -217,7 +220,7 @@ class BranchPolicyTests(BranchFixture, unittest.TestCase):
 
     def test_invalid_targets_quit_and_eof_do_not_mutate_git(self):
         before, metadata = self.sources(), self.git_files()
-        for target in ("go/hello", "python/nope", "../python/hello", "hello", ""):
+        for target in ("javascript/hello", "python/nope", "../python/hello", "hello", ""):
             self.cli("practice", target, code=2)
         for input in ("", "q\n", "quit\n", "invalid\nq\n"):
             self.cli("practice", input=input)

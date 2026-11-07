@@ -5,12 +5,15 @@
 ## Overview
 
 This implements the shared practice workflow and a line-based session.
-Python and Rust share prompt/hint presentation, navigation, and check orchestration.
+Python, Rust, TypeScript, Go, Bash, and Lua share prompt/hint presentation,
+navigation, and check orchestration, in that native language/menu order.
 The [full question/reference inventory](katas/index.md) registers 37 topic families:
-five curated, 15 draft, and 17 missing questions. Its 20 documents and 70 source
+five curated, 15 draft, and 17 missing questions. Its 20 documents and 74 source
 artifacts across eight languages are discoverable: 60 unverified legacy files plus
-ten checked examples. All five curated questions have Python and Rust bindings
-(ten total). Discovery adds no native adapters.
+14 checked examples. All five curated questions have Python and Rust bindings;
+Hello World additionally has TypeScript, Go, Bash, and Lua bindings (14 total).
+JavaScript and Lisp are inventory-only, with no JavaScript practice track.
+Discovery adds no native adapters and never executes stored implementations.
 Manual checks are intentional: save, then explicitly check. There is no auto-run
 on save or automatic advancement; watch mode is neither implemented nor planned.
 `polyglot` is the only supported practice CLI. The root Python prototype and
@@ -31,6 +34,11 @@ working-tree, learner-HEAD, or legacy-starter fallback, and no automatic commit.
 
 Requires Rust/Cargo 1.85+ to build. Python checks require Python 3.11+; listing and
 starting do not require an installed Python interpreter or exercise toolchain.
+Other check requirements are Node 18+ with TypeScript 5+, Go 1.20+, Bash 3.2+,
+or Lua 5.1+ (regular-file stdout flush/seek support). Install only the tools for
+your chosen track. TypeScript's private package and lockfile pin 5.9.3; explicitly
+run `npm ci --ignore-scripts --prefix practice/typescript` from the root. Checks
+never run npm, install dependencies, or download a toolchain.
 
 From the repository root:
 
@@ -94,6 +102,10 @@ This is a local development install, not release packaging.
 
 ./target/debug/polyglot practice python/hello
 ./target/debug/polyglot practice rust/hello
+./target/debug/polyglot practice typescript/hello
+./target/debug/polyglot practice go/hello
+./target/debug/polyglot practice bash/hello
+./target/debug/polyglot practice lua/hello
 ```
 
 For one-shot selection, first create or select a non-`main` branch, then use
@@ -114,6 +126,8 @@ and target `practice_checks`; the other four use `tests/<exercise>.rs` and targe
 exercise does not reset your work. Track READMEs link to the authoritative shared
 questions and document native APIs/commands; the CLI reads full question Markdown
 and adds the selected native task. Hints remain separate static binding metadata.
+TypeScript, Go, Bash, and Lua each have only `LANGUAGE/hello`; `check LANGUAGE`
+selects that single binding. See their track READMEs for exact native APIs.
 
 `questions [--json | --pretty]` inventories all 37 stable problem IDs. The default
 and the retained explicit `--json` alias emit only a JSON array on stdout, with no
@@ -135,7 +149,7 @@ JSON**. It fits within 80 columns and has no duplicate `Title` column:
 | `Solutions` | Stored implementation languages (not all checked), wrapped in the same 18-character column |
 | `Practice` | Runnable native languages, e.g. `python, rust`; `-` means not converted |
 
-The footer reports 37 topics, 20 docs, 70 solution artifacts, and ten native
+The footer reports 37 topics, 20 docs, 74 solution artifacts, and 14 native
 bindings. Its legend
 distinguishes stored implementations (not all checked) from runnable native practice and
 points to JSON or `question ID` for details. Titles, exact binding IDs, and full
@@ -153,7 +167,7 @@ polyglot questions --json
 
 Hyphenated problem IDs are distinct from qualified exercise IDs such as
 `python/binary_search`. `list`, `practice`, `start`, `check`, `reset`, `hint`, and
-`show` remain restricted to the ten active bindings (or supported track targets).
+`show` remain restricted to the 14 active bindings (or supported track targets).
 Guessing `python/stack` or `python/boggle` is blocked without writes or branch
 mutation. Existing `README/katas/` filenames remain unchanged for link stability.
 
@@ -173,7 +187,8 @@ workspace within one language is needed, not through a plugin framework now.
 ./target/debug/polyglot practice python/find_in_string
 ```
 
-Without a target, choose `python`/`rust` or `1`/`2` at the language menu. Quit or
+Without a target, choose a language name or menu number: `1` Python, `2` Rust,
+`3` TypeScript, `4` Go, `5` Bash, `6` Lua. Quit or
 EOF before selection creates no file or branch. Entering a session validates the
 selected exercise and its shared document before automatic branching, preserves
 existing work, and displays the exercise, position, file, problem ID, question
@@ -191,7 +206,7 @@ editor, monitor saves, or automatically run checks.
 | `next`, `n` | Recheck current source; advance only if it passes |
 | `previous`, `p` | Move back without requiring a pass |
 | `list`, `l` | List exercises in the selected language |
-| `language python`, `language rust` | Switch to that language's first exercise |
+| `language LANGUAGE` | Switch to the first exercise in any of the six native languages |
 | `help`, `?` | Show session commands |
 | `quit`, `q`, EOF | End the session without changing exercise files |
 
@@ -221,7 +236,7 @@ resume would be considered only if needed, not as a prerequisite for retirement.
 
 `question PROBLEM_ID` accepts any registered topic and prints its metadata,
 bindings, and stored paths under a `Solutions` heading marked “not all checked”.
-Ten curated examples have the note “Example checked against current native tests;
+Fourteen curated examples have the note “Example checked against current native tests;
 not a proof of all behavior.” The original 60 legacy sources remain uncertified.
 Curated topics show the full contract;
 drafts show a warning and legacy body, or an empty-draft notice with success.
@@ -332,6 +347,10 @@ All global options must come **before** the command:
 /path/to/polyglot --root "/path/to/checkout" list
 /path/to/polyglot --root "/path/to/checkout" --python "/path/to/python3" check python/hello
 /path/to/polyglot --root "/path/to/checkout" --cargo "/path/to/cargo" check rust/hello
+/path/to/polyglot --node "/path/to/node" --tsc "/path/to/typescript/bin/tsc" check typescript/hello
+/path/to/polyglot --go "/path/to/go" check go/hello
+/path/to/polyglot --bash "/path/to/bash" check bash/hello
+/path/to/polyglot --lua "/path/to/lua" check lua/hello
 ```
 
 Python selection is `--python` → checkout `.venv/bin/python` (or
@@ -342,6 +361,15 @@ that cannot run is blocked; it does not silently fall back after failure.
 Cargo selection is `--cargo` → `cargo` on PATH. Paths may contain spaces; tools
 are invoked as argument vectors without shell interpolation. No command installs
 tools, creates environments, or downloads exercise dependencies automatically.
+
+Node, Go, Bash, and Lua selection is the matching override (`--node`, `--go`,
+`--bash`, `--lua`) → matching executable on PATH. TypeScript compiler selection is
+`--tsc` → checkout `practice/typescript/node_modules/typescript/bin/tsc` if present
+→ `tsc` on PATH. The compiler entry is canonicalized and must be an actual npm
+`typescript/bin/tsc` with package metadata and `lib/typescript.js`, not an executable
+shim (for example Volta). The selected Node runs its version probe and compiler API;
+TypeScript 5+ and matching reported versions are required. Explicit/local failures
+block rather than triggering installation or a silent fallback.
 
 ## Data Flow
 
@@ -366,6 +394,31 @@ harnesses do not block selected checks. Checks do not
 trust learner stdout as a pass signal. Metadata listing needs no root files, Git,
 or tools. The catalog is static, not runtime file discovery or a filesystem audit;
 editing Markdown does not automatically curate a draft or register a binding.
+
+The additional Hello adapters retain native evidence and selected isolation:
+
+- **TypeScript:** typed `NativeCheck::TypeScript { harness, config, api }` selects
+  a strict compiler-API program containing just the exercise and exact `() => void`
+  export probe. CommonJS output goes to private scratch, then the synchronous
+  function is executed and its `undefined` return checked. A separate JSON report
+  distinguishes configuration, compilation, and runtime outcomes.
+- **Go:** `NativeCheck::Go { harness }` copies just `hello.go` and `hello_test.go`
+  into private scratch. `go test -json -count=1 -run ^TestHello$` selects those files;
+  success requires normal test-run, test-pass, and package-pass events. The child
+  sets `GO111MODULE=off`, `GOWORK=off`, `GOPROXY=off`, `GOSUMDB=off`,
+  `GOTOOLCHAIN=local`, `GOENV=off` and removes `GOFLAGS`. No neighboring legacy
+  programs, modules, workspaces, or automatic downloads participate.
+- **Bash/Lua:** native harness selectors copy only the selected source/harness into
+  private scratch. Bash runs with `--noprofile --norc`; startup environment variables
+  are removed, including Lua init variables. Harnesses check function availability,
+  status/return arity, load-time output, and separate completion reports.
+
+TypeScript, Bash, and Lua reject import/source/load-time stdout and compare function
+output exactly with `Hello, World!\n`. File captures are backend-managed and reports
+are separate from learner stdout. **Do not invoke the TypeScript or Lua harness
+bare:** both require initially empty private regular-file stdout; Lua additionally
+needs flush/seek support. Use `polyglot check` for the complete workflow. Go instead
+checks the return from `Hello() string` in `package exercises`, without a newline.
 
 ## Edge Cases
 
@@ -403,6 +456,11 @@ text, not a universal diagnostic parser.
 
 Direct native check commands remain in the [Python](../practice/python/README.md)
 and [Rust](../practice/rust/README.md) instructions.
+The [TypeScript](../practice/typescript/README.md), [Go](../practice/go/README.md),
+[Bash](../practice/bash/README.md), and [Lua](../practice/lua/README.md) tracks
+document setup and adapter-managed checks. Missing tools/broken harnesses block;
+learner contract errors fail. Early exit without trustworthy completion evidence
+is indeterminate; printing a pass marker or selecting zero/skipped tests never passes.
 
 ## Verify the implementation
 
@@ -414,13 +472,17 @@ cargo build --locked
 python3 -B -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-The integration suite needs Python 3.11+ and Cargo on PATH. It runs the built
+The core integration suite needs Python 3.11+ and Cargo on PATH; the additional
+native Hello cases need Node/TypeScript, Go, Bash, and Lua for their respective
+checks and may skip when host tools are absent. TypeScript setup is explicit, not
+performed by tests or grading. The suite runs the built
 `target/debug/polyglot`; set `POLYGLOT_BIN` to test a different binary. A missing
 binary fails with build instructions rather than silently skipping the suite.
 The fixtures are isolated temporary copies, with temporary Git repositories where
 needed, paths with spaces, and unrelated working directories. Active fixture
 selection and explicit solution cases live in `tests/active_fixture.py`. Fixtures
-copy the curated shared Markdown. `EXAMPLE_PATHS` maps all ten published examples;
+copy the curated shared Markdown. `EXAMPLE_PATHS` maps ten Python/Rust examples;
+`HELLO_EXAMPLE_PATHS` maps the four additional Hello examples.
 `SOLUTIONS` and `RUST_SOLUTIONS` read their actual files as text and install them
 only into disposable learner sources before native checking;
 tests do not copy, reset, or check real local learner answers. Retired prototype
@@ -432,17 +494,22 @@ bridge were removed, not replaced by the active native tests. See the
 [collection limits](exercises.md#collection-layout-and-execution-limits).
 
 `tests/test_library_inventory.py` independently compares the registry with all
-20 non-index question paths and 70 source artifacts (60 original legacy files plus
-ten checked examples). Its filename normalization maps `hello_world` to
+20 non-index question paths and 74 source artifacts (60 original legacy files plus
+14 checked examples). Its filename normalization maps `hello_world` to
 `hello-world`, not a variant topic. Tests/specs, manifests,
 generated files, playgrounds, and the ideas backlog are not cataloged solution artifacts.
 New in-scope source additions fail the coverage audit until registered; this audit
 does not execute or validate legacy solutions.
 
-`tests/test_curated_batch.py` checks all ten published examples as disposable
+`tests/test_curated_batch.py` checks the ten Python/Rust examples as disposable
 learner inputs, selected Rust isolation, whole-track requirements, and independent
 fixed contract cases in both languages. `tests/test_local_links.py` audits authored
 Markdown targets and fragments without fetching URLs or executing examples.
+`tests/test_additional_hello.py` covers the four additional blanks/examples, static
+TypeScript API mutants, exact stdout/returns/status, tool versions/paths, early
+exits, broken harnesses, Go offline isolation, tool-free metadata, menus, and reset
+in committed disposable fixtures. Native cases require the respective installed
+host tools; parent/full validation must arrange those explicitly, never by grading.
 
 ## Scope and deferrals
 

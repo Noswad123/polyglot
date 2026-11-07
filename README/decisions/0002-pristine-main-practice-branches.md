@@ -90,9 +90,9 @@ The latest reviewed local main is the baseline at reset start, not a permanently
 recorded practice-branch creation revision. A later main-ref change during the
 confirmation does not substitute another blob into that operation.
 
-The canonical file must already be committed on local main. The six existing blank
-files have that baseline; no additional baseline commit is needed for them. Newly
-authored files still need reviewed integration into main; without that baseline
+The canonical file must already be committed at its exercise path on local main.
+Catalog registration or an uncommitted blank is not a baseline. Newly
+authored files need reviewed integration into main; without that baseline
 reset blocks. Uncommitted cleanup on main still blocks automatic practice-branch
 creation until the user explicitly branches or reconciles changes. Existing
 pristine files require no write or backup. Other cases require `y`/`yes`;

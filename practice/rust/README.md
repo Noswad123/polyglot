@@ -21,8 +21,8 @@ pristine; implement solutions on a practice branch, not in a separate answers fi
 at its exercise path in local `refs/heads/main`. New or uncommitted paths are not
 a baseline; reset safely refuses until it exists. `start` does not create missing
 files or copy a starter.
-The existing Hello baseline is committed; the four new Rust blanks become
-reset-ready only when their reviewed canonical blobs reach local `main`.
+Catalog registration does not establish a committed baseline; check local main's
+committed tree before relying on reset for any newly authored path.
 
 ## API / Interfaces
 

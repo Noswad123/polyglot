@@ -130,7 +130,11 @@ library! {
         [(python, "hello_world.py"), (javascript, "helloWorld.js"), (go, "helloWorld.go"),
          (bash, "hello_world.sh"), (lua, "helloWorld.lua"), (lisp, "hello-world.lisp"),
          (python, "curated/hello_world.py", "Example checked against current native tests; not a proof of all behavior."),
-         (rust, "curated/hello_world.rs", "Example checked against current native tests; not a proof of all behavior.")];
+         (rust, "curated/hello_world.rs", "Example checked against current native tests; not a proof of all behavior."),
+         (typescript, "solutions/curated/hello_world.ts", "Example checked against current native tests; not a proof of all behavior."),
+         (go, "solutions/curated/hello_world.go", "Example checked against current native tests; not a proof of all behavior."),
+         (bash, "solutions/curated/hello_world.sh", "Example checked against current native tests; not a proof of all behavior."),
+         (lua, "solutions/curated/hello_world.lua", "Example checked against current native tests; not a proof of all behavior.")];
     INSERT_DELETE_GET_RANDOM: "insert-delete-get-random", "Insert Delete GetRandom", Missing, [],
         [(typescript, "insertDeleteGetRandom.ts")];
     INTEGER_TO_ROMAN: "integer-to-roman", "Integer to Roman", Draft, ["integer_to_Roman.md"],

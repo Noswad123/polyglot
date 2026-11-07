@@ -93,11 +93,11 @@ class LibraryInventoryTests(BranchFixture, unittest.TestCase):
         self.assertTrue(all((self.root / path).is_file() for path in docs))
         self.assertTrue(all(rows[topic]["question_doc"] is None for topic in MISSING))
         refs = [ref for row in rows.values() for ref in row["references"]]
-        self.assertEqual(len(refs), 70)
-        self.assertEqual(len({ref["path"] for ref in refs}), 70)
+        self.assertEqual(len(refs), 74)
+        self.assertEqual(len({ref["path"] for ref in refs}), 74)
         self.assertEqual(Counter(ref["language"] for ref in refs),
-                         {"python": 26, "typescript": 27, "javascript": 3, "go": 3,
-                          "rust": 6, "bash": 2, "lua": 2, "lisp": 1})
+                         {"python": 26, "typescript": 28, "javascript": 3, "go": 4,
+                          "rust": 6, "bash": 3, "lua": 3, "lisp": 1})
         scanned = {}
         excluded = {"exercises", "tests", "compat", "__pycache__", "target", "build",
                     "dist", "node_modules", "generated", ".pytest_cache", ".venv", "venv"}
@@ -105,13 +105,17 @@ class LibraryInventoryTests(BranchFixture, unittest.TestCase):
         for language, suffix in SUFFIXES.items():
             root = REPO / IMPLEMENTATION_ROOTS[language]
             self.assertTrue(root.is_dir(), root)
-            for path in root.rglob("*" + suffix):
-                if (not path.is_file() or excluded.intersection(path.relative_to(root).parts)
-                        or path.name == "__init__.py" or path.name.startswith("test_")
-                         or path.name.endswith((".spec.ts", ".spec.js", ".test.ts", ".test.js",
-                                                "_test.go", "_test.py"))):
-                    continue
-                scanned[str(path.relative_to(REPO))] = (language, source_topic(path))
+            for directory, directories, files in os.walk(root):
+                directories[:] = [name for name in directories if name not in excluded]
+                for name in files:
+                    path = root / os.path.relpath(directory, root) / name
+                    if path.suffix != suffix:
+                        continue
+                    if (not path.is_file() or path.name == "__init__.py" or path.name.startswith("test_")
+                            or path.name.endswith((".spec.ts", ".spec.js", ".test.ts", ".test.js",
+                                                   "_test.go", "_test.py"))):
+                        continue
+                    scanned[str(path.relative_to(REPO))] = (language, source_topic(path))
         declared = {ref["path"]: (ref["language"], topic)
                     for topic, row in rows.items() for ref in row["references"]}
         self.assertEqual(set(declared), set(scanned))
@@ -124,7 +128,7 @@ class LibraryInventoryTests(BranchFixture, unittest.TestCase):
         self.assertEqual({key for key, row in rows.items() if row["bindings"]}, set(QUESTIONS))
         self.assertEqual(rows["spiral-matrix"]["references"], [])
         self.assertEqual({ref["language"] for ref in rows["hello-world"]["references"]},
-                         {"python", "rust", "javascript", "go", "bash", "lua", "lisp"})
+                         set(SUFFIXES))
         for topic in ("stack", "queue"):
             self.assertEqual([ref["language"] for ref in rows[topic]["references"]], ["python"])
         self.assertEqual({ref["language"] for ref in rows["boggle"]["references"]}, {"python", "typescript"})
@@ -186,15 +190,15 @@ class LibraryInventoryTests(BranchFixture, unittest.TestCase):
         self.assertIn("'-' means not converted", output)
         self.assertRegex(output, r"Solutions: .*not all checked.*'-' means none")
         self.assertIn("polyglot question <problem-id>", output)
-        for pattern in (r"37\s+topics", r"20\s+(?:question\s+)?docs", r"70\s+solution artifacts",
-                        r"10\s+(?:native\s+)?bindings"):
+        for pattern in (r"37\s+topics", r"20\s+(?:question\s+)?docs", r"74\s+solution artifacts",
+                        r"14\s+(?:native\s+)?bindings"):
             self.assertRegex(output, pattern)
         self.assertEqual([line.split("\t")[0] for line in self.cli("list", env=env).splitlines()], list(IDS))
         for args in (("questions", "--json", "extra"), ("questions", "--json", "--json"),
                      ("questions", "--pretty", "--pretty"), ("questions", "--json", "--pretty"),
                      ("questions", "--pretty", "--json"), ("questions", "--pretty", "extra"),
                      ("questions", "--language", "python"), ("question", "--json"),
-                     ("question", "boggle", "extra"), ("list", "--language", "typescript")):
+                     ("question", "boggle", "extra"), ("list", "--language", "javascript")):
             self.assert_blocked(*args, env=env)
         self.assertEqual(self.sources(), before)
         self.assertFalse((self.root / ".git").exists())

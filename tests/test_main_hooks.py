@@ -9,11 +9,11 @@ import tempfile
 import unittest
 
 from git_fixture import isolated_git_env
-from active_fixture import IDS
+from active_fixture import IDS, EXTENSIONS
 
 
 REPO = Path(__file__).resolve().parents[1]
-EXERCISES = tuple(f"practice/{language}/exercises/{name}{'.py' if language == 'python' else '.rs'}"
+EXERCISES = tuple(f"practice/{language}/exercises/{name}{EXTENSIONS[language]}"
                   for language, name in (selection.split("/") for selection in IDS))
 
 

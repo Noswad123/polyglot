@@ -12,6 +12,9 @@ practice bindings; legacy references are unverified and never run by discovery.
 Preserved implementations live in [`soutions/`](soutions/) (existing spelling),
 with five new checked examples in [`soutions/curated/`](soutions/curated/), separate
 from learner modules. All five shared contracts also have active Rust bindings.
+Hello World additionally has TypeScript, Go, Bash, and Lua bindings; these are
+Hello-only tracks, not conversion of their legacy collections. Native menu order
+is Python, Rust, TypeScript, Go, Bash, Lua. JavaScript and Lisp remain inventory-only.
 The old seven pytest files and
 compatibility import bridge were removed, not migrated to these tests.
 Use Python 3.11+; native checks need no package installation, virtual environment,

@@ -6,7 +6,7 @@ import re
 import subprocess
 import unittest
 
-from active_fixture import EXAMPLE_PATHS, IDS, NAMES, QUESTIONS, REPO, RUST_SOLUTIONS, SOLUTIONS, solve
+from active_fixture import EXAMPLE_PATHS, LANGUAGES, PAIRED_IDS, NAMES, QUESTIONS, REPO, RUST_SOLUTIONS, SOLUTIONS, solve
 import test_rust_cli as cli_fixture
 
 
@@ -41,7 +41,7 @@ class CuratedBatchTests(unittest.TestCase):
     native = cli_fixture.RustCliTests.native
 
     def test_all_ten_published_examples_pass_selected_native_checks_with_siblings_blank(self):
-        for selection in IDS:
+        for selection in PAIRED_IDS:
             language, name = selection.split("/")
             with self.subTest(selection=selection):
                 path = self.answer(language, name)
@@ -82,7 +82,8 @@ class CuratedBatchTests(unittest.TestCase):
         self.assertEqual(set(curated), set(QUESTIONS))
         for topic, name in zip(QUESTIONS, NAMES):
             row = curated[topic]
-            self.assertEqual(row["bindings"], [f"python/{name}", f"rust/{name}"])
+            self.assertEqual(row["bindings"], [language + "/hello" for language in LANGUAGES] if name == "hello"
+                             else [f"python/{name}", f"rust/{name}"])
             for language in ("python", "rust"):
                 path = str(EXAMPLE_PATHS[language][name].relative_to(REPO))
                 ref = next(ref for ref in row["references"] if ref["path"] == path)

@@ -1,5 +1,9 @@
+mod go;
 mod python;
 mod rust;
+mod shell;
+mod support;
+mod typescript;
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -7,17 +11,30 @@ use std::process::{Command, Output};
 
 use crate::model::{Exercise, Language, Outcome};
 
+#[derive(Default)]
+pub(crate) struct Tools {
+    pub(crate) python: Option<PathBuf>,
+    pub(crate) cargo: Option<PathBuf>,
+    pub(crate) node: Option<PathBuf>,
+    pub(crate) tsc: Option<PathBuf>,
+    pub(crate) go: Option<PathBuf>,
+    pub(crate) bash: Option<PathBuf>,
+    pub(crate) lua: Option<PathBuf>,
+}
+
 pub fn check(
     root: &Path,
     directory: &Path,
     language: Language,
     exercises: &[&Exercise],
-    python: Option<&Path>,
-    cargo: Option<&Path>,
+    tools: &Tools,
 ) -> Outcome {
     let result = match language {
-        Language::Python => python::check(root, directory, exercises, python),
-        Language::Rust => rust::check(root, directory, exercises, cargo),
+        Language::Python => python::check(root, directory, exercises, tools.python.as_deref()),
+        Language::Rust => rust::check(root, directory, exercises, tools.cargo.as_deref()),
+        Language::TypeScript => typescript::check(root, directory, exercises, tools),
+        Language::Go => go::check(root, directory, exercises, tools),
+        Language::Bash | Language::Lua => shell::check(root, directory, exercises, tools),
     };
     result.unwrap_or_else(|outcome| outcome)
 }

@@ -13,22 +13,23 @@ use std::process::ExitCode;
 use model::{Exercise, Language, Outcome, CATALOG, PROBLEMS};
 use workflow::Context;
 
-const HELP: &str = "polyglot [--root PATH] [--python PATH] [--cargo PATH] COMMAND
+const HELP: &str = "polyglot [--root PATH] [--python PATH] [--cargo PATH] [--node PATH] [--tsc PATH] [--go PATH] [--bash PATH] [--lua PATH] COMMAND
 
 Commands:
-  list [--language python|rust]
+  list [--language LANGUAGE]
   questions [--json | --pretty]
   question PROBLEM_ID
   start ID
   reset ID
-  check ID|python|rust
+  check ID|LANGUAGE
   show ID
   hint ID
-  practice [python|rust|ID]
+  practice [LANGUAGE|ID]
 
 IDs: python/hello, python/find_in_string, python/length_of_last_word,
      python/binary_search, python/fibonacci, rust/hello, rust/find_in_string,
-     rust/length_of_last_word, rust/binary_search, rust/fibonacci
+     rust/length_of_last_word, rust/binary_search, rust/fibonacci,
+     typescript/hello, go/hello, bash/hello, lua/hello
 Global options must precede the command. --help shows this help.
 Questions inventories all topics, draft/missing docs, and stored solution attempts.
 Questions defaults to JSON (--json is explicit); --pretty displays a compact table.
@@ -58,18 +59,22 @@ fn run() -> Result<(), Outcome> {
     let mut args = std::env::args_os().skip(1).peekable();
     let mut options = Context {
         root: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
-        python: None,
-        cargo: None,
+        tools: adapters::Tools::default(),
     };
     while let Some(arg) = args.peek() {
         if arg == "--help" || arg == "-h" {
-            print!("{HELP}");
+            println!("{HELP}Languages: {}", Language::names());
             return Ok(());
         }
         let destination = match arg.to_str() {
             Some("--root") => &mut options.root,
-            Some("--python") => options.python.get_or_insert_with(PathBuf::new),
-            Some("--cargo") => options.cargo.get_or_insert_with(PathBuf::new),
+            Some("--python") => options.tools.python.get_or_insert_with(PathBuf::new),
+            Some("--cargo") => options.tools.cargo.get_or_insert_with(PathBuf::new),
+            Some("--node") => options.tools.node.get_or_insert_with(PathBuf::new),
+            Some("--tsc") => options.tools.tsc.get_or_insert_with(PathBuf::new),
+            Some("--go") => options.tools.go.get_or_insert_with(PathBuf::new),
+            Some("--bash") => options.tools.bash.get_or_insert_with(PathBuf::new),
+            Some("--lua") => options.tools.lua.get_or_insert_with(PathBuf::new),
             _ => break,
         };
         let flag = args.next().unwrap();
@@ -123,9 +128,10 @@ fn run() -> Result<(), Outcome> {
                         .ok_or_else(|| Outcome::Blocked(format!("unknown language: {value}")))?,
                 ),
                 _ => {
-                    return Err(Outcome::Blocked(
-                        "usage: list [--language python|rust]".into(),
-                    ))
+                    return Err(Outcome::Blocked(format!(
+                        "usage: list [--language {}]",
+                        Language::names()
+                    )))
                 }
             };
             workflow::catalog(language);
@@ -135,7 +141,12 @@ fn run() -> Result<(), Outcome> {
             let initial = match args.as_slice() {
                 [_] => session::choose_language()?,
                 [_, value] => Some(select(value, true)?[0]),
-                _ => return Err(Outcome::Blocked("usage: practice [python|rust|ID]".into())),
+                _ => {
+                    return Err(Outcome::Blocked(format!(
+                        "usage: practice [{}|ID]",
+                        Language::names()
+                    )))
+                }
             };
             let Some(initial) = initial else {
                 return Ok(());
@@ -147,7 +158,7 @@ fn run() -> Result<(), Outcome> {
                 return Err(Outcome::Blocked(format!(
                     "usage: {command} {}",
                     if command == "check" {
-                        "ID|python|rust"
+                        "ID|LANGUAGE"
                     } else {
                         "ID"
                     }
@@ -206,6 +217,25 @@ mod tests {
     fn selection_is_exact_and_tracks_are_check_only() {
         assert_eq!(select("python", true).unwrap().len(), 5);
         assert_eq!(select("rust/hello", false).unwrap().len(), 1);
+        assert_eq!(Language::names(), "python|rust|typescript|go|bash|lua");
+        for language in Language::ALL {
+            let name = language.to_string();
+            assert_eq!(Language::parse(&name), Some(language));
+            let selected = select(&name, true).unwrap();
+            assert_eq!(selected[0].id, format!("{name}/hello"));
+            assert_eq!(
+                selected.len(),
+                if matches!(language, Language::Python | Language::Rust) {
+                    5
+                } else {
+                    1
+                }
+            );
+            assert!(select(&name, false).is_err());
+        }
+        assert!(Language::parse("javascript").is_none());
+        assert!(Language::parse("js").is_none());
+        assert!(Language::parse("lisp").is_none());
         for value in ["python", "../rust/hello", "hello", "python/hello/", ""] {
             assert!(select(value, false).is_err());
         }

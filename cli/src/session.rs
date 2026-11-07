@@ -5,7 +5,7 @@ use crate::workflow::{self, Context};
 use crate::{git, workspace};
 
 const HELP: &str = "Commands: Enter/check/c, hint/h, prompt, reset/r, next/n, previous/p, list/l,
-language python|rust, help/?, quit/q.
+language LANGUAGE, help/?, quit/q.
 Edit and save the exercise file in your own editor, then check. Next always rechecks.";
 
 fn read_line(prompt: &str) -> Result<Option<String>, Outcome> {
@@ -22,17 +22,26 @@ fn read_line(prompt: &str) -> Result<Option<String>, Outcome> {
 }
 
 pub fn choose_language() -> Result<Option<&'static Exercise>, Outcome> {
-    while let Some(line) = read_line("Choose a language (1: python, 2: rust; q: quit): ")? {
+    let choices = Language::ALL
+        .iter()
+        .enumerate()
+        .map(|(i, language)| format!("{}: {language}", i + 1))
+        .collect::<Vec<_>>()
+        .join(", ");
+    while let Some(line) = read_line(&format!("Choose a language ({choices}; q: quit): "))? {
         let language = match line.as_str() {
             "q" | "quit" => return Ok(None),
-            "1" => Some(Language::Python),
-            "2" => Some(Language::Rust),
-            value => Language::parse(value),
+            value => value
+                .parse::<usize>()
+                .ok()
+                .and_then(|index| index.checked_sub(1))
+                .and_then(|index| Language::ALL.get(index).copied())
+                .or_else(|| Language::parse(value)),
         };
         if let Some(language) = language {
             return Ok(CATALOG.iter().find(|e| e.language == language));
         }
-        println!("Invalid language. Choose python/rust or 1/2.");
+        println!("Invalid language. Choose {choices}.");
     }
     Ok(None)
 }
@@ -48,7 +57,7 @@ pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome>
         .collect();
     let mut index = track.iter().position(|e| e.id == initial.id).unwrap();
     context.show(initial, Some((index, track.len())))?;
-    println!("{HELP}");
+    println!("{HELP}\nLanguages: {}", Language::names());
     while let Some(line) = read_line("practice> ")? {
         let current = track[index];
         let target = match line.as_str() {
@@ -107,7 +116,7 @@ pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome>
                 continue;
             }
             "help" | "?" => {
-                println!("{HELP}");
+                println!("{HELP}\nLanguages: {}", Language::names());
                 continue;
             }
             _ => {
@@ -118,7 +127,7 @@ pub fn run(context: &Context, initial: &'static Exercise) -> Result<(), Outcome>
                         _ => None,
                     };
                     let Some(language) = language else {
-                        println!("Blocked: usage: language python|rust");
+                        println!("Blocked: usage: language {}", Language::names());
                         continue;
                     };
                     CATALOG.iter().find(|e| e.language == language).unwrap()

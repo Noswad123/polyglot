@@ -15,7 +15,7 @@ import tempfile
 import unittest
 
 from git_fixture import isolated_git_env
-from active_fixture import IDS, copy_active_fixture, exercise_path, solve
+from active_fixture import IDS, LANGUAGES, copy_active_fixture, exercise_path, solve, tool_overrides
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -109,7 +109,7 @@ class RustCliTests(unittest.TestCase):
         command = [self.binary, "--root", self.root]
         if python:
             command += ["--python", self.python]
-        command += ["--cargo", self.cargo, *globals, *args]
+        command += ["--cargo", self.cargo, *tool_overrides(), *globals, *args]
         before = self.sources() if args and args[0] == "check" else None
         result = self.execute(command, env=env)
         if before is not None:
@@ -135,13 +135,13 @@ class RustCliTests(unittest.TestCase):
         before = self.sources()
         env = {**self.env, "PATH": ""}
         missing = self.base / "missing tool"
-        overrides = ("--python", missing, "--cargo", missing)
+        overrides = ("--python", missing, "--cargo", missing, *tool_overrides(missing))
         help_result = self.cli("--help", globals=overrides, env=env)
         self.assertIn("Global options", help_result.stdout)
         result = self.cli("list", globals=overrides, env=env)
         self.assertEqual([line.split("\t")[0] for line in result.stdout.splitlines()], list(IDS))
         self.assertIn("README/katas/hello_world.md", result.stdout)
-        for language in ("python", "rust"):
+        for language in LANGUAGES:
             with self.subTest(language=language):
                 result = self.cli("list", "--language", language, globals=overrides, env=env)
                 self.assertEqual([line.split("\t")[0] for line in result.stdout.splitlines()],
@@ -151,17 +151,17 @@ class RustCliTests(unittest.TestCase):
     def test_invalid_arguments_do_not_write(self):
         before = self.sources()
         cases = [(), ("start",), ("check",), ("list", "extra"),
-                 ("list", "--language"), ("list", "--language", "go"),
+                 ("list", "--language"), ("list", "--language", "javascript"),
                  ("unknown",), ("start", "python"), ("start", "rust"),
                  ("check", "hello"), ("start", "python/hello", "extra"),
                  ("check", "python", "--python", self.python)]
         for selection in ("../python/hello", "python/../hello", "/python/hello",
-                          "python/hello/", "python/nope", "go/hello", ""):
+                          "python/hello/", "python/nope", "javascript/hello", ""):
             cases += [(command, selection) for command in ("start", "check")]
         for args in cases:
             with self.subTest(args=args):
                 self.cli(*args, code=2)
-        for flag in ("--root", "--python", "--cargo"):
+        for flag in ("--root", "--python", "--cargo", "--node", "--tsc", "--go", "--bash", "--lua"):
             with self.subTest(flag=flag):
                 self.assert_code(self.execute([self.binary, flag]), 2)
         self.assertEqual(self.sources(), before)

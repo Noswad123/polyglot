@@ -6,7 +6,7 @@ import shutil
 import subprocess
 import unittest
 
-from active_fixture import IDS, QUESTIONS, SOLUTIONS, exercise_path, solve
+from active_fixture import IDS, PAIRED_IDS, LANGUAGES, QUESTIONS, SOLUTIONS, exercise_path, solve
 from test_branch_policy import BranchFixture
 
 
@@ -40,8 +40,9 @@ class QuestionLibraryTests(BranchFixture, unittest.TestCase):
 
     def test_hello_shared_contract_has_explicit_different_native_bindings(self):
         document = self.question_path().read_text().strip()
-        outputs = [self.cli("show", selection) for selection in ("python/hello", "rust/hello")]
-        for output, selection in zip(outputs, ("python/hello", "rust/hello")):
+        selections = [language + "/hello" for language in LANGUAGES]
+        outputs = [self.cli("show", selection) for selection in selections]
+        for output, selection in zip(outputs, selections):
             self.assertIn(f"Exercise: {selection}", output)
             self.assertIn("Title:", output)
             self.assertIn("Problem: hello-world", output)
@@ -52,12 +53,22 @@ class QuestionLibraryTests(BranchFixture, unittest.TestCase):
             self.assertNotIn("Hint:", output)
         self.assertIn("hello() -> None", outputs[0].split("Language task:", 1)[1])
         self.assertIn("greeting() -> &'static str", outputs[1].split("Language task:", 1)[1])
+        for output, signature in zip(outputs[2:], ("hello(): void", "func Hello() string",
+                                                   "hello shell function", "global function hello()")):
+            self.assertIn(signature, output.split("Language task:", 1)[1])
+        rows = {line.split("|")[1].strip().strip("`"): line.lower()
+                for line in document.splitlines() if line.startswith("| `")}
+        self.assertEqual(set(rows), set(selections))
+        for language in LANGUAGES:
+            row = rows[language + "/hello"]
+            self.assertIn("return" if language in ("rust", "go") else "print", row)
+            self.assertIn("newline", row)
         self.assertIn("print", document.lower())
         self.assertIn("return", document.lower())
         library = json.loads(self.cli("questions"))
         hello = next(problem for problem in library if problem["id"] == "hello-world")
         self.assertEqual(hello["title"], "Hello, World!")
-        self.assertEqual(hello["bindings"], ["python/hello", "rust/hello"])
+        self.assertEqual(hello["bindings"], [language + "/hello" for language in LANGUAGES])
 
     def test_every_binding_shows_its_registered_question_and_signature(self):
         problems = tuple(QUESTIONS) * 2
@@ -69,8 +80,8 @@ class QuestionLibraryTests(BranchFixture, unittest.TestCase):
                       "length_of_last_word(text: &str) -> usize",
                       "binary_search(target: i32, arr: &[i32]) -> bool",
                       "fibonacci(length: usize) -> Vec<u32>")
-        self.assertEqual(len(signatures), len(IDS))
-        for selection, problem, signature in zip(IDS, problems, signatures):
+        self.assertEqual(len(signatures), len(PAIRED_IDS))
+        for selection, problem, signature in zip(PAIRED_IDS, problems, signatures):
             with self.subTest(selection=selection):
                 output = self.cli("show", selection)
                 self.assertIn(f"Problem: {problem}", output)

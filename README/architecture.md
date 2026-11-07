@@ -4,7 +4,8 @@
 
 **Accepted direction:** a Rust-hosted, Rustlings-inspired shared workflow with
 native language adapters. The Rust list/start/check proof is implemented for
-Python and Rust. A shared line-based session now supplies prompts, hints, and
+Python and Rust, extended with Hello-only TypeScript, Go, Bash, and Lua tracks.
+A shared line-based session now supplies prompts, hints, and
 navigation and canonical per-exercise reset. Manual checking is the intended
 workflow, not an interim step toward watching. The root Python prototype is retired;
 `polyglot` is the only supported practice CLI. See
@@ -84,10 +85,12 @@ reference inventories. Intentional binding differences, such as Python printing
 Hello World while Rust returns the greeting, are documented explicitly.
 
 The static library covers 37 topic families: five curated, 15 draft, and 17 missing
-questions; its 20 documents and 70 source artifacts (60 unverified legacy files plus
-ten checked examples) are distinct from the ten active bindings in `model.rs`:
-all five curated questions in Python and Rust. Reference labels span eight languages;
-the native `Language` enum still has only Python and Rust. A curated question may
+questions; its 20 documents and 74 source artifacts (60 unverified legacy files plus
+14 checked examples) are distinct from the 14 active bindings in `model.rs`:
+all five curated questions in Python and Rust, plus Hello in TypeScript, Go, Bash,
+and Lua. Reference labels span eight languages; the native `Language` enum/menu
+order is Python, Rust, TypeScript, Go, Bash, Lua. JavaScript and Lisp are
+inventory-only, with no JavaScript practice track. A curated question may
 exist without a binding: contract readiness, reference availability, native practice,
 and committed reset baselines are independent dimensions.
 
@@ -101,7 +104,7 @@ language/path/nullable-note entries remain; no `solutions` alias is added.
 table, not pretty-printed JSON: within 80 columns, `Problem ID`, `Question`
 (status), wrapped `Solutions` languages (the same 18-character column), and `Practice` native languages (or `-`
 for not converted) replace verbose rows without duplicating the title. Its footer
-gives aggregate totals including 70 solution artifacts and a “not all checked” legend with detail
+gives aggregate totals including 74 solution artifacts and a “not all checked” legend with detail
 commands. JSON or `question ID` retains titles, exact binding IDs, and full source
 paths. Mixed or repeated format flags are rejected. `question PROBLEM_ID`
 displays curated contracts, warns before draft bodies, or reports metadata and
@@ -114,9 +117,11 @@ references, requires no Git/tools/root files, and is not a runtime filesystem au
 General reference notes remain in Darkness; question contracts belong to Polyglot.
 
 Preserved implementations live under `practice/`: Python uses `python/soutions/`,
-Rust Users uses `rust/solutions/users/`, and other language collections are flat
-apart from retained project subdirectories. Checked examples additionally live in
-`practice/python/soutions/curated/` and `practice/rust/solutions/curated/`.
+Rust Users uses `rust/solutions/users/`, and other legacy collections retain their
+flat files and project subdirectories alongside the new exercise/test areas.
+Checked examples additionally live in
+`practice/python/soutions/curated/`, `practice/rust/solutions/curated/`, and
+`practice/<language>/solutions/curated/` for TypeScript, Go, Bash, and Lua Hello.
 Their reference notes record native-test evidence, not proof of all behavior;
 the legacy JSON `references` key and nullable-note schema remain unchanged.
 The old Python tests and compatibility
@@ -124,12 +129,12 @@ bridge were removed. This layout adds no adapters, changes no shared contracts,
 and does not certify specs, servers, or database projects. See the
 [lifecycle guide](exercises.md#collection-layout-and-execution-limits) for execution limits.
 
-Python and Rust adapters resolve their tools, invoke the selected native checks,
+Native language adapters resolve their tools, invoke the selected native checks,
 and return evidence-backed outcomes: passed, attempt failed, blocked, or
 interrupted/indeterminate. Keep native diagnostics; do not mistake missing tools
 for an incorrect solution or zero selected tests for success.
 
-The two built-in adapters now use the same list/start/check path; there is no
+All six native languages use the same list/start/check path; there is no
 dynamic plugin framework. The initial catalog uses one workspace per language,
 with independent files and native selectors for each exercise. Python's package
 initializers do not import siblings. Add independent workspace metadata when a
@@ -140,6 +145,23 @@ The adapter builds only the selected target; broken or missing siblings do not
 block a selected check. Whole-track checks run sequentially, may stop at the first
 non-pass, and pass only if all five pass. Cargo command construction stays in the
 adapter, not language-specific workflow branches.
+The added Hello adapters retain those boundaries: TypeScript uses the real compiler
+API with an exact static `() => void` named-export probe and synchronous runtime
+checks, emitting CommonJS into private scratch. Go copies only the selected source
+and harness, runs offline `go test -json` for `TestHello`, and checks the return
+through a typed `func() string` assignment in `package exercises`. Bash and Lua
+copy only their selected source/harness and check status/return arity. TypeScript,
+Bash, and Lua reject import/load-time output and compare exact stdout bytes using
+backend-managed file captures and separate completion reports. TypeScript and Lua
+harnesses must not be invoked bare: regular-file stdout is part of their protocol.
+Go's return contract, like Rust's, has no newline.
+
+The private TypeScript package/lock pins 5.9.3; installation is explicit with
+`npm ci --ignore-scripts --prefix practice/typescript`, never part of grading.
+Required native versions and override resolution (`--python`, `--cargo`, `--node`,
+`--tsc`, `--go`, `--bash`, `--lua`, alongside `--root`) are documented in the
+[CLI guide](rust-cli.md#roots-and-tool-selection). Selection and metadata display
+do not resolve or launch native tools.
 Reuse suitable Rustlings patterns/code without importing Cargo assumptions into
 application state or adopting a full fork by default.
 
@@ -176,8 +198,8 @@ Code boundaries are explicit:
 - `README/katas/`: shared question contracts plus the explicit conversion backlog.
 - `practice/`: native exercise workspaces, checked examples, and legacy collections; see the inventory for exact roots.
 - `tests/test_library_inventory.py`: independent coverage audit of all 20 question
-  documents and 70 source artifacts; coverage, not legacy solution validation.
-- `tests/active_fixture.py`: reads all ten published examples as text and copies
+  documents and 74 source artifacts; coverage, not legacy solution validation.
+- `tests/active_fixture.py`: reads all 14 published examples as text and copies
   them into disposable learner sources for native-check regressions, never user attempts.
 
 Native checks may produce build artifacts but must preserve learner sources and
@@ -209,9 +231,9 @@ not imported or migrated by the CLI.
 Reset requires a non-main branch, pins strict local `refs/heads/main` once, and
 reads the actual regular-file blob with Git object replacements disabled. Missing
 canonical files block; uncommitted files or learner HEAD are never fallbacks.
-The six existing blank files have committed baselines. Newly authored
-files still need reviewed integration there before they become reset baselines.
-This includes the four new Rust blanks until their canonical blobs reach local main.
+Every newly authored file needs reviewed integration into local main's committed
+tree before it becomes a reset baseline. Catalog registration and an uncommitted
+working-tree blank do not establish that baseline.
 After confirmation, only the selected worktree file is restored. Its staged
 version, other files, and Git refs are unchanged.
 
