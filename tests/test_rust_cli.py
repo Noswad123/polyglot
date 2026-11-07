@@ -119,13 +119,15 @@ class RustCliTests(unittest.TestCase):
     def solve(self, language):
         solve(self.root, language)
 
-    def native(self, language):
+    def native(self, language, name=None):
         directory = self.directory(language)
         if language == "python":
             command = [self.python, "-B", "-m", "unittest", "discover", "-s", "tests", "-t", "."]
         else:
             command = [self.cargo, "test", "--offline", "--manifest-path",
-                       directory / "Cargo.toml", "--test", "practice_checks",
+                       directory / "Cargo.toml",
+                       *(["--test", "practice_checks" if name == "hello" else name + "_checks"]
+                         if name else ["--tests"]),
                        "--target-dir", directory / "target", "--", "--nocapture"]
         return self.execute(command, cwd=directory)
 

@@ -9,9 +9,12 @@ import tempfile
 import unittest
 
 from git_fixture import isolated_git_env
+from active_fixture import IDS
 
 
 REPO = Path(__file__).resolve().parents[1]
+EXERCISES = tuple(f"practice/{language}/exercises/{name}{'.py' if language == 'python' else '.rs'}"
+                  for language, name in (selection.split("/") for selection in IDS))
 
 
 class MainHookTests(unittest.TestCase):
@@ -28,8 +31,7 @@ class MainHookTests(unittest.TestCase):
         shutil.copytree(REPO / ".githooks", self.root / ".githooks")
         shutil.copy2(REPO / "Makefile", self.root / "Makefile")
         shutil.copy2(REPO / ".gitignore", self.root / ".gitignore")
-        for relative in ("practice/python/exercises/hello.py", "practice/rust/exercises/hello.rs",
-                         "docs.md"):
+        for relative in (*EXERCISES, "docs.md"):
             path = self.root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b"baseline fixture bytes\n")
@@ -79,7 +81,7 @@ class MainHookTests(unittest.TestCase):
         self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o755)
 
     def test_staged_exercises_on_main_are_blocked(self):
-        for relative in ("practice/python/exercises/hello.py", "practice/rust/exercises/hello.rs"):
+        for relative in EXERCISES:
             with self.subTest(path=relative):
                 (self.root / relative).write_bytes(b"staged learner edit\n")
                 self.git("add", "--", relative)

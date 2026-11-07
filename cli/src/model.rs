@@ -32,7 +32,7 @@ impl Language {
             },
             Self::Rust => Workspace {
                 directory: "practice/rust",
-                inputs: &["Cargo.toml", "Cargo.lock", "checks.rs", "target"],
+                inputs: &["Cargo.toml", "Cargo.lock", "target"],
             },
         }
     }
@@ -55,7 +55,14 @@ pub struct Workspace {
 #[derive(Clone, Copy)]
 pub enum NativeCheck {
     Python(&'static str),
-    Rust(&'static str),
+    Rust(RustCheck),
+}
+
+#[derive(Clone, Copy)]
+pub struct RustCheck {
+    pub target: &'static str,
+    pub selector: &'static str,
+    pub harness: &'static str,
 }
 
 pub struct Exercise {
@@ -121,7 +128,63 @@ pub const CATALOG: &[Exercise] = &[
         problem: &HELLO_WORLD,
         prompt: "Implement pub fn greeting() -> &'static str using the Rust binding in the shared question.",
         hint: "A string literal has a static lifetime. Consider the difference between returning a value and printing it.",
-        check: NativeCheck::Rust("hello"),
+        check: NativeCheck::Rust(RustCheck {
+            target: "practice_checks",
+            selector: "hello",
+            harness: "checks.rs",
+        }),
+    },
+    Exercise {
+        id: "rust/find_in_string",
+        file: "exercises/find_in_string.rs",
+        language: Language::Rust,
+        problem: &FIND_IN_STRING,
+        prompt: "Implement pub fn find_in_string(string: &str, substring: &str) -> isize. For ASCII inputs, return the first match index or -1; an empty substring matches at 0.",
+        hint: "Rust's str::find returns an Option<usize>. Convert the first match index to isize, or return -1 when absent.",
+        check: NativeCheck::Rust(RustCheck {
+            target: "find_in_string_checks",
+            selector: "find_in_string",
+            harness: "tests/find_in_string.rs",
+        }),
+    },
+    Exercise {
+        id: "rust/length_of_last_word",
+        file: "exercises/length_of_last_word.rs",
+        language: Language::Rust,
+        problem: &LENGTH_OF_LAST_WORD,
+        prompt: "Implement pub fn length_of_last_word(text: &str) -> usize for the shared ASCII input scope; return the last word's length, or 0 when no words exist.",
+        hint: "Consider split_whitespace and a double-ended iterator to find the last word, then handle the no-words case.",
+        check: NativeCheck::Rust(RustCheck {
+            target: "length_of_last_word_checks",
+            selector: "length_of_last_word",
+            harness: "tests/length_of_last_word.rs",
+        }),
+    },
+    Exercise {
+        id: "rust/binary_search",
+        file: "exercises/binary_search.rs",
+        language: Language::Rust,
+        problem: &BINARY_SEARCH,
+        prompt: "Implement pub fn binary_search(target: i32, arr: &[i32]) -> bool. Return whether target occurs in the sorted slice without mutating it; halve the search interval.",
+        hint: "Keep a half-open interval of usize indices and compare its midpoint with target. Setting the upper bound to mid avoids subtracting from zero.",
+        check: NativeCheck::Rust(RustCheck {
+            target: "binary_search_checks",
+            selector: "binary_search",
+            harness: "tests/binary_search.rs",
+        }),
+    },
+    Exercise {
+        id: "rust/fibonacci",
+        file: "exercises/fibonacci.rs",
+        language: Language::Rust,
+        problem: &FIBONACCI,
+        prompt: "Implement pub fn fibonacci(length: usize) -> Vec<u32>. For length in 0..=40, return exactly length terms starting 1, 1; length 0 returns an empty vector.",
+        hint: "Build a Vec<u32> from the two most recent terms, handling lengths 0 and 1 without adding extra terms.",
+        check: NativeCheck::Rust(RustCheck {
+            target: "fibonacci_checks",
+            selector: "fibonacci",
+            harness: "tests/fibonacci.rs",
+        }),
     },
 ];
 
@@ -160,6 +223,46 @@ mod tests {
     use super::*;
     use std::collections::HashSet;
     use std::path::{Component, Path};
+
+    #[test]
+    fn curated_batch_has_both_languages_and_independent_rust_targets() {
+        for problem in [
+            &HELLO_WORLD,
+            &FIND_IN_STRING,
+            &LENGTH_OF_LAST_WORD,
+            &BINARY_SEARCH,
+            &FIBONACCI,
+        ] {
+            let bindings: Vec<_> = CATALOG
+                .iter()
+                .filter(|exercise| std::ptr::eq(exercise.problem, problem))
+                .collect();
+            assert_eq!(bindings.len(), 2);
+            assert!(bindings
+                .iter()
+                .any(|exercise| exercise.language == Language::Python));
+            assert!(bindings
+                .iter()
+                .any(|exercise| exercise.language == Language::Rust));
+        }
+        let mut targets = HashSet::new();
+        let mut harnesses = HashSet::new();
+        for exercise in CATALOG {
+            if let NativeCheck::Rust(check) = exercise.check {
+                assert!(targets.insert(check.target));
+                assert!(harnesses.insert(check.harness));
+                assert!(check
+                    .target
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_'));
+                assert_eq!(exercise.id.rsplit('/').next(), Some(check.selector));
+                assert!(Path::new(check.harness)
+                    .components()
+                    .all(|part| matches!(part, Component::Normal(_))));
+            }
+        }
+        assert_eq!(targets.len(), 5);
+    }
 
     #[test]
     fn catalog_has_unique_ids_and_registered_safe_questions() {
@@ -223,14 +326,14 @@ mod tests {
         }
         assert_eq!(problems.len(), 37);
         assert_eq!(documents.len(), 20);
-        assert_eq!(references.len(), 60);
+        assert_eq!(references.len(), 70);
         assert_eq!(statuses, [5, 15, 17]);
         for (language, count) in [
-            ("python", 21),
+            ("python", 26),
             ("typescript", 27),
             ("javascript", 3),
             ("go", 3),
-            ("rust", 1),
+            ("rust", 6),
             ("bash", 2),
             ("lua", 2),
             ("lisp", 1),
@@ -248,6 +351,6 @@ mod tests {
                 .iter()
                 .any(|problem| std::ptr::eq(*problem, exercise.problem)));
         }
-        assert_eq!(exercises.len(), 6);
+        assert_eq!(exercises.len(), 10);
     }
 }

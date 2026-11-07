@@ -3,11 +3,28 @@ name = "polyglot-rust-practice"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
+autolib = false
 autobins = false
 autotests = false
 
 [[test]]
 name = "practice_checks"
 path = "checks.rs"
+
+[[test]]
+name = "find_in_string_checks"
+path = "tests/find_in_string.rs"
+
+[[test]]
+name = "length_of_last_word_checks"
+path = "tests/length_of_last_word.rs"
+
+[[test]]
+name = "binary_search_checks"
+path = "tests/binary_search.rs"
+
+[[test]]
+name = "fibonacci_checks"
+path = "tests/fibonacci.rs"
 
 [workspace]

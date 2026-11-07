@@ -27,11 +27,12 @@ Commands:
   practice [python|rust|ID]
 
 IDs: python/hello, python/find_in_string, python/length_of_last_word,
-     python/binary_search, python/fibonacci, rust/hello
+     python/binary_search, python/fibonacci, rust/hello, rust/find_in_string,
+     rust/length_of_last_word, rust/binary_search, rust/fibonacci
 Global options must precede the command. --help shows this help.
 Questions inventories all topics, draft/missing docs, and stored solution attempts.
 Questions defaults to JSON (--json is explicit); --pretty displays a compact table.
-List shows only runnable native bindings; stored solutions remain unverified.
+List shows only runnable native bindings; stored solutions are not all checked.
 Start selects existing exercise files. Check never creates exercise files.
 Reset restores one exercise from committed main after confirmation.
 Start requires a non-main Git branch. Practice creates one from clean main.

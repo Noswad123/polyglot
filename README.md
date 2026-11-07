@@ -81,13 +81,13 @@ polyglot questions > /tmp/polyglot-questions.json
 `Problem ID`, `Question` (status), `Solutions` (wrapped language list), and
 `Practice` (runnable languages, e.g. `python, rust`; `-` means not converted)
 columns fit within 80 columns without a duplicate title column. The footer gives
-aggregate totals (including 60 solution artifacts) and a legend distinguishing unverified solutions
-from native practice. Use JSON or `question ID` for titles, exact binding IDs, and
+aggregate totals (including 70 solution artifacts) and a “not all checked” legend
+distinguishing stored implementations from native practice. Use JSON or `question ID` for titles, exact binding IDs, and
 full solution paths. Choose at most one format flag; mixing or repeating flags
 is rejected. Default/`--json` output has no human header or footer.
 
-The `Solutions` column retains its 18-character width; its languages are unverified
-inventory, while `Practice` lists runnable native languages. Detail output uses a
+The `Solutions` column retains its 18-character width; its languages include both
+legacy inventory and checked examples, while `Practice` lists runnable native languages. Detail output uses a
 `Solutions` heading. JSON intentionally keeps the legacy `references` key and its
 `language`/`path`/nullable `note` entries, with paths now under
 the mixed `practice/` collection roots listed in the inventory; no `solutions` alias field is added. The legacy export
@@ -99,12 +99,14 @@ or native binding changes still require a build/install. Native checks do not
 depend on question-file availability.
 
 The inventory registers five curated contracts, 15 drafts/project sketches, and
-17 topics still needing question documents: 20 existing documents and 60 unverified
-solution artifacts across eight languages under `practice/`. These are preserved inventory,
-not validated solutions or runnable bindings; discovery never reads or executes them.
+17 topics still needing question documents: 20 existing documents and 70 source
+artifacts across eight languages under `practice/`: the original 60 unverified legacy
+implementations plus ten checked examples (five Python, five Rust). Each new example
+has a metadata note: “Example checked against current native tests; not a proof of
+all behavior.” Discovery never reads or executes these sources.
 `questions` lists all 37 topics; `question ID` also accepts drafts and code-only
-topics. `list` and practice commands still expose only six active bindings: five
-Python exercises and `rust/hello`, in the same order. Solution-language labels do
+topics. `list` and practice commands expose ten active bindings: all five curated
+questions in both Python and Rust, in the same question order. Solution-language labels do
 not add native adapters. Use the curated contract when porting a question.
 
 ## Pristine main and practice branches
@@ -131,17 +133,18 @@ changes, and local hooks can be bypassed; remote branch rules are a separate lay
 [ADR 0002](README/decisions/0002-pristine-main-practice-branches.md).
 
 The active files are now `practice/python/exercises/*.py` and
-`practice/rust/exercises/hello.rs`. Current ignored legacy answer files are
+`practice/rust/exercises/*.rs`. Current ignored legacy answer files are
 preserved if present, not automatically split or imported. The optional guard
 covers active `practice/*/exercises/**` paths and the two legacy answer paths,
 not retired starter paths. Editor and native commands do not enforce branch safety.
 
 On a practice branch, `polyglot reset python/hello` (or session `reset`/`r`) asks
 before restoring only that exercise from a pinned commit of local `main`.
-The four original blank files have a committed local-main baseline. Any new
+The six existing blank files have committed baselines. Any new
 binding—including newly converted katas—becomes reset-ready only after its reviewed
-blank reaches local `main`; a working-tree file is not enough. See the roadmap for
-pending authoring work. Uncommitted changes on main still block automatic
+blank reaches local `main`; a working-tree file is not enough. In particular, the
+four new Rust blanks need that integration before reset can restore them.
+Uncommitted changes on main still block automatic
 practice-branch creation until you explicitly branch or reconcile them.
 Changed existing files get private snapshot and original-inode recovery artifacts;
 the index is unchanged. See the [exercise lifecycle guide](README/exercises.md)
@@ -170,7 +173,7 @@ resolves Python explicitly; see `--python` and `--root` in its instructions.
 Direct native commands remain in the track instructions; use them on a practice
 branch too. They do not enforce the CLI's branch safeguards.
 
-The five Python exercises form a small practice path, not a full curriculum:
+Both tracks cover the same five questions, a small practice path rather than a full curriculum:
 
 1. **Hello World:** functions and observable output; skip quickly if familiar.
 2. **Find in String:** return values and text searches.
@@ -216,16 +219,16 @@ evidence about this attempt, not a claim of permanent mastery.
 - [Exercise lifecycle and authoring](README/exercises.md): tracked files, safe reset,
   preserving older attempts, and creating or fixing exercises.
 - [Python exercises](practice/python/README.md): prompts, checks, and retry instructions.
-- [Rust proof exercise](practice/rust/README.md): a native check for the second adapter.
+- [Rust exercises](practice/rust/README.md): five isolated native Cargo check targets.
 - [Solutions inventory](README/katas/index.md): preserved implementations and attempts across eight
-  languages, with their support files; unverified and potentially revealing answers.
-- [Shared data](src/shared/): retained shared data, not language packages or playgrounds.
+  languages, with their support files; mixed legacy inventory and checked examples,
+  potentially revealing answers.
 - [Full question/solution inventory](README/katas/index.md): all 37 topic families,
   curated bindings, draft and code-only queues, and the original ideas/resources
   backlog—not today's assignment list.
 - [Earlier vision](README/vision.md): preserved philosophy and platform proposals.
 
-Only the Python exercises and Rust proof exercise are documented as
+Only the five-question Python and Rust tracks are documented as
 self-contained practice paths.
 Keep the active scope small; use a few real sessions to decide what to add next.
 
@@ -237,3 +240,7 @@ These integration tests use disposable practice copies, not your local answers:
 cargo build --locked
 python3 -B -m unittest discover -s tests -p 'test_*.py' -v
 ```
+
+The fixtures read published curated examples as text and copy them into disposable
+learner sources; they never overwrite your attempts. Passing native checks is
+evidence for those cases, not proof of all behavior or recorded user progress.

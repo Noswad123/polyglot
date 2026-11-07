@@ -21,8 +21,8 @@ preservation and invocation behavior, not the final architecture, and is now ret
 along with obsolete starter/test files. Ignored learner answers remain preserved
 if present, with no automatic migration.
 
-The shared Rust CLI exposes the same Python contracts plus one isolated Rust
-exercise using independent tracked modules. `polyglot` is the only supported
+The shared Rust CLI exposes all five curated contracts in both Python and Rust
+using independent tracked modules (ten bindings). `polyglot` is the only supported
 practice CLI; there is no prototype fallback. See the
 [CLI instructions](../rust-cli.md) for current commands and validation.
 
@@ -59,7 +59,7 @@ dispatch boundary and use the same orchestration for both languages.
 ### Exercise definition
 
 Separate a shared problem (stable ID, title, question status, optional document,
-unverified reference metadata) from its
+reference metadata, including per-example native-check notes) from its
 language bindings. Each binding carries a language-qualified ID, language,
 workspace identity, exercise-file path, native API task, language hint, check
 selector, and optional Darkness references. Common contracts/examples live in
@@ -69,7 +69,8 @@ the serialization format is an implementation choice, not a reason to build a DS
 
 The static inventory in `cli/src/library.rs` now registers 37 topic families:
 five curated, 15 draft, and 17 missing questions, covering 20 existing documents
-and 60 current legacy source artifacts across eight languages. `questions` defaults
+and 70 source artifacts across eight languages: 60 original unverified legacy files
+plus ten checked examples, five per native language. `questions` defaults
 to strict JSON-only stdout; `questions --json` remains an explicit alias, with the
 same metadata schema and no human header/footer. Paths remain repository-relative,
 but now point to the mixed `practice/` collection roots. JSON retains `references` with
@@ -77,9 +78,10 @@ language/path/nullable-note entries, without a `solutions` alias; the legacy key
 is compatibility metadata, not a verification claim. Internal reference types stay unchanged.
 `questions --pretty` exposes the same topics as an ASCII table within 80 columns,
 not pretty-printed JSON. Its columns are `Problem ID`, `Question` (status),
-`Solutions` (wrapped unverified languages, same 18-character width), and `Practice` (runnable native languages, or `-`
+`Solutions` (wrapped implementation languages, same 18-character width), and `Practice` (runnable native languages, or `-`
 for not converted), with no duplicate title. Aggregate totals and a legend
-include 60 solution artifacts, distinguish unverified solutions from native practice, and direct readers to JSON
+include 70 solution artifacts, mark stored implementations “not all checked”, distinguish
+them from native practice, and direct readers to JSON
 or `question ID` for titles, exact binding IDs, and full source paths. Mixing or
 repeating format flags is invalid. For human browsing use
 `polyglot questions --pretty`; for machine export use `polyglot questions` or
@@ -94,13 +96,15 @@ The [inventory](../katas/index.md) maps the eight language collections under
 Python tests and their compatibility bridge were removed, not relocated.
 Shared question documents remain in `README/katas/`. Human question detail
 uses a `Solutions` heading. This storage/label change does not change the five
-curated contracts, six native bindings, or adapter boundaries.
+curated contracts or adapter boundaries.
 
-`cli/src/model.rs` still supplies only six native bindings: five Python exercises
-and `rust/hello`, with unchanged IDs/order. Reference-language labels are not native
+`cli/src/model.rs` supplies ten native bindings: all five curated questions in
+Python and Rust, in the same question order. Reference-language labels are not native
 adapters; the native `Language` enum remains Python/Rust. A curated contract may
 have no binding. Question readiness, reference availability, native practice, and
-committed reset readiness are separate. Markdown edits are visible at runtime but
+stored-solution validation, user progress, and committed reset readiness are separate.
+The ten examples carry “Example checked against current native tests; not a proof
+of all behavior.” Legacy files remain uncertified. Markdown edits are visible at runtime but
 never automatically promote a question or register a binding. Active selection
 still requires a curated, nonempty safe document before automatic branching;
 native checks remain document-independent. No database or watcher is introduced.
@@ -114,6 +118,15 @@ the same layout as a Python module.
 
 Resolve and validate its toolchain, translate the native check selector into an
 invocation, and classify results using evidence from that toolchain.
+
+Rust selectors are typed `NativeCheck::Rust(RustCheck { target, selector, harness })`
+data. Hello retains target `practice_checks` and `checks.rs`; the other four use
+`<exercise>_checks` and `tests/<exercise>.rs`. Each harness includes only its own
+exercise. Automatic libraries/binaries/tests are disabled; the adapter builds only
+the selected target, so broken or missing siblings do not block an individual
+check. Whole-track Rust checks run sequentially, may stop at the first non-pass,
+and pass only when all five pass. This is adapter metadata, not new shared-workflow
+language branching or one aggregate target.
 
 Initially, two concrete adapters and a small internal interface or enum are enough.
 Do not introduce plugin discovery, dynamic loading, an adapter SDK, or arbitrary
@@ -164,7 +177,8 @@ interpreters after a check fails.
 ## Delivery and adoption status
 
 1. **Two-language vertical slice:** list/start/check uses the same Rust workflow
-   for the existing Python exercises and one isolated Rust exercise. No watcher,
+   for the Python and Rust exercises; the initial one-Rust-exercise proof now covers
+   all five curated questions in both languages. No watcher,
    persisted progress, TUI, or automatic reset is required for this proof.
 2. **Interaction:** hints, navigation, and explicit checks are implemented. Native
    commands remain documented, but do not enforce the CLI's branch safeguards.
@@ -222,3 +236,10 @@ to catch a Rust-only design before more features or exercise tracks depend on it
 These links describe the reviewed design, not a pinned code dependency. Pin a
 revision if implementation copies code; no upstream code was copied for the
 current two-language proof.
+
+## Related files
+
+- [Native binding types](../../cli/src/model.rs), [Rust adapter](../../cli/src/adapters/rust.rs)
+- [Shared inventory](../../cli/src/library.rs), [question contracts](../katas/index.md)
+- [Disposable example fixtures](../../tests/active_fixture.py)
+- [Python track](../../practice/python/README.md), [Rust track](../../practice/rust/README.md)

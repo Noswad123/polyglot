@@ -21,7 +21,7 @@ from active_fixture import IDS, copy_active_fixture, exercise_path, solve
 
 REPO = Path(__file__).resolve().parents[1]
 TITLES = ("Hello, World!", "Find in String", "Length of Last Word",
-          "Binary Search", "Fibonacci", "Hello, World!")
+          "Binary Search", "Fibonacci") * 2
 PYTHON_SOLUTION = '''def hello():
     print("Hello, World!")
 
@@ -181,7 +181,7 @@ class InteractiveCliTests(unittest.TestCase):
             language = selection.split("/")[0]
             with self.subTest(selection=selection):
                 output = self.cli("practice", selection, input="q\n", tools=False)
-                position, count = (index + 1, 5) if language == "python" else (1, 1)
+                position, count = index % 5 + 1, 5
                 self.assertIn(f"Exercise: {selection} ({position}/{count})", output)
                 self.assertIn(TITLES[index], output)
                 self.assertIn(f"Exercise file: {self.answer(*selection.split('/'))}", output)
@@ -213,11 +213,13 @@ class InteractiveCliTests(unittest.TestCase):
         self.assertEqual(self.sources(), before)
 
     def test_blank_next_is_gated_and_failed_checks_allow_clean_quit(self):
-        output = self.cli("practice", "python", input="next\nn\ncheck\nprompt\nquit\n")
-        self.assertEqual(output.count("Attempt failed"), 3, output)
-        self.assert_current(output, "python/hello")
-        self.assertNotIn("Exercise: python/find_in_string", output)
-        self.assertNotIn("End of track", output)
+        for language in ("python", "rust"):
+            with self.subTest(language=language):
+                output = self.cli("practice", language, input="next\nn\ncheck\nprompt\nquit\n")
+                self.assertEqual(output.count("Attempt failed"), 3, output)
+                self.assert_current(output, language + "/hello")
+                self.assertNotIn("Exercise: " + language + "/find_in_string", output)
+                self.assertNotIn("End of track", output)
 
     def test_solved_python_track_previous_boundaries_and_final_no_wrap(self):
         self.solve("python")
@@ -234,13 +236,17 @@ class InteractiveCliTests(unittest.TestCase):
         self.assert_current(output, "python/hello")
         self.assertEqual(self.sources(), before)
 
-    def test_solved_rust_check_next_and_single_exercise_boundaries(self):
+    def test_solved_rust_track_previous_boundaries_and_final_no_wrap(self):
         self.solve("rust")
         before = self.sources()
-        output = self.cli("practice", "rust", input="p\nc\nnext\nn\nprompt\nq\n")
-        self.assertEqual(output.count("Passed"), 3, output)
-        self.assertEqual(output.count("test result:"), 3, output)
+        output = self.cli("practice", "rust", input=(
+            "previous\nprompt\nnext\nprompt\nn\nprompt\nnext\nprompt\nn\n"
+            "next\nn\nprompt\np\nprompt\nprevious\nprevious\nprevious\nprevious\nprompt\nq\n"))
+        self.assertEqual(output.count("Passed"), 6, output)
+        self.assertEqual(output.count("test result:"), 6, output)
         self.assertGreaterEqual(output.count("End of track"), 2, output)
+        for index, selection in enumerate(IDS[5:], 1):
+            self.assertIn((selection, str(index), "5"), self.selections(output))
         self.assert_current(output, "rust/hello")
         self.assertEqual(self.sources(), before)
 
@@ -260,7 +266,7 @@ class InteractiveCliTests(unittest.TestCase):
     def test_rust_list_contains_only_current_language(self):
         output = self.cli("practice", "rust", input="list\nl\nq\n", tools=False)
         rows = re.findall(r"(?:^|practice> )([a-z_/]+)\t", output, re.MULTILINE)
-        self.assertEqual(rows, ["rust/hello", "rust/hello"])
+        self.assertEqual(rows, list(IDS[5:]) * 2)
 
     def test_language_switch_prepares_first_exercise_and_preserves_source(self):
         self.solve("python")
@@ -269,7 +275,7 @@ class InteractiveCliTests(unittest.TestCase):
         output = self.cli("practice", "python/length_of_last_word",
                           input="language rust\nprompt\nlanguage python\nprompt\nq\n",
                           tools=False)
-        self.assertIn("Exercise: rust/hello (1/1)", output)
+        self.assertIn("Exercise: rust/hello (1/5)", output)
         self.assert_current(output, "python/hello")
         self.assertEqual(self.answer("python").read_bytes(), original)
         self.assertEqual(self.answer("rust").read_bytes(), rust_before)

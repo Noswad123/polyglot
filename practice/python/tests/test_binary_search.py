@@ -26,6 +26,8 @@ class PracticeTests(unittest.TestCase):
             (6, [7, 7, 7, 7], False),
             (1, [1, 2], True),
             (2, [1, 2], True),
+            (-2147483648, [-2147483648, 0, 2147483647], True),
+            (2147483647, [-2147483648, 0, 2147483647], True),
         ]
         for target, arr, expected in cases:
             with self.subTest(target=target, arr=arr):

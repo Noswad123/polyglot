@@ -83,7 +83,7 @@ macro_rules! reference {
     };
 }
 
-// Preserved solution attempts are not verified answers or native adapters.
+// Legacy solution attempts are not certified; curated examples carry check notes.
 // `references` remains the JSON field name for export compatibility.
 macro_rules! library {
     ($($name:ident: $id:literal, $title:literal, $status:ident, [$($doc:literal)?],
@@ -103,7 +103,9 @@ library! {
     BEST_TIME_TO_BUY_AND_SELL_STOCK: "best-time-to-buy-and-sell-stock", "Best Time to Buy and Sell Stock", Missing, [],
         [(typescript, "bestTimeToBuyAndSellStock.ts")];
     BINARY_SEARCH: "binary-search", "Binary Search", Curated, ["binarySearch.md"],
-        [(python, "binary_search.py")];
+        [(python, "binary_search.py"),
+         (python, "curated/binary_search.py", "Example checked against current native tests; not a proof of all behavior."),
+         (rust, "curated/binary_search.rs", "Example checked against current native tests; not a proof of all behavior.")];
     BOGGLE: "boggle", "Boggle", Draft, ["boggle.md"],
         [(python, "boggle.py"), (typescript, "boggle.ts")];
     CANDY: "candy", "Candy", Missing, [],
@@ -111,9 +113,13 @@ library! {
     CONTAINER_WITH_MOST_WATER: "container-with-most-water", "Container With Most Water", Missing, [],
         [(python, "container_with_most_water.py")];
     FIBONACCI: "fibonacci", "Fibonacci", Curated, ["fibonacci.md"],
-        [(python, "fibonacci.py"), (javascript, "fibonacci.js")];
+        [(python, "fibonacci.py"), (javascript, "fibonacci.js"),
+         (python, "curated/fibonacci.py", "Example checked against current native tests; not a proof of all behavior."),
+         (rust, "curated/fibonacci.rs", "Example checked against current native tests; not a proof of all behavior.")];
     FIND_IN_STRING: "find-in-string", "Find in String", Curated, ["find_in_string.md"],
-        [(python, "find_in_string.py"), (typescript, "findTheIndexOfTheFirstOccurrenceInAString.ts")];
+        [(python, "find_in_string.py"), (typescript, "findTheIndexOfTheFirstOccurrenceInAString.ts"),
+         (python, "curated/find_in_string.py", "Example checked against current native tests; not a proof of all behavior."),
+         (rust, "curated/find_in_string.rs", "Example checked against current native tests; not a proof of all behavior.")];
     FIND_PIVOT_INDEX: "find-pivot-index", "Find Pivot Index", Missing, [],
         [(python, "find_pivot_index.py", "Empty placeholder; not implemented."), (typescript, "findPivotIndex.ts")];
     GAS_STATION: "gas-station", "Gas Station", Missing, [],
@@ -122,7 +128,9 @@ library! {
         [(typescript, "hIndex.ts")];
     HELLO_WORLD: "hello-world", "Hello, World!", Curated, ["hello_world.md"],
         [(python, "hello_world.py"), (javascript, "helloWorld.js"), (go, "helloWorld.go"),
-         (bash, "hello_world.sh"), (lua, "helloWorld.lua"), (lisp, "hello-world.lisp")];
+         (bash, "hello_world.sh"), (lua, "helloWorld.lua"), (lisp, "hello-world.lisp"),
+         (python, "curated/hello_world.py", "Example checked against current native tests; not a proof of all behavior."),
+         (rust, "curated/hello_world.rs", "Example checked against current native tests; not a proof of all behavior.")];
     INSERT_DELETE_GET_RANDOM: "insert-delete-get-random", "Insert Delete GetRandom", Missing, [],
         [(typescript, "insertDeleteGetRandom.ts")];
     INTEGER_TO_ROMAN: "integer-to-roman", "Integer to Roman", Draft, ["integer_to_Roman.md"],
@@ -132,7 +140,9 @@ library! {
     JUMP_GAME: "jump-game", "Jump Game", Missing, [],
         [(typescript, "jumpGame.ts")];
     LENGTH_OF_LAST_WORD: "length-of-last-word", "Length of Last Word", Curated, ["lengthOfLastWord.md"],
-        [(python, "length_of_last_word.py"), (typescript, "lengthOfLastWord.ts")];
+        [(python, "length_of_last_word.py"), (typescript, "lengthOfLastWord.ts"),
+         (python, "curated/length_of_last_word.py", "Example checked against current native tests; not a proof of all behavior."),
+         (rust, "curated/length_of_last_word.rs", "Example checked against current native tests; not a proof of all behavior.")];
     LONGEST_COMMON_PREFIX: "longest-common-prefix", "Longest Common Prefix", Missing, [],
         [(typescript, "longestCommonPrefix.ts")];
     MAJORITY_ELEMENT: "majority-element", "Majority Element", Draft, ["majorityElement.md"],

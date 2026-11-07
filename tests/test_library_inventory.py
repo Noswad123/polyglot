@@ -93,11 +93,11 @@ class LibraryInventoryTests(BranchFixture, unittest.TestCase):
         self.assertTrue(all((self.root / path).is_file() for path in docs))
         self.assertTrue(all(rows[topic]["question_doc"] is None for topic in MISSING))
         refs = [ref for row in rows.values() for ref in row["references"]]
-        self.assertEqual(len(refs), 60)
-        self.assertEqual(len({ref["path"] for ref in refs}), 60)
+        self.assertEqual(len(refs), 70)
+        self.assertEqual(len({ref["path"] for ref in refs}), 70)
         self.assertEqual(Counter(ref["language"] for ref in refs),
-                         {"python": 21, "typescript": 27, "javascript": 3, "go": 3,
-                          "rust": 1, "bash": 2, "lua": 2, "lisp": 1})
+                         {"python": 26, "typescript": 27, "javascript": 3, "go": 3,
+                          "rust": 6, "bash": 2, "lua": 2, "lisp": 1})
         scanned = {}
         excluded = {"exercises", "tests", "compat", "__pycache__", "target", "build",
                     "dist", "node_modules", "generated", ".pytest_cache", ".venv", "venv"}
@@ -124,7 +124,7 @@ class LibraryInventoryTests(BranchFixture, unittest.TestCase):
         self.assertEqual({key for key, row in rows.items() if row["bindings"]}, set(QUESTIONS))
         self.assertEqual(rows["spiral-matrix"]["references"], [])
         self.assertEqual({ref["language"] for ref in rows["hello-world"]["references"]},
-                         {"python", "javascript", "go", "bash", "lua", "lisp"})
+                         {"python", "rust", "javascript", "go", "bash", "lua", "lisp"})
         for topic in ("stack", "queue"):
             self.assertEqual([ref["language"] for ref in rows[topic]["references"]], ["python"])
         self.assertEqual({ref["language"] for ref in rows["boggle"]["references"]}, {"python", "typescript"})
@@ -184,10 +184,10 @@ class LibraryInventoryTests(BranchFixture, unittest.TestCase):
             self.assertCountEqual([] if practice == "-" else practice.split(", "),
                                   {binding.split("/", 1)[0] for binding in row["bindings"]})
         self.assertIn("'-' means not converted", output)
-        self.assertIn("Solutions: unverified implementation languages; '-' means none", output)
+        self.assertRegex(output, r"Solutions: .*not all checked.*'-' means none")
         self.assertIn("polyglot question <problem-id>", output)
-        for pattern in (r"37\s+topics", r"20\s+(?:question\s+)?docs", r"60\s+solution artifacts",
-                        r"6\s+(?:native\s+)?bindings"):
+        for pattern in (r"37\s+topics", r"20\s+(?:question\s+)?docs", r"70\s+solution artifacts",
+                        r"10\s+(?:native\s+)?bindings"):
             self.assertRegex(output, pattern)
         self.assertEqual([line.split("\t")[0] for line in self.cli("list", env=env).splitlines()], list(IDS))
         for args in (("questions", "--json", "extra"), ("questions", "--json", "--json"),
@@ -214,7 +214,7 @@ class LibraryInventoryTests(BranchFixture, unittest.TestCase):
                 output = self.cli("question", topic, env=env)
                 self.assertIn(row["title"], output)
                 self.assertIn(row["question_status"], output.lower())
-                self.assertIn("Solutions (unverified; not runnable exercise bindings)", output)
+                self.assertRegex(output, r"Solutions \(.*not all checked.*not runnable exercise bindings\)")
                 for ref in row["references"]:
                     self.assertIn(ref["path"], output)
                 for binding in row["bindings"]:

@@ -10,7 +10,9 @@ and the [full inventory](../../README/katas/index.md) expose all 37 topic famili
 Drafts and code-only topics such as Boggle and Stack are discoverable but not
 practice bindings; legacy references are unverified and never run by discovery.
 Preserved implementations live in [`soutions/`](soutions/) (existing spelling),
-separate from this native unittest track. The old seven pytest files and
+with five new checked examples in [`soutions/curated/`](soutions/curated/), separate
+from learner modules. All five shared contracts also have active Rust bindings.
+The old seven pytest files and
 compatibility import bridge were removed, not migrated to these tests.
 Use Python 3.11+; native checks need no package installation, virtual environment,
 database, or CLI. Keep `main` pristine and edit exercises on a practice branch.
@@ -38,8 +40,11 @@ examples; these are native bindings, in track order. Each module is
 while Rust's returns text; the intentional difference is specified in the question.
 Binary Search returns presence, not an index, without changing its sorted input;
 use binary search even though checks validate behavior, not complexity.
+The shared integer range is signed 32-bit, including `-2147483648` and `2147483647`;
+Python's broader integer range is not a cross-language guarantee.
 Fibonacci takes a term count, not an upper-value cutoff. The linked question
-defines its `0..40` domain and `1, 1` prefix; legacy references do not expand it.
+defines its inclusive `0..40` domain and `1, 1` prefix; legacy references do not expand it.
+Both languages' native checks cover all 41 lengths against fixed expected terms.
 
 ## Data Flow
 
@@ -120,9 +125,12 @@ validated before automatic branching or committing a navigation selection.
 `list`, `questions`, `hint`, and native checks do not require question Markdown.
 Question edits in the selected checkout appear without rebuilding; static catalog
 metadata and native-signature prompts require rebuilding/reinstalling the CLI.
-Shared string conformance is ASCII: Python uses Unicode code points, not UTF-16
-units or grapheme clusters. New Unicode bindings must explicitly agree on units
-and whitespace rules rather than assume cross-language equivalence.
+Shared string inputs are printable ASCII plus SPACE, TAB, LF, CR, VT (`\v`/`\x0b`),
+and FF (`\f`/`\x0c`). Python's `str.split()` naturally recognizes broader whitespace;
+other Unicode/control separators are not cross-language guaranteed. Python uses
+Unicode code points, not Rust byte offsets, UTF-16 units, or grapheme clusters.
+New Unicode bindings must explicitly agree on units and whitespace rules rather
+than assume cross-language equivalence. Fibonacci behavior outside `0..40` is unspecified.
 
 The root Python prototype, `starter.py`, and shared `test_exercises.py` are retired;
 `polyglot` is the only supported practice CLI. Ignored `answers.py` is preserved if
@@ -137,6 +145,15 @@ any retained `pylearn` metadata name does not provide a command or import.
 
 - [Catalog and selectors](../../cli/src/model.rs), [Python adapter](../../cli/src/adapters/python.rs)
 - [Tests](tests/), [exercise modules](exercises/)
+- Checked examples (compare after attempting): [Hello World](soutions/curated/hello_world.py),
+  [Find in String](soutions/curated/find_in_string.py),
+  [Length of Last Word](soutions/curated/length_of_last_word.py),
+  [Binary Search](soutions/curated/binary_search.py), [Fibonacci](soutions/curated/fibonacci.py).
+  Each is checked against current native tests, not proof of all behavior. Root
+  fixtures read published examples as text and copy them into disposable learner
+  sources, never user attempts; expected native outputs are independent. Browsing
+  executes no example. This evidence neither certifies legacy files nor records
+  user progress.
 - Related solutions (unverified): [Hello World](soutions/hello_world.py),
   [Find in String](soutions/find_in_string.py),
   [Length of Last Word](soutions/length_of_last_word.py),

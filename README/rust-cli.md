@@ -7,9 +7,10 @@
 This implements the shared practice workflow and a line-based session.
 Python and Rust share prompt/hint presentation, navigation, and check orchestration.
 The [full question/reference inventory](katas/index.md) registers 37 topic families:
-five curated, 15 draft, and 17 missing questions. Its 20 documents and 60 unverified
-legacy source artifacts across eight languages are discoverable, but only five
-Python bindings and one Rust binding are runnable. Discovery adds no native adapters.
+five curated, 15 draft, and 17 missing questions. Its 20 documents and 70 source
+artifacts across eight languages are discoverable: 60 unverified legacy files plus
+ten checked examples. All five curated questions have Python and Rust bindings
+(ten total). Discovery adds no native adapters.
 Manual checks are intentional: save, then explicitly check. There is no auto-run
 on save or automatic advancement; watch mode is neither implemented nor planned.
 `polyglot` is the only supported practice CLI. The root Python prototype and
@@ -103,10 +104,13 @@ from the committed-main baseline. Standalone `check` never initializes an attemp
 
 Python's track order is `python/hello`, `python/find_in_string`,
 `python/length_of_last_word`, `python/binary_search`, `python/fibonacci`.
-`check python` checks all five native tests; `check rust` checks its one binding.
+`check python` checks all five native tests; `check rust` checks all five Rust
+bindings sequentially, may stop on the first non-pass, and requires all five to pass.
 Python uses independent `practice/python/exercises/<ID suffix>.py` modules and
 corresponding `tests/test_*.py` files. Rust uses
-`practice/rust/exercises/hello.rs`, imported by `checks.rs`. Selecting another
+five independent `practice/rust/exercises/*.rs` files. Hello retains `checks.rs`
+and target `practice_checks`; the other four use `tests/<exercise>.rs` and target
+`<exercise>_checks`, each including only its own exercise. Selecting another
 exercise does not reset your work. Track READMEs link to the authoritative shared
 questions and document native APIs/commands; the CLI reads full question Markdown
 and adds the selected native task. Hints remain separate static binding metadata.
@@ -128,12 +132,12 @@ JSON**. It fits within 80 columns and has no duplicate `Title` column:
 |---|---|
 | `Problem ID` | Stable problem ID |
 | `Question` | `curated`, `draft`, or `missing` status |
-| `Solutions` | Unverified implementation languages, wrapped in the same 18-character column |
+| `Solutions` | Stored implementation languages (not all checked), wrapped in the same 18-character column |
 | `Practice` | Runnable native languages, e.g. `python, rust`; `-` means not converted |
 
-The footer reports 37 topics, 20 docs, 60 solution artifacts, and six native
+The footer reports 37 topics, 20 docs, 70 solution artifacts, and ten native
 bindings. Its legend
-distinguishes unverified solution languages from runnable native practice and
+distinguishes stored implementations (not all checked) from runnable native practice and
 points to JSON or `question ID` for details. Titles, exact binding IDs, and full
 reference source paths remain available there rather than in the compact table.
 No format flags may be mixed or repeated: `--json --pretty`, `--json --json`, and
@@ -149,7 +153,7 @@ polyglot questions --json
 
 Hyphenated problem IDs are distinct from qualified exercise IDs such as
 `python/binary_search`. `list`, `practice`, `start`, `check`, `reset`, `hint`, and
-`show` remain restricted to the six active bindings (or supported track targets).
+`show` remain restricted to the ten active bindings (or supported track targets).
 Guessing `python/stack` or `python/boggle` is blocked without writes or branch
 mutation. Existing `README/katas/` filenames remain unchanged for link stability.
 
@@ -216,7 +220,10 @@ resume would be considered only if needed, not as a prerequisite for retirement.
 ```
 
 `question PROBLEM_ID` accepts any registered topic and prints its metadata,
-bindings, and unverified paths under a `Solutions` heading. Curated topics show the full contract;
+bindings, and stored paths under a `Solutions` heading marked “not all checked”.
+Ten curated examples have the note “Example checked against current native tests;
+not a proof of all behavior.” The original 60 legacy sources remain uncertified.
+Curated topics show the full contract;
 drafts show a warning and legacy body, or an empty-draft notice with success.
 Missing-question topics show metadata and paths without a fabricated `Prompt:`
 or an error. A declared document that is missing, unreadable, non-UTF-8,
@@ -350,7 +357,12 @@ the selected exercise/harness. Python's `exercises/__init__.py` has no re-export
 broken or missing unselected sibling modules/tests do not block a selected check.
 For example, hello selects `tests.test_hello.PracticeTests.test_hello`.
 The Python adapter launches a fresh-source helper with a separate result report;
-Rust uses Cargo JSON and the selected libtest executable (`hello`). Checks do not
+Rust uses typed `NativeCheck::Rust(RustCheck { target, selector, harness })` data,
+Cargo JSON, and the selected libtest executable. The Rust adapter builds only that
+target and runs its exact selector. The manifest disables automatic libraries,
+binaries, and tests (`autolib`, `autobins`, `autotests` are false); each explicit
+target includes only its own exercise. Missing or broken unselected sources and
+harnesses do not block selected checks. Checks do not
 trust learner stdout as a pass signal. Metadata listing needs no root files, Git,
 or tools. The catalog is static, not runtime file discovery or a filesystem audit;
 editing Markdown does not automatically curate a draft or register a binding.
@@ -408,7 +420,9 @@ binary fails with build instructions rather than silently skipping the suite.
 The fixtures are isolated temporary copies, with temporary Git repositories where
 needed, paths with spaces, and unrelated working directories. Active fixture
 selection and explicit solution cases live in `tests/active_fixture.py`. Fixtures
-copy the curated shared Markdown and include all five Python solution cases;
+copy the curated shared Markdown. `EXAMPLE_PATHS` maps all ten published examples;
+`SOLUTIONS` and `RUST_SOLUTIONS` read their actual files as text and install them
+only into disposable learner sources before native checking;
 tests do not copy, reset, or check real local learner answers. Retired prototype
 tests are not part of the active suite or required for authoring validation.
 Unix-specific symlink/shim cases are skipped on other platforms. Runtime platform
@@ -418,10 +432,17 @@ bridge were removed, not replaced by the active native tests. See the
 [collection limits](exercises.md#collection-layout-and-execution-limits).
 
 `tests/test_library_inventory.py` independently compares the registry with all
-20 non-index question paths and 60 legacy source artifacts. Tests/specs, manifests,
+20 non-index question paths and 70 source artifacts (60 original legacy files plus
+ten checked examples). Its filename normalization maps `hello_world` to
+`hello-world`, not a variant topic. Tests/specs, manifests,
 generated files, playgrounds, and the ideas backlog are not cataloged solution artifacts.
 New in-scope source additions fail the coverage audit until registered; this audit
 does not execute or validate legacy solutions.
+
+`tests/test_curated_batch.py` checks all ten published examples as disposable
+learner inputs, selected Rust isolation, whole-track requirements, and independent
+fixed contract cases in both languages. `tests/test_local_links.py` audits authored
+Markdown targets and fragments without fetching URLs or executing examples.
 
 ## Scope and deferrals
 

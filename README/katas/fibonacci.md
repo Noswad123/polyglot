@@ -13,17 +13,21 @@ Input: an integer length in `0..40`, inclusive. Return a list/sequence of intege
 do not print the sequence as the answer. These bounds keep all core values within
 signed 32-bit integers.
 
-Active binding: `python/fibonacci`: `fibonacci(length: int) -> list[int]`.
+| Binding | Native interface |
+|---|---|
+| `python/fibonacci` | `fibonacci(length: int) -> list[int]` |
+| `rust/fibonacci` | `pub fn fibonacci(length: usize) -> Vec<u32>` |
 
-**Readiness:** question contract ready; Python has a native blank and checks.
-No other native binding is active, including Rust or JavaScript. Existing source
-implementations are unverified solution attempts, not practice blanks.
+**Readiness:** question contract ready; Python and Rust have native blanks and checks.
+JavaScript is legacy inventory, not an active binding. Older source implementations
+remain unverified attempts, not practice blanks.
 
 ## Data Flow
 
 The CLI renders this shared Markdown plus the selected binding. Native checks call
 the exercise with a length and compare the returned sequence, including its length
-and prefix values. Hints remain in the CLI catalog. Active checks do not import
+and prefix values for all 41 lengths from `0` through `40`, against fixed expected
+terms independent of learner code or published examples. Hints remain in the CLI catalog. Active checks do not import
 the older source references or their demos.
 
 ## Edge Cases
@@ -50,11 +54,16 @@ the older source references or their demos.
 ```sh
 polyglot question fibonacci
 polyglot show python/fibonacci
+polyglot show rust/fibonacci
 ```
 
 ## Related files
 
 - [Question library](index.md), [CLI catalog](../../cli/src/model.rs)
 - [Python blank](../../practice/python/exercises/fibonacci.py), [native checks](../../practice/python/tests/test_fibonacci.py)
+- [Rust blank](../../practice/rust/exercises/fibonacci.rs), [native checks](../../practice/rust/tests/fibonacci.rs)
+- Checked examples: [Python](../../practice/python/soutions/curated/fibonacci.py),
+  [Rust](../../practice/rust/solutions/curated/fibonacci.rs). Compare after attempting;
+  checked against current native tests, not proof of behavior outside the contract.
 - Related solutions (unverified): [Python](../../practice/python/soutions/fibonacci.py), [JavaScript](../../practice/javascript/fibonacci.js)
 - The old legacy Python tests were removed; they are not the native practice harness.

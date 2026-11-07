@@ -3,6 +3,7 @@
 import ast
 import json
 import shutil
+import subprocess
 import unittest
 
 from active_fixture import IDS, QUESTIONS, SOLUTIONS, exercise_path, solve
@@ -59,11 +60,16 @@ class QuestionLibraryTests(BranchFixture, unittest.TestCase):
         self.assertEqual(hello["bindings"], ["python/hello", "rust/hello"])
 
     def test_every_binding_shows_its_registered_question_and_signature(self):
-        problems = (*QUESTIONS, "hello-world")
+        problems = tuple(QUESTIONS) * 2
         signatures = ("hello() -> None", "find_in_string(string: str, substring: str) -> int",
                       "length_of_last_word(text: str) -> int",
                       "binary_search(target: int, arr: list[int]) -> bool",
-                      "fibonacci(length: int) -> list[int]", "greeting() -> &'static str")
+                      "fibonacci(length: int) -> list[int]", "greeting() -> &'static str",
+                      "find_in_string(string: &str, substring: &str) -> isize",
+                      "length_of_last_word(text: &str) -> usize",
+                      "binary_search(target: i32, arr: &[i32]) -> bool",
+                      "fibonacci(length: usize) -> Vec<u32>")
+        self.assertEqual(len(signatures), len(IDS))
         for selection, problem, signature in zip(IDS, problems, signatures):
             with self.subTest(selection=selection):
                 output = self.cli("show", selection)
@@ -230,11 +236,19 @@ class QuestionLibraryTests(BranchFixture, unittest.TestCase):
                  75025, 121393, 196418, 317811, 514229, 832040, 1346269,
                  2178309, 3524578, 5702887, 9227465, 14930352, 24157817,
                  39088169, 63245986, 102334155]
-        namespace = {}
-        exec(SOLUTIONS["fibonacci"], namespace)
+        solve(self.root, "python", "fibonacci")
+        result = subprocess.run(
+            [self.python, "-B", "-c", "import json; from exercises.fibonacci import fibonacci; "
+             "print(json.dumps([fibonacci(n) for n in range(41)]))"],
+            cwd=self.root / "practice/python", env=self.env,
+            capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        actual = json.loads(result.stdout)
+        self.assertEqual(len(actual), 41)
         for length in range(41):
             with self.subTest(length=length):
-                self.assertEqual(namespace["fibonacci"](length), terms[:length])
+                self.assertEqual(actual[length], terms[:length])
 
     def test_native_fibonacci_rejects_pair_appending_overshoot(self):
         # This implementation satisfies the old even-length sample cases but

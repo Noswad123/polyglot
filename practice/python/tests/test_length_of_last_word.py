@@ -18,6 +18,10 @@ class PracticeTests(unittest.TestCase):
             ("hello\tworld", 5),
             ("hello\nworld\n", 5),
             ("hello world!", 6),
+            ("hello\rworld\r", 5),
+            ("hello\vworld\f", 5),
+            (" \t\n\r\v\f", 0),
+            ("x" * 300, 300),
         ]
         for text, expected in cases:
             with self.subTest(text=text):

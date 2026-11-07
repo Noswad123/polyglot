@@ -46,4 +46,7 @@ polyglot show rust/hello
 - [Question library](index.md), [CLI catalog](../../cli/src/model.rs)
 - [Python blank](../../practice/python/exercises/hello.py), [native checks](../../practice/python/tests/test_hello.py)
 - [Rust blank](../../practice/rust/exercises/hello.rs), [native checks](../../practice/rust/checks.rs)
+- Checked examples: [Python](../../practice/python/soutions/curated/hello_world.py),
+  [Rust](../../practice/rust/solutions/curated/hello_world.rs) (function `greeting`).
+  Compare after attempting; checked against current native tests, not proof of all behavior.
 - [Related Python solution](../../practice/python/soutions/hello_world.py) — unverified inventory; compare after attempting, not a blank.

@@ -1,43 +1,63 @@
-# Rust practice proof exercise
+# Rust practice track
 
 [Home](../../README.md) · [Rust CLI](../../README/rust-cli.md) · [Exercise lifecycle](../../README/exercises.md)
 
 ## Overview
 
-One small exercise proves that the shared workflow can run native Rust checks as
-well as Python. This is not a complete Rust track or a requirement to study Rust
-alongside another language. Use Rust/Cargo 1.85+.
+Five independent exercises use the same shared contracts and workflow as Python,
+with native Rust checks. This is a small practice path, not a complete curriculum
+or a requirement to study Rust alongside another language. Use Rust/Cargo 1.85+.
 The [full collection inventory](../../README/katas/index.md) exposes 37 topic
-families through `polyglot questions`, but only `rust/hello` is active Rust practice.
+families through `polyglot questions`; all five curated questions are active Rust practice.
 Legacy Rust source is unverified reference inventory, not another binding or adapter.
 The preserved [Users project](solutions/users/) lives in its own standalone
 workspace, retaining its `src/` nesting and support files. It is not part of these
 checks; do not start its server or touch its database to validate native practice.
 
-The active file is tracked `practice/rust/exercises/hello.rs`. Keep `main`
+Active files are `practice/rust/exercises/*.rs`. Keep `main`
 pristine; implement solutions on a practice branch, not in a separate answers file.
 
 **Reset prerequisite:** the reviewed canonical blank must already be committed
 at its exercise path in local `refs/heads/main`. New or uncommitted paths are not
 a baseline; reset safely refuses until it exists. `start` does not create missing
 files or copy a starter.
+The existing Hello baseline is committed; the four new Rust blanks become
+reset-ready only when their reviewed canonical blobs reach local `main`.
 
 ## API / Interfaces
 
 | Exercise ID | Shared question / problem ID | Native API |
 |---|---|---|
 | `rust/hello` | [hello-world](../../README/katas/hello_world.md) | `pub fn greeting() -> &'static str` |
+| `rust/find_in_string` | [find-in-string](../../README/katas/find_in_string.md) | `pub fn find_in_string(string: &str, substring: &str) -> isize` |
+| `rust/length_of_last_word` | [length-of-last-word](../../README/katas/lengthOfLastWord.md) | `pub fn length_of_last_word(text: &str) -> usize` |
+| `rust/binary_search` | [binary-search](../../README/katas/binarySearch.md) | `pub fn binary_search(target: i32, arr: &[i32]) -> bool` |
+| `rust/fibonacci` | [fibonacci](../../README/katas/fibonacci.md) | `pub fn fibonacci(length: usize) -> Vec<u32>` |
 
-Implement this binding in **`exercises/hello.rs`**. The shared question is
-authoritative: Rust returns the greeting, while Python prints and returns `None`.
-This intentional difference preserves both native APIs. The canonical blank body
-uses `todo!()`. Other curated questions have no active Rust binding yet.
+Implement each binding in `exercises/<ID suffix>.rs`, in the order above. Shared
+question Markdown is authoritative; native task strings do not duplicate it.
+Hello returns the exact greeting without a newline, while Python prints it with
+one newline and returns `None`. Canonical Rust blanks use `todo!()`; the four new
+blanks do not overwrite the existing Hello or Python exercises.
 
 ## Data Flow
 
-`checks.rs` imports `exercises/hello.rs` and calls `greeting()` in native test
-`hello`. The independent, dependency-free Cargo package has a checked-in lockfile
-and runs offline and locked. Normal build artifacts go in `practice/rust/target/`;
+The dependency-free Cargo package has five explicit, isolated test targets and a
+checked-in lockfile. Automatic library, binary, and test discovery is disabled
+(`autolib = false`, `autobins = false`, `autotests = false`). Each harness includes
+only its own exercise:
+
+| Exact test selector | Cargo target | Harness |
+|---|---|---|
+| `hello` | `practice_checks` | `checks.rs` (retained path) |
+| `find_in_string` | `find_in_string_checks` | `tests/find_in_string.rs` |
+| `length_of_last_word` | `length_of_last_word_checks` | `tests/length_of_last_word.rs` |
+| `binary_search` | `binary_search_checks` | `tests/binary_search.rs` |
+| `fibonacci` | `fibonacci_checks` | `tests/fibonacci.rs` |
+
+The adapter consumes typed `RustCheck { target, selector, harness }` metadata and
+builds only the selected target, offline and locked. Broken or missing unselected
+exercise files or harnesses do not block that check. Normal build artifacts go in `practice/rust/target/`;
 checks do not update source, harness, manifest, or lockfile.
 
 `show` and session `prompt` read the full shared question Markdown and display it
@@ -60,7 +80,8 @@ cargo build --locked
 ```
 
 On a non-main branch, `polyglot start rust/hello` and `polyglot check rust/hello`
-provide a one-shot loop. `check rust` currently selects the same single exercise.
+provide a one-shot loop. `check rust` runs all five bindings sequentially and may
+stop at the first non-pass; all five must pass for track success.
 See [tool selection](../../README/rust-cli.md#roots-and-tool-selection) for overrides.
 
 Native checks do not enforce branch policy: select a practice branch yourself,
@@ -68,13 +89,36 @@ then run from the repository root:
 
 ```sh
 cargo test --offline --locked --manifest-path practice/rust/Cargo.toml --test practice_checks -- hello --exact
+cargo test --offline --locked --manifest-path practice/rust/Cargo.toml --test find_in_string_checks -- find_in_string --exact
+cargo test --offline --locked --manifest-path practice/rust/Cargo.toml --test length_of_last_word_checks -- length_of_last_word --exact
+cargo test --offline --locked --manifest-path practice/rust/Cargo.toml --test binary_search_checks -- binary_search --exact
+cargo test --offline --locked --manifest-path practice/rust/Cargo.toml --test fibonacci_checks -- fibonacci --exact
 ```
+
+For a direct whole-package check, all five sources and harnesses must be valid:
+
+```sh
+cargo test --offline --locked --manifest-path practice/rust/Cargo.toml --tests
+```
+
+This intentionally builds all targets; it is not the isolated selected-check path.
+`practice_checks` is Hello's target, not an aggregate target for all five exercises.
 
 After the committed-main prerequisite above is met, retry with
 `polyglot reset rust/hello`, or `reset`/`r` in its session. Read the
 [reset recovery contract](../../README/exercises.md#edge-cases) first.
 
 ## Edge Cases
+
+Shared text inputs are printable ASCII plus SPACE, TAB, LF, CR, VT (`\v`/`\x0b`),
+and FF (`\f`/`\x0c`). Other Unicode/control-separator behavior is not guaranteed
+across languages. Rust's checked last-word example uses `split_whitespace`, not
+`split_ascii_whitespace` (which misses VT). See the separate CLI hints for guidance,
+not full solutions in question bodies. Binary Search uses signed 32-bit values,
+including `i32::MIN`/`i32::MAX`, without mutation and with manual interval halving;
+behavioral tests do not prove complexity. Fibonacci checks all 41 lengths in
+`0..=40`, returning exactly N terms starting `1, 1` (empty at zero); behavior beyond
+that domain is unspecified.
 
 Missing tools or broken check configuration are blocked checks, not failed
 solutions. `check` does not initialize missing source. Save before checking or
@@ -102,7 +146,16 @@ an older attempt, follow the [manual preservation steps](../../README/exercises.
 
 ## Related files
 
-- [Exercise](exercises/hello.rs), [checks](checks.rs), [manifest](Cargo.toml), [lockfile](Cargo.lock)
+- [Exercises](exercises/), [Hello checks](checks.rs), [other checks](tests/), [manifest](Cargo.toml), [lockfile](Cargo.lock)
+- Checked examples (compare after attempting): [Hello World](solutions/curated/hello_world.rs)
+  (function `greeting`, unlike the `hello.rs` blank filename),
+  [Find in String](solutions/curated/find_in_string.rs),
+  [Length of Last Word](solutions/curated/length_of_last_word.rs),
+  [Binary Search](solutions/curated/binary_search.rs), [Fibonacci](solutions/curated/fibonacci.rs).
+  Each is checked against current native tests, not proof of all behavior. Root
+  tests read these files as text into disposable learner sources, never overwrite
+  user attempts, and use independent expected outputs. This does not certify the
+  legacy Users project or record user progress; browsing executes no examples.
 - [Catalog](../../cli/src/model.rs), [Rust adapter](../../cli/src/adapters/rust.rs)
 - [Shared question library](../../README/katas/index.md)
 - [Collection layout and execution limits](../../README/exercises.md#collection-layout-and-execution-limits)

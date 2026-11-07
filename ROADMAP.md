@@ -44,11 +44,14 @@ retained untouched, not automatically imported. Canonical baseline commits still
 require user review and integration into main.
 
 Discovery now covers the complete current-file inventory: 37 topic families,
-20 question documents, and 60 unverified solution artifacts in the user-selected
+20 question documents, and 70 solution artifacts in the user-selected
 language directories under `practice/`.
+The artifacts include the original 60 legacy files and ten examples checked
+against the current native tests, not a proof of all behavior.
 The JSON `references` field is retained for export compatibility. Question readiness
 and native practice availability are separate: only five contracts are curated
-and six bindings are runnable. Earlier five-question milestones describe that
+and all five have Python and Rust bindings (ten runnable exercises). Earlier
+five-question milestones describe that
 curated subset, not the size of the original collection.
 
 ## Ownership boundaries
@@ -331,8 +334,8 @@ language API, blank file, hint, and test selector. General notes remain in Darkn
       they are never copied into canonical blanks or marked verified by location.
 - [x] Publish a readiness table and 15-document remaining conversion queue, including
       contradictory or incomplete contracts, without implying all languages are ready.
-- [ ] Review and integrate the two new blank modules into local main before using
-      them as real reset baselines. Existing original exercises retain their baselines.
+- [x] Confirm the two converted Python modules reached committed main; all six
+      pre-batch exercises have canonical reset baselines.
 - [ ] Choose the next question or language binding from the library based on a
       learning need, resolving its contract before adding a native check.
 
@@ -343,7 +346,8 @@ and locked offline build. Coverage includes runtime question edits, shared/nativ
 bindings, missing/empty/symlink question handling, selection retention, native
 contract failures, reset of the new exercise files, and regression safety.
 
-The five curated questions have five Python bindings and only `rust/hello`.
+At this initial conversion milestone, five Python bindings and only `rust/hello`
+were available. The paired-track batch below now completes both languages.
 Drafts and reference-only topics are now discoverable through the full inventory
 below, but no unsupported language or completed reference is implicitly converted
 to a native binding. See the [question library](README/katas/index.md) for scope.
@@ -467,8 +471,8 @@ files back to an earlier proposed structure:
 - [x] Add regression audits for local Markdown targets/anchors, TypeScript relative
       imports, and Python development-configuration paths.
 
-The active six exercise bindings, shared question-document locations, JSON export
-schema, and manual-check workflow are unchanged. Historical validation numbers
+At the link-cleanup milestone the six exercise bindings, shared question-document
+locations, JSON export schema, and manual-check workflow were unchanged. Historical validation numbers
 above refer to their respective earlier layouts, not to deleted legacy tests.
 
 **Current-layout validation:** all 148 root integration/regression tests and 14
@@ -477,6 +481,43 @@ build, and diff checks. The new audits cover repository-local Markdown links and
 anchors, all 16 TypeScript relative imports, and virtual Python test configuration.
 Nested Users Cargo metadata resolves independently without launching the server.
 External web URLs and TypeScript test execution are not certified by these checks.
+
+## Paired Python/Rust curated batch
+
+Deliver the complete bounded curated set together, not one port at a time. This
+does not convert the other 32 inventory topics or add another language adapter.
+
+- [x] Register all five questions in both languages: Hello World, Find in String,
+      Length of Last Word, Binary Search, and Fibonacci (ten native bindings).
+- [x] Add the four missing Rust blank files without overwriting existing exercises.
+      Preserve the intentional Python-print/Rust-return Hello binding difference.
+- [x] Give each Rust exercise an explicit Cargo target and selected harness, keeping
+      automatic target discovery disabled. Missing or broken siblings do not block
+      the selected exercise; whole-track success requires every selected check.
+- [x] Enforce declared Rust APIs through marked typed function assignments, with
+      learner signature/name/visibility errors distinguished from broken harnesses.
+- [x] Check matching contract edges across languages: ASCII first-match indexing,
+      six standard ASCII whitespace separators and long words, signed-32-bit search
+      boundaries/duplicates/input preservation, and all 41 Fibonacci lengths.
+- [x] Publish five checked Python and five checked Rust examples under the existing
+      implementation roots' `curated/` directories. Reuse their text only as inputs
+      in disposable fixtures; expected outputs remain independently defined.
+- [x] Preserve all 60 legacy artifacts. The inventory now has 70 artifacts, of which
+      the ten new examples carry explicit native-test evidence, not a proof of all
+      behavior. No stored solution is automatically copied into learner files.
+- [x] Validate selected checks, both language sessions, wrong-contract/API mutants,
+      zero/ignored tests, sibling isolation, branch guards, and per-file reset.
+- [ ] Review and integrate the four new canonical Rust blanks into local main before
+      using reset for those paths. The six existing blank paths already have baselines.
+
+**Validation:** 162 isolated integration/regression tests passed with Python 3.15.
+All 16 Rust units passed on Rust 1.85 and 1.89. Root and native harness formatting,
+Clippy with warnings denied, locked offline build, local links, and diff checks
+passed. Native published examples are checked after copying into temporary
+exercises, not by modifying real attempts. Independent example probes and wrong,
+missing, or private API checks also passed with Cargo/Rust 1.85. Runtime validation is macOS; Linux
+runtime validation remains open. No servers, databases, watch mode, or persistent
+progress were introduced.
 
 ## Practice and curriculum discipline throughout
 
@@ -511,10 +552,10 @@ programming-practice session.
 
 ## Current next action
 
-Use `questions` or `questions --json` to see the full collection, then `question ID`
-to inspect its state and references. Choose the next contract/native binding to
-convert without treating reference availability as runnable readiness. Review the
-pending two Python blanks before integrating their canonical files into main and
-resetting them. Practice remains manual; no watch mode is planned. Preserve older
-attempts until copied and verified. No real-checkout commits, branch changes, or
-merges are performed automatically.
+Review the paired-track batch on an authoring branch and integrate the four new
+Rust blanks into main for canonical reset. Then use the complete curated set in
+either language, choosing meaningful practice rather than more infrastructure.
+`questions --pretty` distinguishes full-library inventory from runnable bindings
+and checked examples. Practice remains manual; no watch mode is planned. Preserve
+older attempts until copied and verified. No real-checkout commits, branch changes,
+or merges are performed automatically.

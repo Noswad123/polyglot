@@ -84,7 +84,7 @@ impl Context {
                 bindings.join(", ")
             }
         );
-        println!("Solutions (unverified; not runnable exercise bindings):");
+        println!("Solutions (not all checked; not runnable exercise bindings):");
         if problem.references.is_empty() {
             println!("  none");
         }
@@ -308,7 +308,7 @@ fn questions_table() -> String {
         CATALOG.len()
     ));
     lines.push("Practice: runnable languages; '-' means not converted.".into());
-    lines.push("Solutions: unverified implementation languages; '-' means none.".into());
+    lines.push("Solutions: implementation languages (not all checked); '-' means none.".into());
     lines.push("Details and exact binding IDs: polyglot question <problem-id>".into());
     lines.join("\n")
 }

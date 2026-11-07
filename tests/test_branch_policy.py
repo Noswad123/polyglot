@@ -12,7 +12,7 @@ import time
 import unittest
 
 from git_fixture import isolated_git_env
-from active_fixture import copy_active_fixture, exercise_path, solve
+from active_fixture import IDS, copy_active_fixture, exercise_path, solve
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -146,9 +146,11 @@ class BranchPolicyTests(BranchFixture, unittest.TestCase):
         self.assertEqual(self.git_files(), metadata)
 
     def test_direct_start_on_main_is_blocked_without_switch(self):
-        output = self.assert_blocked("start", "python/hello")
-        self.assertIn("main", output.lower())
-        self.assertRegex(output.lower(), r"git switch|git checkout")
+        for selection in IDS:
+            with self.subTest(selection=selection):
+                output = self.assert_blocked("start", selection)
+                self.assertIn("main", output.lower())
+                self.assertRegex(output.lower(), r"git switch|git checkout")
 
     def test_direct_start_on_nonmain_does_not_create_branch(self):
         self.git("switch", "-c", "feature/direct")

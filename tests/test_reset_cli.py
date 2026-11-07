@@ -327,6 +327,27 @@ class ResetCliTests(BranchFixture, unittest.TestCase):
                         self.assertEqual(source.read_bytes() if source.is_file() else None, content)
                 self.assertEqual(self.git_files(), metadata)
 
+    def test_new_rust_resets_preserve_staged_index_and_all_siblings(self):
+        names = ("find_in_string", "length_of_last_word", "binary_search", "fibonacci")
+        baselines = {name: exercise_path(self.root, "rust", name).read_bytes() for name in names}
+        for name in names:
+            with self.subTest(name=name):
+                solve(self.root, "rust")
+                path = exercise_path(self.root, "rust", name)
+                relative = str(path.relative_to(self.root))
+                self.git("add", relative)
+                path.write_bytes(path.read_bytes() + b"\n// unstaged learner bytes\r\n")
+                learner = path.read_bytes()
+                before, metadata = self.sources(), self.git_files()
+                output = self.reset(selection="rust/" + name)
+                self.assert_backup(output, learner)
+                self.assertEqual(path.read_bytes(), baselines[name])
+                self.assertEqual(self.git_files(), metadata)
+                for sibling, content in before.items():
+                    if sibling != relative:
+                        source = self.root / sibling
+                        self.assertEqual(source.read_bytes() if source.is_file() else None, content)
+
     def test_session_reset_aliases_stay_selected_and_next_rechecks(self):
         for alias in ("reset", "r"):
             with self.subTest(alias=alias):

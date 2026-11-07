@@ -84,8 +84,9 @@ reference inventories. Intentional binding differences, such as Python printing
 Hello World while Rust returns the greeting, are documented explicitly.
 
 The static library covers 37 topic families: five curated, 15 draft, and 17 missing
-questions; its 20 documents and 60 unverified solution artifacts are distinct from
-the six active bindings in `model.rs`. Reference labels span eight languages;
+questions; its 20 documents and 70 source artifacts (60 unverified legacy files plus
+ten checked examples) are distinct from the ten active bindings in `model.rs`:
+all five curated questions in Python and Rust. Reference labels span eight languages;
 the native `Language` enum still has only Python and Rust. A curated question may
 exist without a binding: contract readiness, reference availability, native practice,
 and committed reset baselines are independent dimensions.
@@ -100,7 +101,7 @@ language/path/nullable-note entries remain; no `solutions` alias is added.
 table, not pretty-printed JSON: within 80 columns, `Problem ID`, `Question`
 (status), wrapped `Solutions` languages (the same 18-character column), and `Practice` native languages (or `-`
 for not converted) replace verbose rows without duplicating the title. Its footer
-gives aggregate totals including 60 solution artifacts and an unverified-solutions-versus-practice legend with detail
+gives aggregate totals including 70 solution artifacts and a “not all checked” legend with detail
 commands. JSON or `question ID` retains titles, exact binding IDs, and full source
 paths. Mixed or repeated format flags are rejected. `question PROBLEM_ID`
 displays curated contracts, warns before draft bodies, or reports metadata and
@@ -114,7 +115,11 @@ General reference notes remain in Darkness; question contracts belong to Polyglo
 
 Preserved implementations live under `practice/`: Python uses `python/soutions/`,
 Rust Users uses `rust/solutions/users/`, and other language collections are flat
-apart from retained project subdirectories. The old Python tests and compatibility
+apart from retained project subdirectories. Checked examples additionally live in
+`practice/python/soutions/curated/` and `practice/rust/solutions/curated/`.
+Their reference notes record native-test evidence, not proof of all behavior;
+the legacy JSON `references` key and nullable-note schema remain unchanged.
+The old Python tests and compatibility
 bridge were removed. This layout adds no adapters, changes no shared contracts,
 and does not certify specs, servers, or database projects. See the
 [lifecycle guide](exercises.md#collection-layout-and-execution-limits) for execution limits.
@@ -129,6 +134,12 @@ dynamic plugin framework. The initial catalog uses one workspace per language,
 with independent files and native selectors for each exercise. Python's package
 initializers do not import siblings. Add independent workspace metadata when a
 second workspace within one language needs it.
+Rust uses `NativeCheck::Rust(RustCheck { target, selector, harness })` metadata:
+five explicit isolated Cargo targets, each including only its own exercise.
+The adapter builds only the selected target; broken or missing siblings do not
+block a selected check. Whole-track checks run sequentially, may stop at the first
+non-pass, and pass only if all five pass. Cargo command construction stays in the
+adapter, not language-specific workflow branches.
 Reuse suitable Rustlings patterns/code without importing Cargo assumptions into
 application state or adopting a full fork by default.
 
@@ -153,7 +164,7 @@ Code boundaries are explicit:
 
 - `cli/src/main.rs`: argument parsing and command dispatch.
 - `cli/src/library.rs`: full static topic inventory, statuses, optional documents,
-  and unverified reference paths.
+  and reference paths/notes distinguishing checked examples from legacy inventory.
 - `cli/src/model.rs`: native exercise bindings, workspace mappings,
   selectors, and outcomes.
 - `cli/src/workflow.rs`: shared preparation, metadata display, and check orchestration.
@@ -163,9 +174,11 @@ Code boundaries are explicit:
   reset, descriptor-anchored file transactions, backups, and recovery.
 - `cli/src/adapters/`: tool resolution, native invocations, and classification.
 - `README/katas/`: shared question contracts plus the explicit conversion backlog.
-- `practice/`: native exercise workspaces plus unverified collections; see the inventory for exact roots.
+- `practice/`: native exercise workspaces, checked examples, and legacy collections; see the inventory for exact roots.
 - `tests/test_library_inventory.py`: independent coverage audit of all 20 question
-  documents and 60 current legacy source artifacts; not solution validation.
+  documents and 70 source artifacts; coverage, not legacy solution validation.
+- `tests/active_fixture.py`: reads all ten published examples as text and copies
+  them into disposable learner sources for native-check regressions, never user attempts.
 
 Native checks may produce build artifacts but must preserve learner sources and
 locked inputs. Python checks execute fresh source instead of cached bytecode.
@@ -196,12 +209,22 @@ not imported or migrated by the CLI.
 Reset requires a non-main branch, pins strict local `refs/heads/main` once, and
 reads the actual regular-file blob with Git object replacements disabled. Missing
 canonical files block; uncommitted files or learner HEAD are never fallbacks.
-The four original blank files are committed on local main. Newly authored
+The six existing blank files have committed baselines. Newly authored
 files still need reviewed integration there before they become reset baselines.
+This includes the four new Rust blanks until their canonical blobs reach local main.
 After confirmation, only the selected worktree file is restored. Its staged
 version, other files, and Git refs are unchanged.
 
 ## Edge Cases
+
+Shared text contracts cover printable ASCII plus SPACE, TAB, LF, CR, VT, and FF.
+Other Unicode/control-separator behavior is not cross-language guaranteed. Binary
+Search's shared numeric scope is signed 32-bit; Python integers can be broader.
+Fibonacci uses exactly N terms starting `1, 1` for `0..=40`; behavior outside that
+domain is unspecified. The question Markdown remains authoritative, rather than
+duplicating full contracts in native task strings. Contract curation, native
+practice readiness, stored-example validation, reset readiness, and user progress
+are separate dimensions.
 
 The macOS/Linux backend uses no-follow directory handles and conditional atomic
 operations. Changed existing files receive private snapshot backups and a lasting
@@ -226,8 +249,8 @@ The root `polyglot.py` prototype and obsolete practice starters/tests are retire
 there is no prototype fallback. `make install` installs the Rust debug binary at
 `~/.local/bin/polyglot`; release packaging remains separate. Direct native checks
 remain available but, like editors, do not enforce branch safeguards. The former
-`pylearn` package and other language packages under `src/` were removed; only
-shared data remains there. Root Python configuration is development/test tooling,
+`pylearn` package, other language packages under `src/`, and the unused root database
+experiment were removed. Root Python configuration is development/test tooling,
 not an installed runtime package or CLI.
 
 ## Integration rules

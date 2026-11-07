@@ -12,40 +12,24 @@ QUESTIONS = {
     "binary-search": "binarySearch.md",
     "fibonacci": "fibonacci.md",
 }
-IDS = ("python/hello", "python/find_in_string", "python/length_of_last_word",
-       "python/binary_search", "python/fibonacci", "rust/hello")
-SOLUTIONS = {
-    "hello": 'def hello():\n    print("Hello, World!")\n',
-    "find_in_string": "def find_in_string(string, substring):\n    return string.find(substring)\n",
-    "length_of_last_word": "def length_of_last_word(text):\n    words = text.split()\n    return len(words[-1]) if words else 0\n",
-    "binary_search": """def binary_search(target: int, arr: list[int]) -> bool:
-    low, high = 0, len(arr)
-    while low < high:
-        middle = (low + high) // 2
-        if arr[middle] == target:
-            return True
-        if arr[middle] < target:
-            low = middle + 1
-        else:
-            high = middle
-    return False
-""",
-    "fibonacci": """def fibonacci(length: int) -> list[int]:
-    result = []
-    first, second = 1, 1
-    for _ in range(length):
-        result.append(first)
-        first, second = second, first + second
-    return result
-""",
+NAMES = ("hello", "find_in_string", "length_of_last_word", "binary_search", "fibonacci")
+IDS = tuple(f"{language}/{name}" for language in ("python", "rust") for name in NAMES)
+EXAMPLE_PATHS = {
+    language: {name: REPO / "practice" / language / directory / "curated" /
+               (("hello_world" if name == "hello" else name) + suffix) for name in NAMES}
+    for language, directory, suffix in (("python", "soutions", ".py"),
+                                        ("rust", "solutions", ".rs"))
 }
-RUST_SOLUTION = 'pub fn greeting() -> &\'static str { "Hello, World!" }\n'
+# Published examples are inputs, never imported or evaluated in the source tree.
+SOLUTIONS = {name: path.read_text() for name, path in EXAMPLE_PATHS["python"].items()}
+RUST_SOLUTIONS = {name: path.read_text() for name, path in EXAMPLE_PATHS["rust"].items()}
+RUST_SOLUTION = RUST_SOLUTIONS["hello"]
 
 
 def copy_active_fixture(root):
     for language, names in {
         "python": ("exercises", "tests", "README.md"),
-        "rust": ("Cargo.toml", "Cargo.lock", "checks.rs", "exercises"),
+        "rust": ("Cargo.toml", "Cargo.lock", "checks.rs", "exercises", "tests", "README.md"),
     }.items():
         destination = root / "practice" / language
         destination.mkdir(parents=True)
@@ -63,9 +47,6 @@ def copy_active_fixture(root):
         destination = root / source.relative_to(REPO)
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, destination)
-    rust_readme = REPO / "practice/rust/README.md"
-    (root / "practice/rust/README.md").write_bytes(
-        rust_readme.read_bytes() if rust_readme.is_file() else b"Rust fixture prompt.\n")
 
 
 def exercise_path(root, language="python", name="hello"):
@@ -73,8 +54,6 @@ def exercise_path(root, language="python", name="hello"):
 
 
 def solve(root, language, name=None):
-    if language == "rust":
-        exercise_path(root, language).write_text(RUST_SOLUTION)
-    else:
-        for selected in ((name,) if name else SOLUTIONS):
-            exercise_path(root, language, selected).write_text(SOLUTIONS[selected])
+    solutions = RUST_SOLUTIONS if language == "rust" else SOLUTIONS
+    for selected in ((name,) if name else solutions):
+        exercise_path(root, language, selected).write_text(solutions[selected])

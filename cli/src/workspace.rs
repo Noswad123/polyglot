@@ -65,19 +65,22 @@ pub fn prevalidate_start(root: &Path, exercise: &Exercise) -> Result<(), Outcome
     if !path.is_file() {
         return Err(Outcome::Blocked(format!("exercise file is missing or not regular: {}. Use `polyglot reset {}` after committing a reviewed pristine exercise on main first.", path.display(), exercise.id)));
     }
-    if let NativeCheck::Python(selector) = exercise.check {
-        let module = selector.rsplit_once(".PracticeTests.").unwrap().0;
-        let harness = format!("{}.py", module.replace('.', "/"));
-        let path = safe_path(
-            root,
-            &Path::new(exercise.language.workspace().directory).join(harness),
-        )?;
-        if !path.is_file() {
-            return Err(Outcome::Blocked(format!(
-                "selected test harness is missing or not regular: {}",
-                path.display()
-            )));
+    let harness = match exercise.check {
+        NativeCheck::Python(selector) => {
+            let module = selector.rsplit_once(".PracticeTests.").unwrap().0;
+            format!("{}.py", module.replace('.', "/"))
         }
+        NativeCheck::Rust(check) => check.harness.to_owned(),
+    };
+    let path = safe_path(
+        root,
+        &Path::new(exercise.language.workspace().directory).join(harness),
+    )?;
+    if !path.is_file() {
+        return Err(Outcome::Blocked(format!(
+            "selected test harness is missing or not regular: {}",
+            path.display()
+        )));
     }
     Ok(())
 }
